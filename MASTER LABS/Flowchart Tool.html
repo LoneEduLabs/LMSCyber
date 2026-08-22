@@ -1,0 +1,1663 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cybersecurity Basics Lab — City Hospital — 3D Interactive Cyber Lab</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <style>
+        * { box-sizing: border-box; margin: 0; padding: 0; }
+        :root {
+            --bg: #0a0f1c; --bg-grid: #0d1424; --panel: #121a2b; --panel-2: #0e1526;
+            --border: #223050; --border-soft: #1a2540; --text: #e7ecf5; --muted: #7c8aa5; --muted-2: #56637d;
+            --clean: #3a4a6b; --clean-glow: #4d6087;
+            --danger: #ff3b5c; --danger-glow: rgba(255,59,92,0.45);
+            --c2: #8b6bff; --c2-glow: rgba(139,107,255,0.45);
+            --amber: #ffb020; --amber-glow: rgba(255,176,32,0.45);
+            --ok: #22d3a6; --ok-glow: rgba(34,211,166,0.4);
+            --mono: 'IBM Plex Mono', monospace; --sans: 'Inter', sans-serif;
+        }
+        html, body { height: 100%; width: 100%; overflow: hidden; }
+        body {
+            background: var(--panel); color: var(--text); font-family: var(--sans);
+            height: 100vh; width: 100vw; margin: auto; padding: 0 12px;
+            display: flex; flex-direction: column;
+        }
+        .app { height: 100%; width: 100%; display: flex; flex-direction: column; position: relative; }
+
+        header.hero {
+            display: flex; flex-direction: column; gap: 0px;
+            border-bottom: 1px solid var(--border-soft); padding-bottom: 4px; flex-shrink: 0;
+            position: relative;
+            z-index: 201;
+        }
+        .eyebrow {
+            font-family: var(--mono); font-size: 18px; letter-spacing: 0.1em; color: var(--ok);
+            display: flex; align-items: center; gap: 8px; font-weight: 700;
+        }
+        .eyebrow::before {
+            content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--danger);
+            box-shadow: 0 0 0 4px var(--danger-glow); animation: pulse-dot 3s ease-in-out infinite;
+        }
+        @keyframes pulse-dot { 0%,100%{opacity:1;} 50%{opacity:.35;} }
+
+        /* ---- Admin menu (top-right) ---- */
+        .admin-menu { position: absolute; top: 6px; right: 4px; z-index: 250; font-family: var(--sans); }
+        .admin-menu-btn {
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+            padding: 7px 12px; color: var(--text); font-size: 13px; font-weight: 600; cursor: pointer;
+            display: flex; align-items: center; gap: 6px; transition: border-color .2s;
+        }
+        .admin-menu-btn:hover { border-color: var(--c2); }
+        .admin-menu-btn i { font-size: 10px; color: var(--muted); transition: transform .2s; }
+        .admin-menu.open .admin-menu-btn i { transform: rotate(180deg); }
+        .admin-menu-dropdown {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0; min-width: 180px;
+            background: var(--panel); border: 1px solid var(--border-soft); border-radius: 10px;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.5); overflow: hidden; z-index: 260;
+        }
+        .admin-menu.open .admin-menu-dropdown { display: block; }
+        .admin-menu-item { padding: 10px 14px; font-size: 12.5px; }
+        .admin-menu-item.admin-menu-name {
+            color: var(--text); font-weight: 700; letter-spacing: .02em;
+            border-bottom: 1px solid var(--border-soft);
+        }
+        .admin-menu-item.admin-menu-feedback { color: var(--muted); cursor: pointer; transition: all .15s; }
+        .admin-menu-item.admin-menu-feedback:hover { background: rgba(139,107,255,0.1); color: var(--c2); }
+
+        main.layout {
+            display: grid; grid-template-columns: 210px 1fr 150px; gap: 4px;
+            flex: 1; min-height: 0; height: 100%;
+            position: relative;
+        }
+        @media(max-width:1100px) { main.layout { grid-template-columns: 1fr; } }
+
+        .panel { background: var(--panel); border: 1px solid var(--border-soft); padding: 12px 14px; overflow: hidden; }
+        .panel.sidebar {
+            border-radius: 0; display: flex; flex-direction: column; padding: 12px 14px; height: 100%;
+            overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;
+            margin-left: -12px; border-left: 0;
+            position: relative;
+            z-index: 1;
+        }
+        .panel.sidebar::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        .panel.sidebar.right-side { margin-left: 0; border-left: 1px solid var(--border-soft); margin-right: -12px; border-right: 0; }
+
+        /* ----- toolbox left ----- */
+        .instr-title { font-family: var(--mono); font-size: 13px; color: var(--muted); text-transform: uppercase; letter-spacing: .08em; margin-bottom: 6px; }
+
+        .pool-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 3px; margin-top: 4px; }
+        .pool-item {
+            background: var(--panel-2); border: 1px solid var(--border-soft); border-radius: 7px;
+            padding: 2px; text-align: center; user-select: none; min-width: 0; box-sizing: border-box;
+        }
+        .pool-item .p-icon { font-size: 32px; display: block; line-height: 1.15; color: var(--text); }
+        .pool-item .p-icon i { font-size: 38px; display: inline-block; width: 100%; color: var(--ok); }
+        .pool-item .p-label { font-size: 11.5px; font-weight: 800; font-family: var(--mono); color: var(--ok); display: block; margin-top: 2px; letter-spacing: .01em; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+        #toolboxPanel { padding: 8px 4px; }
+        #toolboxPanel .instr-title { margin-bottom: 3px; }
+
+        /* ---- stage panel ---- */
+        .stage-panel { padding: 0; overflow: hidden; display: flex; flex-direction: column; border-radius: 50px; height:98%; }
+        /* ---- Stage footer: fixed, transparent, shows the student's name once a week is loaded ---- */
+        .stage-header {
+            display: none; position: absolute; bottom: 0; left: 0; right: 0; z-index: 20;
+            align-items: center; justify-content: center;
+            padding: 0px 0px 6px; pointer-events: none;
+            background: transparent;font-family: var(--mono); font-size: 12.5px; color: var(--ok);
+        }
+        .stage-header-badge {
+            display: none; align-items: center; gap: 8px;
+            background: transparent;
+            padding: 6px 10px;font-family: var(--mono); font-size: 12.5px; color: var(--ok);
+        }
+        .stage-header-badge .shb-label { font-family: var(--mono); font-size: 12.5px; color: var(--ok);}
+        .stage-header-badge .shb-name { font-family: var(--mono); font-size: 12.5px; color: var(--ok); }
+
+        .stage3d { position: relative; flex: 1; min-height: 0; background: var(--panel-2); border-bottom: 1px solid var(--border-soft); }
+        .stage3d canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: grab; }
+        .stage3d canvas.orbiting { cursor: grabbing; }
+
+        .status-badge {
+            position: absolute; left: 50%; top: 14px; transform: translateX(-50%);
+            font-family: var(--mono); font-size: 12px; font-weight: 700; letter-spacing: .06em;
+            padding: 6px 16px; border-radius: 20px; border: 1px solid var(--border); background: rgba(14,21,38,.88);
+            color: var(--ok); pointer-events: none; z-index: 5;
+        }
+        .current-tool-badge {
+            display: none; margin-top: 4px; font-family: var(--mono); font-size: 12px; font-weight: 700;
+            letter-spacing: .03em; padding: 5px 12px; border-radius: 8px; border: 1px solid var(--c2);
+            background: rgba(139,107,255,.14); color: var(--c2); max-width: 100%; box-sizing: border-box;
+            overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+        }
+        .current-tool-badge.is-connect { border-color: var(--amber); background: rgba(255,176,32,.14); color: var(--amber); }
+        .current-tool-badge.is-label { border-color: var(--ok); background: rgba(34,211,166,.14); color: var(--ok); }
+
+        /* ----- dashboard ----- */
+     .dashboard {
+    display: grid;
+    grid-template-columns: 100%;
+    gap: 0;
+    min-height: 34px;
+    flex-shrink: 0;
+    width: 100%;
+    background: transparent;
+    border-top: 1px solid var(--border-soft);
+    align-items: center;
+    padding: 5px 10px;
+    padding-left:16px;
+    
+}
+        .stat { padding: 2px 4px; display: flex; align-items: center; gap: 6px; overflow: hidden; border-right: 1px solid var(--border-soft); }
+        .stat:last-child { border-right: none; }
+        .stat .stat-label { font-family: var(--mono); font-size: 10px; color:grey; text-transform: uppercase; white-space: nowrap; }
+        .stat .stat-value { font-family: var(--mono); font-size: 16px; font-weight: 700; white-space: nowrap; }
+
+        .stat-flash {
+            background:transparent; border-left: 0px solid #7a2c1f; padding-left: 0px; width:100%; text-align:center;
+            border-right: 1px solid var(--border-soft);
+        }
+        .stat-flash .stat-label { color: #ff8a6d; }
+
+        .health-track { flex:1; height:8px; background:#e5e7eb; border-radius:10px; overflow:hidden; min-width:40px; }
+        #healthFill { width:100%; height:100%; background:#22c55e; border-radius:10px; }
+
+        .rp-section-title { font-family: var(--mono); font-size: 10px; color: var(--muted); text-transform: uppercase; letter-spacing: .1em; padding-bottom: 5px; margin: 8px 0 5px; border-bottom: 1px solid var(--border-soft); }
+
+        footer.note { font-size: 11px; color: var(--muted-2); text-align: center; line-height: 1.4; flex-shrink: 0; padding-top: 4px; }
+
+        .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
+        .modal-box { background: var(--panel); border: 1px solid var(--border-soft); border-radius: 30px; padding: 20px 35px; max-width: 480px; width: 90%; max-height: 58vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+        .modal-box::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        .modal-box h2 { font-family: var(--mono); font-size: 18px; color: var(--text); margin-bottom: 8px; }
+        .modal-box p { font-size: 14px; color: var(--muted); margin-bottom: 12px; line-height: 1.5; }
+        .modal-box .options { display: flex; flex-direction: column; gap: 8px; margin-bottom: 16px; }
+        .modal-box .options button { background: var(--panel-2); border: 1px solid var(--border); border-radius: 12px; padding: 10px 14px; color: var(--text); font-size: 14px; cursor: pointer; transition: all .2s; text-align: left; font-family: var(--sans); }
+        .modal-box .options button:hover { border-color: var(--danger); background: rgba(255,59,92,0.08); }
+        .modal-box label { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .05em; text-transform: uppercase; color: var(--muted); margin: 0 0 5px; }
+        .modal-box input[type="text"] { width: 100%; padding: 10px 12px; margin-bottom: 14px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text); font-family: var(--sans); font-size: 14px; }
+        .modal-box input[type="text"]:focus { outline: none; border-color: var(--danger); }
+        .modal-box .form-error { font-size: 12px; color: var(--danger); margin: -8px 0 12px; min-height: 14px; }
+
+        /* ---- Scenario modal ---- */
+        .modal-box.scenario-modal2 {
+            position: relative;
+            background-image: url('LabImages/FlowchartScenerio.png');
+            background-repeat: no-repeat; background-position: center center; background-size: contain;
+            background-color: #fbfeff;
+            border: none; box-shadow: 0 20px 60px rgba(20,50,80,0.35);
+            max-width: 640px; width: 100vw; max-height: none;
+            aspect-ratio: 1536 / 1024;
+            padding: 0; overflow: visible;
+        }
+        .scenario-lab-title {
+            position: absolute;
+            top: 45px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+            font-family: "Times New Roman", Times, serif;
+            font-weight: bold;
+            font-size:16px;
+            color: #0f4c81;
+        }
+        .scenario-para {
+            position: absolute; top:85px; left: 3%; width:93%; height:250px;
+            overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none;
+            padding:6px;border-top:1px dashed grey;border-bottom:1px dashed grey;border-radius:0px;
+        }
+        .scenario-para::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        .scenario-para p {
+            font-family: var(--sans); font-weight: 500; font-size: 14.5px; line-height: 1.0;
+            color:#0f2f4d; text-align: left; margin: 0; padding: 7px 6px 7px 30px; position: relative;
+            border-bottom: 1px solid rgba(15,76,129,0.18);
+        }
+        .scenario-para p::before {
+            content: attr(data-icon); position: absolute; left: 4px; top: 6px; font-size: 14px; line-height: 1;
+        }
+        .scenario-para p:last-child { border-bottom: none; }
+        .scenario-para b { color: #0f4c81; font-weight: 700; }
+        .scenario-input-row { position: absolute;bottom:60px; left: 6%; width: 88%; display: flex; gap: 10px;height:28px; }
+        .scenario-input-row .si-name { width: 60%; }
+        .scenario-input-row .si-sno { width: 20%;}
+        .scenario-input-row .si-grade { width: 20%;}
+        .scenario-input-row input[type="text"] {
+            width: 100%; padding: 4px 4px; background: #10263c; border: 1px solid rgba(59,123,176,0.55);
+            border-radius: 8px; color: #eaf3fb; font-family: var(--sans); font-size: 12.5px; margin: 0;
+            text-transform: uppercase; height:28px;
+        }
+        .scenario-input-row input[type="text"]::placeholder { color: #9db6ce; text-transform: uppercase; }
+        .scenario-input-row input[type="text"]:focus { outline: none; border-color: #5aa8da; }
+        .scenario-form-error {
+            position: absolute;bottom:90px; left: 6%; width: 88%; text-align: center;
+            font-size: 13px; color: red; min-height: 14px;
+        }
+        .scenario-start-btn-wrap {
+            position: absolute;
+            bottom: 20px;
+            left: 0;
+            width: 100%;
+            text-align: center;
+        }
+        .scenario-start-btn-wrap button {
+            position: relative;
+            display: inline-block;
+            background-color: #2E2EFF;
+            border: none;
+            color: #DEDEDE;
+            font-family: "Times New Roman", Times, serif;
+            font-weight: bold;
+            font-size:14px;
+            padding: 6px 4px;
+            border-radius: 0.5em;
+            cursor: pointer;
+        }
+
+        .pdf-row { margin-top: auto; padding-top: 10px; border-top: 1px dashed var(--border-soft); }
+        .pdf-row .ghost { width:100%; text-align:center; padding:7px 10px; font-size:11px; }
+        button.ghost {
+            font-family: var(--sans); font-weight: 600; font-size: 11px; padding: 5px 10px; border-radius: 8px;
+            background: transparent; border: 1px solid var(--border); color: var(--muted); cursor: pointer; transition: all .2s;
+        }
+        button.ghost:hover:not(:disabled) { border-color: var(--muted); color: var(--text); }
+        button.ghost:disabled { opacity: .4; cursor: not-allowed; }
+
+        /* ---- Flowchart engine additions (new, layered on top of existing design) ---- */
+        .week-title { font-family: var(--mono); font-size: 12.5px; color: var(--ok); margin-top: 3px;}
+
+        .rp-bottom { margin-top: auto; }
+        .week-btn {
+            background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 7px 3px;
+            color: var(--muted); font-family: var(--mono); font-size: 10px; font-weight: 700; cursor: pointer;
+            transition: all .2s; text-align: center; line-height: 1.3;
+        }
+        .week-btn:hover { border-color: var(--c2); color: var(--text); }
+        .week-btn.active { border-color: var(--ok); color: var(--ok); background: rgba(34,211,166,0.08); }
+
+        /* ---- Weeks flip-card modal ---- */
+        .weeks-modal-box { max-width: 640px; width: 92%; max-height: 90vh; overflow-y: auto; padding: 12px 14px; border-radius: 16px; }
+        .weeks-modal-box h2 { text-align: center; margin-bottom: 8px; font-size: 16px; }
+        .weeks-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 8px; }
+        .flip-card { perspective: 900px; height: 112px; }
+        .flip-card-inner {
+            position: relative; width: 100%; height: 100%; text-align: center;
+            transition: transform .5s cubic-bezier(.4,.2,.2,1); transform-style: preserve-3d;
+        }
+        .flip-card:hover .flip-card-inner, .flip-card.flipped .flip-card-inner { transform: rotateY(180deg); }
+        .flip-card-front, .flip-card-back {
+            position: absolute; inset: 0; backface-visibility: hidden; -webkit-backface-visibility: hidden;
+            border-radius: 10px; border: 1px solid var(--border); display: flex; flex-direction: column;
+            align-items: center; justify-content: center; padding: 4px; gap: 3px;
+        }
+        .flip-card-front { background: linear-gradient(160deg, var(--panel-2), #0a1120); cursor: default; }
+        .flip-card-front .fc-line1 { font-family: var(--mono); font-size: 11px; letter-spacing: .1em; color: var(--ok); }
+        .flip-card-front .fc-line2 { font-family: var(--mono); font-size: 19px; font-weight: 800; color: var(--ok); }
+        .flip-card-back {
+            background: linear-gradient(160deg, #141f3a, #060a14); transform: rotateY(180deg);
+            border-color: var(--c2); gap: 7px; padding: 7px;
+        }
+        .flip-card-back .fc-title { font-size: 11px; font-weight: 700; color: var(--text); line-height: 1.25; }
+        .flip-card-back button {
+            background: var(--c2); border: none; color: #fff; font-family: var(--mono); font-weight: 700;
+            font-size: 12px; padding: 5px 12px; border-radius: 6px; cursor: pointer; letter-spacing: .03em;
+        }
+        .flip-card-back button:hover { filter: brightness(1.15); }
+        /* ---- Locked (not yet in JSON) weeks ---- */
+        .flip-card.locked .flip-card-front,
+        .flip-card.locked .flip-card-back { border-color: var(--border-soft); opacity: .68; }
+        .flip-card.locked .flip-card-front .fc-line1,
+        .flip-card.locked .flip-card-front .fc-line2 { color: var(--muted-2); }
+        .flip-card.locked .fc-lock { font-size: 19px; }
+        .flip-card.locked .fc-title { color: var(--muted); }
+        .flip-card.locked .fc-locked-label {
+            font-family: var(--mono); font-size: 11px; letter-spacing: .06em; color: var(--muted-2);
+        }
+
+        /* ---- Instruction bar (replaces the old dead status/tool badges) ---- */
+        .instr-bar {
+            display: flex; align-items: center; gap: 10px; width: 100%; height: 100%;
+            padding: 0 6px; overflow: hidden;
+        }
+        .instr-step-chip {
+            color: var(--amber); font-weight: 700;font-size:12px;
+        }
+        .instr-icon { font-size: 15px; flex-shrink: 0; }
+.instr-text {
+  font-family: "Times New Roman", serif;
+  font-size: 16px;
+  font-weight: 600;font-weight:bold;color: var(--ok);
+}
+
+       .instr-text .instr-linetype { color: var(--amber); font-weight: 800; }
+        .instr-text .instr-quote { color: var(--ok); }
+
+        .pool-item { cursor: grab; touch-action: none; transition: all .15s; position: relative; }
+        .pool-item.required { border-color: var(--ok); box-shadow: 0 0 0 3px var(--ok-glow); animation: pulse-req 1.1s ease-in-out infinite; }
+        .pool-item.wrong-flash { animation: shake-item .35s; border-color: var(--danger); box-shadow: 0 0 0 3px var(--danger-glow); }
+        .pool-item.correct-flash { border-color: var(--ok); box-shadow: 0 0 0 3px var(--ok-glow); }
+        .pool-item.drag-source { opacity: .35; }
+        @keyframes pulse-req { 0%,100% { box-shadow: 0 0 0 3px var(--ok-glow); } 50% { box-shadow: 0 0 0 7px transparent; } }
+        @keyframes shake-item { 0%,100% { transform: translateX(0); } 25% { transform: translateX(-4px); } 75% { transform: translateX(4px); } }
+
+        .pool-item.pool-item-ghost {
+            position: fixed; transition: none; z-index: 500; pointer-events: none; cursor: grabbing; will-change: transform;
+            box-shadow: 0 10px 26px rgba(0,0,0,.55); opacity: .92;
+        }
+
+        .flow-canvas {
+            position: absolute; inset: 0; overflow-y: auto; overflow-x: hidden; z-index: 4;
+            background-color: rgba(10,15,28,0.82); scrollbar-width: none; -ms-overflow-style: none;
+            transition: background-color .35s ease;
+        }
+        .flow-canvas.drop-armed { background-color: rgba(34,211,166,0.06); }
+        .flow-canvas::-webkit-scrollbar { width: 0; height: 0; display: none; }
+        .flow-canvas-inner { position: relative; width: 100%; max-width: 100%; height: 1600px; }
+        svg#flowSvgLayer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; overflow: visible; }
+        .flow-node {
+            position: absolute; background: var(--panel-2); border: 2px solid var(--border); border-radius: 8px;
+            padding: 6px 10px; min-width: 88px; max-width: 128px; text-align: center; color: var(--text);
+            font-size: 9.5px; font-weight: 700; box-shadow: 0 4px 14px rgba(0,0,0,.35); font-family: var(--sans);
+            cursor: grab; user-select: none; touch-action: none; z-index: 6;
+        }
+        .flow-node:active { cursor: grabbing; }
+        .flow-node.dragging { z-index: 30; box-shadow: 0 10px 26px rgba(0,0,0,.6); border-color: var(--c2); }
+        .flow-node.is-start-end { border-radius: 999px; border-color: var(--ok); }
+        .flow-node.is-display { border-color: var(--c2); }
+        .flow-node.is-decision {
+            border-radius: 5px; transform: rotate(45deg); width: 76px; height: 76px;
+            display: flex; align-items: center; justify-content: center; padding: 3px; border-color: var(--amber);
+        }
+        .flow-node.is-decision .fn-inner { transform: rotate(-45deg); font-size: 8.5px; line-height: 1.15; text-align: center; width: 62px; }
+        .flow-node .fn-icon { display: block; font-size: 13px; margin-bottom: 2px; color: #ffa733; }
+        .flow-node .fn-label, .flow-node .fn-caption { display: block; outline: none; border-radius: 4px; }
+        .flow-node .fn-label:focus, .flow-node .fn-caption:focus, .flow-node.is-decision .fn-caption:focus { background: rgba(139,107,255,0.15); cursor: text; }
+        .flow-node .fn-caption { font-size: 8px; color: var(--muted); font-weight: 600; margin-top: 3px; font-family: var(--mono); min-height: 10px; }
+        .flow-edge-label {
+            position: absolute; font-family: var(--mono); font-size: 9.5px; font-weight: 700; padding: 2px 7px;
+            border-radius: 6px; background: var(--panel); border: 1px solid var(--border-soft); color: var(--text);
+            pointer-events: auto; z-index: 8; transform: translate(-50%, -50%); white-space: nowrap; cursor: text; outline: none;
+        }
+        .flow-edge-label.type-yes { color: var(--ok); border-color: var(--ok); }
+        .flow-edge-label.type-no { color: var(--danger); border-color: var(--danger); }
+        .flow-edge-label.edge-caption { color: var(--muted); font-weight: 600; }
+
+        .hist-item { font-family: var(--mono); font-size: 10.5px; padding: 5px 2px; border-bottom: 1px dashed var(--border-soft); color: var(--muted); line-height: 1.4; }
+        .hist-item.hist-done { color: var(--ok); }
+        .hist-item.hist-current { color: var(--amber); font-weight: 700; }
+
+        .completion-box h2 { color: var(--ok); }
+        .final-check-box { font-family: var(--mono); font-size: 12px; background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px; padding: 10px 12px; color: var(--text); margin-bottom: 14px; line-height: 1.6; }
+    </style>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+</head>
+<body>
+<div class="app">
+
+  <header class="hero">
+    <div class="eyebrow">CYBERSECURITY FOUNDATIONS:CYBER FLOWCHART TOOL </div>
+    <div class="week-title" id="weekTitle"></div>
+    <div class="admin-menu" id="adminMenu">
+      <button class="admin-menu-btn" id="adminMenuBtn" type="button">👤 ADMIN <i class="fas fa-caret-down"></i></button>
+      <div class="admin-menu-dropdown" id="adminMenuDropdown">
+        <div class="admin-menu-item admin-menu-name">LONE FIRDOUS</div>
+        <div class="admin-menu-item admin-menu-feedback" id="changeWeekBtn">🔄 Change Week</div>
+        <div class="admin-menu-item admin-menu-feedback" id="sendFeedbackBtn">Send Feedback</div>
+      </div>
+    </div>
+  </header>
+
+  <main class="layout">
+    <!-- Toolbox left -->
+    <section class="panel sidebar" id="toolboxPanel">
+      <div class="instr-title" id="toolboxTitle">TOOLBOX</div>
+      <div class="pool-grid" id="iconPoolGrid"></div>
+    </section>
+
+    <!-- 3D Stage -->
+    <section class="panel stage-panel" style="border-radius:50px;border:4px solid black;margin-top:3px;">
+
+      <div class="dashboard" style="border-bottom:1px solid var(--border-soft);">
+        <div class="instr-bar">
+          <span class="instr-step-chip" id="instrStepChip">STEP —</span>
+          <span class="instr-icon" id="instrIconEl">🧭</span>
+          <span class="week-title"style="margin-top:0px;color: var(--amber); font-weight: 700;" id="instrTextEl">Load a week from the flip-card menu to begin.</span>
+        </div>
+        <!-- Hidden legacy stat holders kept so old helper functions never throw on missing elements -->
+        <strong id="statStage" style="display:none;">0 / 10</strong>
+        <strong id="healthText" style="display:none;">100%</strong>
+        <div id="healthFill" style="display:none;width:100%;"></div>
+        <strong id="statExfil" style="display:none;">0 / 10</strong>
+        <div id="flashStatValue" style="display:none;"></div>
+      </div>
+
+      <div class="stage3d" id="stage3d">
+        <div class="stage-header" id="stageHeader">
+          <div class="stage-header-badge" id="stageHeaderBadge">
+            <span class="shb-label">🧑‍🎓 Cyber Flowchart Designer:</span>
+            <span class="shb-name" id="stageHeaderName"></span>🧑‍🎓
+          </div>
+        </div>
+        <div class="flow-canvas" id="flowCanvas">
+          <div class="flow-canvas-inner" id="flowCanvasInner">
+            <svg id="flowSvgLayer"></svg>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Activity feed (right sidebar) -->
+    <section class="panel sidebar right-side" style="display:flex; flex-direction:column;">
+      <div class="rp-section-title">Activity Log</div>
+      <div class="activity-feed" id="activityFeed" style="flex:1; overflow-y:auto; min-height:0; scrollbar-width:none; -ms-overflow-style:none;"></div>
+      <div class="rp-bottom">
+        <div class="pdf-row">
+          <button class="ghost" id="certPdfBtn" disabled>📄 Download Lab Report (PDF)</button>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer class="note">Educational lab for learning cybersecurity principles.</footer>
+</div>
+
+<script>
+(function() {
+  const CERT_LAB_TITLE = 'Cybersecurity Basics Lab';
+
+  let studentName = '';
+  let studentId = '';
+  let studentGrade = '';
+
+  const stageEl = document.getElementById('stage3d');
+  const toolboxPanel = document.getElementById('toolboxPanel');
+  const iconPoolGrid = document.getElementById('iconPoolGrid');
+
+  function sanitizeCertTitle(title) {
+    return String(title || '').replace(/[<>]/g, '');
+  }
+
+  // ---- Fixed transparent stage footer: shows "Cyber Flowchart Designer: <Name>" once known ----
+  const stageHeaderEl = document.getElementById('stageHeader');
+  const stageHeaderBadgeEl = document.getElementById('stageHeaderBadge');
+  const stageHeaderNameEl = document.getElementById('stageHeaderName');
+  function updateStageHeader() {
+    if (!stageHeaderEl || !stageHeaderBadgeEl || !stageHeaderNameEl) return;
+    if (studentName) {
+      stageHeaderNameEl.textContent = studentName;
+      stageHeaderBadgeEl.style.display = 'inline-flex';
+      stageHeaderEl.style.display = 'flex';
+    } else {
+      stageHeaderBadgeEl.style.display = 'none';
+      stageHeaderEl.style.display = 'none';
+    }
+  }
+  updateStageHeader(); // hide it immediately on load, before any name exists
+
+  // ---- Scenario modal (scenerioModal2) — reused for the initial gate AND every week's algorithmIntro ----
+  const STEP_LINE_ICONS = ['🩺', '🔎', '🔐', '⚠️', '✅', '🗂️', '🛡️', '📋', '🔁', '🏁'];
+  // Break a paragraph of prose into short, sentence-sized lines so each can carry its own
+  // leading icon and bottom border in the scenario modal, instead of one dense text block.
+  function splitIntoLines(text) {
+    return String(text || '')
+      .replace(/<[^>]+>/g, '')
+      .split(/(?<=[.!?])\s+(?=[A-Z])/)
+      .map(s => s.trim())
+      .filter(Boolean);
+  }
+  function showScenarioModal(opts, callback) {
+    const { title, introParagraphs, requireStudentInfo, okLabel } = opts;
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const lines = splitIntoLines(introParagraphs.join(' '));
+    const paraHtml = lines.map((line, i) => `<p data-icon="${STEP_LINE_ICONS[i % STEP_LINE_ICONS.length]}">${escapeHtml(line)}</p>`).join('');
+    overlay.innerHTML = `
+      <div class="modal-box scenario-modal2">
+        <div class="scenario-lab-title">${sanitizeCertTitle(title)}</div>
+        <div class="scenario-para">${paraHtml}</div>
+        ${requireStudentInfo ? `
+        <div class="scenario-input-row">
+          <div class="si-name"><input type="text" id="scenarioName" placeholder="STUDENT NAME" autocomplete="off" value="${studentName.replace(/"/g, '&quot;')}"></div>
+          <div class="si-sno"><input type="text" id="scenarioId" placeholder="SNO" autocomplete="off" value="${studentId.replace(/"/g, '&quot;')}"></div>
+          <div class="si-grade"><input type="text" id="scenarioGrade" placeholder="GRADE" autocomplete="off" value="${studentGrade.replace(/"/g, '&quot;')}"></div>
+        </div>
+        <div class="scenario-form-error" id="scenarioFormError"></div>` : ''}
+        <div class="scenario-start-btn-wrap"><button id="briefOk">${okLabel}</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#briefOk').addEventListener('click', () => {
+      if (requireStudentInfo) {
+        const nameEl = overlay.querySelector('#scenarioName');
+        const idEl = overlay.querySelector('#scenarioId');
+        const gradeEl = overlay.querySelector('#scenarioGrade');
+        const errEl = overlay.querySelector('#scenarioFormError');
+        const name = nameEl.value.trim(), id = idEl.value.trim(), grade = gradeEl.value.trim();
+        if (!name || !id || !grade) { errEl.textContent = 'Please fill in your name, student ID, and grade/class to begin.'; return; }
+        studentName = name; studentId = id; studentGrade = grade;
+        updateStageHeader();
+      }
+      overlay.remove();
+      callback();
+    });
+  }
+
+  const DEFAULT_INTRO_PARAGRAPHS = [
+    'This lab walks you through building <b>Cybersecurity Flowcharts</b> step-by-step, on an interactive 3D stage you can orbit and zoom.',
+    'Each week loads its own scenario and toolbox. Use the <b>Week 1 – Week 6</b> buttons in the panel on the right to choose a flowchart.',
+    'For every step, the toolbox item (or connection line) you need is highlighted with a glowing border. Click it to complete that action and move on.',
+    'Complete every step in order to finish the flowchart and see the final summary.'
+  ];
+
+  // ---- Feedback modal ----
+  function showFeedbackModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box">
+        <h2>📩 Send Feedback</h2>
+        <p>Share Your Feedback, Ideas, Suggestions, or Issues to Help Us Improve the Cybersecurity Labs.</p>
+        <p>Email@ &nbsp;┃&nbsp; f.lone@ais.sch.sa</p>
+        <div class="options"><button id="feedbackOk" style="text-align:center; font-weight:700;">Close</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.addEventListener('click', (e) => { if (e.target === overlay) overlay.remove(); });
+    overlay.querySelector('#feedbackOk').addEventListener('click', () => overlay.remove());
+  }
+
+  const adminMenu = document.getElementById('adminMenu');
+  const adminMenuBtn = document.getElementById('adminMenuBtn');
+  const sendFeedbackBtn = document.getElementById('sendFeedbackBtn');
+  if (adminMenuBtn) {
+    adminMenuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      adminMenu.classList.toggle('open');
+    });
+  }
+  document.addEventListener('click', (e) => {
+    if (adminMenu && !adminMenu.contains(e.target)) adminMenu.classList.remove('open');
+  });
+  if (sendFeedbackBtn) {
+    sendFeedbackBtn.addEventListener('click', () => {
+      adminMenu.classList.remove('open');
+      showFeedbackModal();
+    });
+  }
+
+  // =====================================================================
+  // ---- JSON-DRIVEN FLOWCHART ENGINE (single reusable engine, Weeks 1-6) ----
+  // =====================================================================
+
+  const JSON_PATH = 'ALL JSON/Flowcharts/Flowchart json Allweeks.json';
+  const WEEK_KEYS = ['Week1-Flowchart', 'Week2-Flowchart', 'Week3-Flowchart', 'Week4-Flowchart', 'Week5-Flowchart', 'Week6-Flowchart'];
+  // The course plan has 12 weeks total; only the weeks present in the JSON are unlocked — the
+  // rest render as locked placeholder cards until their JSON entry is authored.
+  const TOTAL_WEEK_SLOTS = 12;
+  const ALL_WEEK_SLOT_KEYS = Array.from({ length: TOTAL_WEEK_SLOTS }, (_, i) => 'Week' + (i + 1) + '-Flowchart');
+
+  let ALLWEEKS = {};          // raw parsed JSON (all weeks)
+  let currentWeekKey = null;  // e.g. 'Week1-Flowchart'
+  let weekData = null;        // normalized/parsed current week
+  let stepIndex = 0;          // index into weekData.steps
+  let actionIndex = 0;        // index into current step's actions
+
+  const flowCanvasEl = document.getElementById('flowCanvas');       // outer scroll viewport
+  const flowCanvasInner = document.getElementById('flowCanvasInner'); // large absolute canvas (nodes + svg live here)
+  const activityFeedEl = document.getElementById('activityFeed');
+  const weekTitleEl = document.getElementById('weekTitle');
+  const certPdfBtn = document.getElementById('certPdfBtn');
+
+  function escapeHtml(s) {
+    return String(s == null ? '' : s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' }[c]));
+  }
+  function normName(s) { return String(s || '').trim().toLowerCase(); }
+
+  // ---- Load the shared JSON file. All algorithm/step data lives in Flowchart_json_Allweeks.json
+  // only — nothing is embedded in this HTML. Keep both files in the same folder and serve them
+  // through a web server (not opened directly by double-click) so the browser's fetch() can read
+  // the JSON file. ----
+  let loadError = null;
+  async function loadAllWeeksData() {
+    try {
+      const res = await fetch(encodeURI(JSON_PATH), { cache: 'no-store' });
+      if (!res.ok) throw new Error('HTTP ' + res.status);
+      const data = await res.json();
+      if (!data || typeof data !== 'object' || !Object.keys(data).length) throw new Error('Empty JSON');
+      ALLWEEKS = data;
+    } catch (e) {
+      loadError = e;
+      console.error('Could not load "' + JSON_PATH + '": ' + e.message);
+    }
+  }
+
+  // ---- Toolbox icon lookup (generic across all weeks — no per-week code needed) ----
+  const ICON_MAP = {
+    'start': 'fas fa-play', 'end': 'fas fa-stop', 'doctor': 'fas fa-user-doctor',
+    'hospital computer': 'fas fa-desktop', 'patient records server': 'fas fa-server',
+    'access control panel': 'fas fa-key', 'audit log system': 'fas fa-clipboard-list',
+    'backup server': 'fas fa-hdd', 'decision': 'fas fa-diamond', 'display': 'fas fa-display',
+    'straight connection': 'fas fa-minus', 'arrow connection': 'fas fa-arrow-right',
+    'yes connection': 'fas fa-check', 'no connection': 'fas fa-xmark', 'yes/no label': 'fas fa-tag',
+    'firewall': 'fas fa-fire', 'network switch': 'fas fa-network-wired', 'network router': 'fas fa-route',
+    'security monitor': 'fas fa-shield-halved', 'encryption gateway': 'fas fa-lock',
+    'authentication server': 'fas fa-fingerprint', 'user': 'fas fa-user', 'computer': 'fas fa-laptop',
+    'mobile phone': 'fas fa-mobile-screen', 'fingerprint scanner': 'fas fa-fingerprint',
+    'face recognition scanner': 'fas fa-face-smile', 'process': 'fas fa-square'
+  };
+  function iconFor(name) {
+    const key = normName(name);
+    for (const k in ICON_MAP) { if (key.includes(k)) return ICON_MAP[k]; }
+    return 'fas fa-shapes';
+  }
+
+  // ---- Find a toolbox name inside free text (used to link action text -> a real toolbox item) ----
+  function matchToolboxItem(str, toolbox) {
+    const s = normName(str);
+    let best = null;
+    (toolbox || []).forEach(item => {
+      const t = normName(item);
+      if (s.includes(t) || t.includes(s)) { if (!best || t.length > normName(best).length) best = item; }
+    });
+    return best;
+  }
+  // Finds EVERY toolbox item name that appears in str (used for "Select X or Y" style actions,
+  // so the student can complete the action with either accepted tool).
+  function matchAllToolboxItems(str, toolbox) {
+    const s = normName(str);
+    const found = [];
+    (toolbox || []).forEach(item => { if (s.includes(normName(item))) found.push(item); });
+    return found;
+  }
+
+  // "Add Audit Log System after Patient Records Server" should match "Audit Log System" (the
+  // thing being placed), not "Patient Records Server" (just a positional reference) — strip
+  // trailing context clauses before matching.
+  function stripPlacementContext(s) {
+    return String(s || '').split(/\s+(?:after|before|next to)\s+/i)[0].trim();
+  }
+  // ---- Classify one action's text into place / connect / label / info ----
+  function classifyAction(text, toolbox) {
+    let m;
+    if ((m = text.match(/^Connect\s+(.+?)\s*(?:→|->)\s*(.+?):\s*Line Type:\s*(.+)$/i))) {
+      const lineType = m[3].trim();
+      return { type: 'connect', text, from: m[1].trim(), to: m[2].trim(), requiredTool: matchToolboxItem(lineType, toolbox) || lineType, done: false };
+    }
+    if ((m = text.match(/^Add text:\s*([\s\S]+)$/i))) {
+      return { type: 'label', text, label: m[1].trim(), done: false };
+    }
+    if ((m = text.match(/^Select\s+(.+?)\s+and place/i))) {
+      const phrase = stripPlacementContext(m[1].trim());
+      const options = /\bor\b/i.test(phrase) ? matchAllToolboxItems(phrase, toolbox) : [];
+      if (options.length > 1) return { type: 'place', text, requiredTool: options, done: false };
+      const tool = matchToolboxItem(phrase, toolbox);
+      return { type: 'place', text, requiredTool: tool || phrase, done: false };
+    }
+    if ((m = text.match(/^Add\s+(.+)$/i))) {
+      const tool = matchToolboxItem(stripPlacementContext(m[1].trim()), toolbox);
+      if (tool) return { type: 'place', text, requiredTool: tool, done: false };
+    }
+    const found = matchToolboxItem(text, toolbox);
+    if (found) return { type: 'place', text, requiredTool: found, done: false };
+    return { type: 'info', text, done: false };
+  }
+
+  // ---- Parse a raw week object's `steps` (compound ">>1: >>2:" title strings) into structured actions ----
+  function parseWeek(raw) {
+    const toolbox = raw.toolbox || [];
+    const steps = (raw.steps || []).map(s => {
+      const parts = String(s.title || '').split('>>');
+      const stepLabel = parts[0].trim();
+      const actions = [];
+      for (let i = 1; i < parts.length; i++) {
+        const seg = parts[i];
+        const m = seg.match(/^\s*(\d+):\s*([\s\S]*)$/);
+        const text = (m ? m[2] : seg).trim();
+        if (text) actions.push(classifyAction(text, toolbox));
+      }
+      if (actions.length === 0) actions.push({ type: 'info', text: stepLabel, done: false });
+      return { step: s.step, stepLabel, actions, done: false };
+    });
+    return {
+      toolbox, title: raw.title || '', algorithmIntro: raw.algorithmIntro || '',
+      flowchartTitle: raw.flowchartTitle || raw.title || '', steps, finalCheck: raw.finalCheck || ''
+    };
+  }
+
+  // ---- Toolbox rendering + drag-to-place validation ----
+  function renderToolboxForWeek(toolbox) {
+    iconPoolGrid.innerHTML = toolbox.map(name => `
+      <div class="pool-item" data-name="${escapeHtml(name)}">
+        <span class="p-icon"><i class="${iconFor(name)}"></i></span>
+        <span class="p-label">${escapeHtml(name)}</span>
+      </div>`).join('');
+    iconPoolGrid.querySelectorAll('.pool-item').forEach(makePoolItemDraggable);
+  }
+  function findPoolItem(toolName) {
+    const items = [...iconPoolGrid.querySelectorAll('.pool-item')];
+    let match = items.find(it => normName(it.dataset.name) === normName(toolName));
+    if (!match) match = items.find(it => normName(it.dataset.name).includes(normName(toolName)) || normName(toolName).includes(normName(it.dataset.name)));
+    return match;
+  }
+  function toolList(requiredTool) { return Array.isArray(requiredTool) ? requiredTool : [requiredTool]; }
+  function clearHighlight() { iconPoolGrid.querySelectorAll('.pool-item.required').forEach(el => el.classList.remove('required')); }
+  function highlightRequiredTool(requiredTool) {
+    clearHighlight();
+    toolList(requiredTool).forEach(name => { const el = findPoolItem(name); if (el) el.classList.add('required'); });
+  }
+
+  // ---- Instruction bar: always-visible, always shows the step number + a plain-language
+  // description of exactly what to select, where to put it, and which line/type to use next.
+  // JSON steps are already written as full clear sentences, so we show that sentence directly
+  // instead of a truncated codeword — that's the actual fix for "unclear what to do next".
+  const instrStepChipEl = document.getElementById('instrStepChip');
+  const instrIconEl = document.getElementById('instrIconEl');
+  const instrTextEl = document.getElementById('instrTextEl');
+  const ACTION_ICONS = { place: '🧩', connect: '🔗', label: '✏️', info: 'ℹ️' };
+  function formatInstructionHtml(text) {
+    let t = escapeHtml(text || '');
+    t = t.replace(/(Line Type:\s*[A-Za-z /]+)/i, '<span class="instr-linetype">$1</span>');
+    t = t.replace(/(Add text:\s*.+)$/i, '<span class="instr-quote">$1</span>');
+    return t;
+  }
+  function updateInstructionBar(action) {
+    if (!instrStepChipEl || !weekData) return;
+    const totalSteps = weekData.steps.length;
+    instrStepChipEl.textContent = 'STEP ' + Math.min(stepIndex + 1, totalSteps) + ' / ' + totalSteps;
+    if (!action) {
+      instrIconEl.textContent = '🏁';
+      instrTextEl.innerHTML = 'Flowchart complete — great work!';
+      return;
+    }
+    instrIconEl.textContent = ACTION_ICONS[action.type] || '➡️';
+    instrTextEl.innerHTML = formatInstructionHtml(action.text);
+  }
+  // ---- Connector types available in this week's toolbox, and the instruction shown while a
+  //      just-placed shape is waiting for its incoming line (safety net — see resolveNode) ----
+  function connectorToolNames() {
+    return (weekData ? weekData.toolbox : []).filter(t => /connection line/i.test(t));
+  }
+  function updatePendingConnectInstruction() {
+    if (!instrStepChipEl || !pendingConnect) return;
+    instrIconEl.textContent = '🔗';
+    const fromLabel = pendingConnect.fromNode ? pendingConnect.fromNode.type : '';
+    instrTextEl.innerHTML = 'Connect <b>' + escapeHtml(fromLabel) + '</b> → <b>' + escapeHtml(pendingConnect.toNode.type) +
+      '</b>: select a connecting line from the toolbox.';
+  }
+
+  // ---- Drag-to-place: press a toolbox item, drag it over the 3D stage, release to attempt
+  // placement. Reuses onToolClick() for all validation (match/mismatch, pendingConnect, flashes)
+  // — dragging is purely a different way to trigger the same checked action.
+  function isPointOverStage(x, y) {
+    const r = flowCanvasEl.getBoundingClientRect();
+    return x >= r.left && x <= r.right && y >= r.top && y <= r.bottom;
+  }
+  // Student dropped a shape at a specific spot on the stage — honor that exact spot (centered
+  // on the cursor) instead of forcing shapes into an auto-generated grid position.
+  const APPROX_NODE_W = 110, APPROX_NODE_H = 58;
+  function clientDropToCanvasPos(clientX, clientY) {
+    const rect = flowCanvasInner.getBoundingClientRect();
+    const maxX = Math.max(0, flowCanvasInner.clientWidth - APPROX_NODE_W);
+    const x = Math.min(maxX, Math.max(4, (clientX - rect.left) - APPROX_NODE_W / 2));
+    const y = Math.max(4, (clientY - rect.top) - APPROX_NODE_H / 2);
+    return { x, y };
+  }
+  function makePoolItemDraggable(el) {
+    let dragging = false, ghost = null, rafId = null;
+    let pendingX = 0, pendingY = 0;
+    function pointerDown(e) {
+      if (!weekData) return;
+      if (e.button !== undefined && e.button !== 0) return;
+      dragging = true;
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      ghost = el.cloneNode(true);
+      ghost.classList.remove('required', 'correct-flash', 'wrong-flash', 'drag-source');
+      ghost.classList.add('pool-item-ghost');
+      ghost.style.width = el.offsetWidth + 'px';
+      document.body.appendChild(ghost);
+      // Fix the ghost at the top-left of the viewport, centered via negative margins, so every
+      // subsequent move only needs a cheap compositor-only `transform: translate3d(...)` update
+      // instead of a layout-triggering left/top write.
+      const gw = ghost.offsetWidth, gh = ghost.offsetHeight;
+      ghost.style.left = '0px'; ghost.style.top = '0px';
+      ghost.style.marginLeft = (-gw / 2) + 'px'; ghost.style.marginTop = (-gh / 2) + 'px';
+      // Apply the very first transform immediately (not via rAF) so the ghost shows up right at
+      // the press point/current tool position instead of flashing at the untransformed top-left
+      // corner for one frame before the first animation frame runs.
+      applyGhostTransform(e.clientX, e.clientY);
+      el.classList.add('drag-source');
+      e.preventDefault();
+    }
+    function applyGhostTransform(x, y) {
+      if (!ghost) return;
+      ghost.style.transform = `translate3d(${x}px, ${y}px, 0) scale(1.08)`;
+      flowCanvasEl.classList.toggle('drop-armed', isPointOverStage(x, y));
+    }
+    function updateGhost(x, y) {
+      pendingX = x; pendingY = y;
+      if (rafId) return; // already scheduled — the frame below will pick up the latest x/y
+      rafId = requestAnimationFrame(() => {
+        rafId = null;
+        applyGhostTransform(pendingX, pendingY);
+      });
+    }
+    function pointerMove(e) {
+      if (!dragging) return;
+      updateGhost(e.clientX, e.clientY);
+      e.preventDefault();
+    }
+    function pointerUp(e) {
+      if (!dragging) return;
+      dragging = false;
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+      el.classList.remove('drag-source');
+      flowCanvasEl.classList.remove('drop-armed');
+      if (ghost) { ghost.remove(); ghost = null; }
+      if (isPointOverStage(e.clientX, e.clientY)) onToolClick(el.dataset.name, { clientX: e.clientX, clientY: e.clientY });
+    }
+    el.addEventListener('pointerdown', pointerDown);
+    el.addEventListener('pointermove', pointerMove);
+    el.addEventListener('pointerup', pointerUp);
+    el.addEventListener('pointercancel', pointerUp);
+  }
+
+  // =====================================================================
+  // ---- REAL FLOWCHART CANVAS: draggable nodes + live SVG connecting lines ----
+  // =====================================================================
+  const SVG_NS = 'http://www.w3.org/2000/svg';
+  const SVG_DEFS =
+    '<defs>' +
+    '<marker id="arrow-clean" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 Z" fill="#4d6087"/></marker>' +
+    '<marker id="arrow-ok" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 Z" fill="#22d3a6"/></marker>' +
+    '<marker id="arrow-danger" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto" markerUnits="strokeWidth"><path d="M0,0 L6,3 L0,6 Z" fill="#ff3b5c"/></marker>' +
+    '</defs>';
+
+  let nodes = [];          // {id, type, isDecision, el, hasIncoming}
+  let edges = [];          // {id, from, to, cls, branch, labelText, pathEl, labelEl, captionEl}
+  let nodesByType = {};    // normalized toolbox-name -> array of node refs (placement order)
+  let nodeSeq = 0, edgeSeq = 0;
+  let lastActiveNode = null;   // node the flow currently continues from
+  let lastDecisionNode = null; // most recently placed Decision/Diamond node (branches originate here)
+  let pendingConnect = null;   // {fromNode, toNode} — set when a shape was just placed but still needs a line into it
+  let lastCreatedKind = null;  // 'node' | 'edge' — target for the next "Add text" label
+  let lastCreatedRef = null;
+  let svgLayer = null;
+  // ---- Snake/boustrophedon grid layout ----
+  // Start goes top-left. Each next shape is placed to the right of the previous one. When a row
+  // reaches the right edge of the visible stage, the next shape wraps to a new row below and the
+  // direction reverses (row 1 left-to-right, row 2 right-to-left, row 3 left-to-right, ...).
+  const GRID_START_X = 20, GRID_START_Y = 20, CELL_W = 160, CELL_H = 140;
+  let gridRow = 0, gridCol = 0;
+  function resetLayoutGrid() { gridRow = 0; gridCol = 0; }
+  function gridColsPerRow() {
+    const availableWidth = (flowCanvasEl && flowCanvasEl.clientWidth) || 900;
+    return Math.max(1, Math.floor((availableWidth - GRID_START_X) / CELL_W));
+  }
+  // These toolbox categories are reused many times across one flowchart (multiple separate
+  // Decision/Display boxes exist), so a "to" reference to one of them must always create a
+  // brand-new shape — never silently reconnect to an earlier one of the same type.
+  const GENERIC_REUSABLE_TYPES = ['decision/diamond', 'decision', 'display/screen', 'display', 'process/step', 'process'];
+
+  function clearStage() {
+    nodes = []; edges = []; nodesByType = {}; nodeSeq = 0; edgeSeq = 0;
+    lastActiveNode = null; lastDecisionNode = null; lastCreatedKind = null; lastCreatedRef = null;
+    pendingConnect = null;
+    resetLayoutGrid();
+    flowCanvasInner.style.width = ''; flowCanvasInner.style.height = '';
+    flowCanvasInner.innerHTML = '<svg id="flowSvgLayer">' + SVG_DEFS + '</svg>';
+    svgLayer = document.getElementById('flowSvgLayer');
+    flowCanvasEl.querySelectorAll('.flow-empty').forEach(m => m.remove());
+    flowCanvasEl.scrollTop = 0; flowCanvasEl.scrollLeft = 0;
+  }
+  function clearEmptyMsg() { const m = document.getElementById('flowEmptyMsg'); if (m) m.remove(); }
+
+  function nextLayoutPos(toolName) {
+    if (/^start$/i.test(toolName || '')) resetLayoutGrid();
+    const colsPerRow = gridColsPerRow();
+    if (gridCol >= colsPerRow) { gridCol = 0; gridRow++; }
+    const leftToRight = (gridRow % 2 === 0); // row 1 (index 0) LTR, row 2 RTL, row 3 LTR, ...
+    const colForX = leftToRight ? gridCol : (colsPerRow - 1 - gridCol);
+    const x = GRID_START_X + colForX * CELL_W;
+    const y = GRID_START_Y + gridRow * CELL_H;
+    gridCol++;
+    return { x, y };
+  }
+  function lineTypeBranch(lineType) {
+    if (/yes/i.test(lineType)) return 'yes';
+    if (/no/i.test(lineType)) return 'no';
+    return null;
+  }
+
+  // ---- Node creation (draggable) ----
+  function createNode(toolName, opts) {
+    opts = opts || {};
+    clearEmptyMsg();
+    const isDecision = /decision|diamond/i.test(toolName);
+    const isStartEnd = /^(start|end)$/i.test(toolName);
+    const isDisplay = /display|screen/i.test(toolName);
+    const id = 'n' + (++nodeSeq);
+    const pos = opts.pos || nextLayoutPos(toolName);
+    const el = document.createElement('div');
+    el.className = 'flow-node' + (isDecision ? ' is-decision' : '') + (isStartEnd ? ' is-start-end' : '') + (isDisplay ? ' is-display' : '');
+    el.style.left = pos.x + 'px'; el.style.top = pos.y + 'px';
+    el.dataset.nodeId = id;
+    if (isDecision) {
+      el.innerHTML = `<div class="fn-inner"><i class="${iconFor(toolName)}"></i><span class="fn-caption" contenteditable="true" data-role="caption"></span></div>`;
+    } else {
+      el.innerHTML = `<i class="fn-icon ${iconFor(toolName)}"></i><span class="fn-label" contenteditable="true" data-role="label">${escapeHtml(toolName)}</span><span class="fn-caption" contenteditable="true" data-role="caption"></span>`;
+    }
+    flowCanvasInner.appendChild(el);
+    makeDraggable(el);
+    const node = { id, type: toolName, isDecision, el, hasIncoming: false };
+    nodes.push(node);
+    const key = normName(toolName);
+    (nodesByType[key] = nodesByType[key] || []).push(node);
+    lastActiveNode = node;
+    if (isDecision) lastDecisionNode = node;
+    lastCreatedKind = 'node'; lastCreatedRef = node;
+    growCanvasIfNeeded(pos);
+    // Bring the newly placed shape into view — computed manually and targeted only at the
+    // #flowCanvas viewport, since scrollIntoView() walks the *whole* ancestor chain (including
+    // <body>, which is overflow:hidden here) and behaves inconsistently past the first few nodes.
+    requestAnimationFrame(() => scrollNodeIntoView(el));
+    return node;
+  }
+  function scrollNodeIntoView(el) {
+    if (!flowCanvasEl) return;
+    const shapeW = el.offsetWidth || 120, shapeH = el.offsetHeight || 60;
+    const targetLeft = Math.max(0, pxLeft(el) + shapeW / 2 - flowCanvasEl.clientWidth / 2);
+    const targetTop = Math.max(0, pxTop(el) + shapeH / 2 - flowCanvasEl.clientHeight / 2);
+    flowCanvasEl.scrollTo({ left: targetLeft, top: targetTop, behavior: 'smooth' });
+  }
+  function pxLeft(el) { return parseFloat(el.style.left) || 0; }
+  function pxTop(el) { return parseFloat(el.style.top) || 0; }
+  function growCanvasIfNeeded(pos) {
+    // Width is fixed at 100% of the stage (no horizontal scrolling) — only height grows.
+    const minH = pos.y + 200;
+    if (minH > flowCanvasInner.offsetHeight) flowCanvasInner.style.height = minH + 'px';
+  }
+
+  // ---- Resolve a step's "from"/"to" text to an actual node on the canvas ----
+  function resolveNode(nameRaw, toolbox, branchHint, create) {
+    if (!nameRaw) return null;
+    const canonical = matchToolboxItem(nameRaw, toolbox) || nameRaw;
+    const key = normName(canonical);
+    if (key === 'end') {
+      if (nodesByType['end'] && nodesByType['end'].length) return nodesByType['end'][0];
+      return create ? createNode('End', { branch: branchHint }) : null;
+    }
+    const arr = nodesByType[key];
+    if (arr && arr.length) {
+      // A dangling (no-incoming) node of this type is almost always the shape the student was
+      // just told to place in the immediately preceding action — connect to THAT one rather than
+      // silently minting a brand-new shape the student never selected from the toolbox.
+      for (let i = arr.length - 1; i >= 0; i--) { if (!arr[i].hasIncoming) return arr[i]; }
+      // Every existing node of this type already has an incoming line. Generic reusable shapes
+      // (Decision/Display/Process) commonly repeat across a chart, so a fresh one is genuinely
+      // needed here — but this is a safety net only; well-authored steps always place the shape
+      // explicitly first, so this branch should rarely fire.
+      if (create && GENERIC_REUSABLE_TYPES.includes(key)) return createNode(canonical, { branch: branchHint });
+      return arr[arr.length - 1];
+    }
+    if (create) return createNode(canonical, { branch: branchHint });
+    return null;
+  }
+  function hasOutgoing(node) { return edges.some(e => e.from === node); }
+  function isYesNoLiteral(s) { return /^(yes|no)$/i.test(String(s || '').trim()); }
+
+  // ---- Edge (connecting line) creation + live SVG drawing ----
+  function connectNodes(fromNode, toNode, lineType) {
+    if (!fromNode || !toNode || fromNode === toNode) return null;
+    const branch = lineTypeBranch(lineType);
+    let cls = 'edge-arrow';
+    if (branch === 'yes') cls = 'edge-yes';
+    else if (branch === 'no') cls = 'edge-no';
+    else if (/straight/i.test(lineType)) cls = 'edge-straight';
+    const edge = { id: 'e' + (++edgeSeq), from: fromNode, to: toNode, cls, branch, labelText: branch ? branch.toUpperCase() : null };
+    edges.push(edge);
+    toNode.hasIncoming = true;
+    lastActiveNode = toNode;
+    lastCreatedKind = 'edge'; lastCreatedRef = edge;
+    drawEdge(edge);
+    return edge;
+  }
+  function nodeBox(node) {
+    const r = node.el.getBoundingClientRect();
+    const ir = flowCanvasInner.getBoundingClientRect();
+    return {
+      cx: r.left - ir.left + r.width / 2, cy: r.top - ir.top + r.height / 2,
+      top: r.top - ir.top, bottom: r.bottom - ir.top,
+      left: r.left - ir.left, right: r.right - ir.left
+    };
+  }
+  function computeEdgePoints(from, to) {
+    const a = nodeBox(from), b = nodeBox(to);
+    let x1, y1, x2, y2;
+    if (Math.abs(b.cy - a.cy) >= Math.abs(b.cx - a.cx)) {
+      if (b.cy >= a.cy) { x1 = a.cx; y1 = a.bottom; x2 = b.cx; y2 = b.top; }
+      else { x1 = a.cx; y1 = a.top; x2 = b.cx; y2 = b.bottom; }
+    } else {
+      if (b.cx >= a.cx) { x1 = a.right; y1 = a.cy; x2 = b.left; y2 = b.cy; }
+      else { x1 = a.left; y1 = a.cy; x2 = b.right; y2 = b.cy; }
+    }
+    return { x1, y1, x2, y2 };
+  }
+  function drawEdge(edge) {
+    if (!svgLayer) return;
+    if (!edge.pathEl) {
+      edge.pathEl = document.createElementNS(SVG_NS, 'line');
+      edge.pathEl.setAttribute('class', edge.cls);
+      edge.pathEl.setAttribute('stroke-width', '2.5');
+      const colorVar = edge.cls === 'edge-yes' ? 'var(--ok)' : edge.cls === 'edge-no' ? 'var(--danger)' : edge.cls === 'edge-straight' ? 'var(--muted)' : 'var(--clean)';
+      edge.pathEl.setAttribute('stroke', colorVar);
+      if (edge.cls !== 'edge-straight') {
+        const markerId = edge.cls === 'edge-yes' ? 'arrow-ok' : edge.cls === 'edge-no' ? 'arrow-danger' : 'arrow-clean';
+        edge.pathEl.setAttribute('marker-end', `url(#${markerId})`);
+      }
+      svgLayer.appendChild(edge.pathEl);
+    }
+    const { x1, y1, x2, y2 } = computeEdgePoints(edge.from, edge.to);
+    edge.pathEl.setAttribute('x1', x1); edge.pathEl.setAttribute('y1', y1);
+    edge.pathEl.setAttribute('x2', x2); edge.pathEl.setAttribute('y2', y2);
+    if (edge.labelText) {
+      if (!edge.labelEl) {
+        edge.labelEl = document.createElement('div');
+        edge.labelEl.className = 'flow-edge-label type-' + edge.branch;
+        edge.labelEl.contentEditable = 'true';
+        edge.labelEl.textContent = edge.labelText;
+        flowCanvasInner.appendChild(edge.labelEl);
+      }
+      edge.labelEl.style.left = ((x1 + x2) / 2) + 'px';
+      edge.labelEl.style.top = ((y1 + y2) / 2) + 'px';
+    }
+    if (edge.captionEl) {
+      edge.captionEl.style.left = ((x1 + x2) / 2) + 'px';
+      edge.captionEl.style.top = ((y1 + y2) / 2 + 18) + 'px';
+    }
+  }
+  function redrawEdgesForNode(node) { edges.forEach(e => { if (e.from === node || e.to === node) drawEdge(e); }); }
+
+  // ---- Dragging placed shapes ----
+  function makeDraggable(el) {
+    // Free placement: a placed shape can be dragged anywhere on the stage at any time — position
+    // updates are batched through requestAnimationFrame (like the toolbox ghost-drag) so moving a
+    // shape around a busy flowchart stays smooth even while its connecting lines redraw live.
+    let dragging = false, startX, startY, origLeft, origTop, rafId = null, pendingDx = 0, pendingDy = 0;
+    function down(e) {
+      if (e.target.closest('[contenteditable="true"]')) return; // let text stay editable
+      dragging = true;
+      el.classList.add('dragging');
+      try { el.setPointerCapture(e.pointerId); } catch (err) {}
+      startX = e.clientX; startY = e.clientY;
+      origLeft = parseFloat(el.style.left) || 0; origTop = parseFloat(el.style.top) || 0;
+      e.preventDefault();
+    }
+    function applyMove(dx, dy) {
+      const maxX = Math.max(0, flowCanvasInner.clientWidth - el.offsetWidth);
+      const newX = Math.min(maxX, Math.max(0, origLeft + dx)), newY = Math.max(0, origTop + dy);
+      el.style.left = newX + 'px'; el.style.top = newY + 'px';
+      growCanvasIfNeeded({ x: newX, y: newY });
+      const node = nodes.find(n => n.el === el);
+      if (node) redrawEdgesForNode(node);
+    }
+    function move(e) {
+      if (!dragging) return;
+      pendingDx = e.clientX - startX; pendingDy = e.clientY - startY;
+      if (rafId) { e.preventDefault(); return; }
+      rafId = requestAnimationFrame(() => { rafId = null; applyMove(pendingDx, pendingDy); });
+      e.preventDefault();
+    }
+    function up() {
+      dragging = false;
+      el.classList.remove('dragging');
+      if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    }
+    el.addEventListener('pointerdown', down);
+    el.addEventListener('pointermove', move);
+    el.addEventListener('pointerup', up);
+    el.addEventListener('pointercancel', up);
+  }
+
+  // ---- Apply a validated step action to the live canvas ----
+  function attachLabelToLast(text) {
+    if (lastCreatedKind === 'edge' && lastCreatedRef) {
+      const edge = lastCreatedRef;
+      if (!edge.captionEl) {
+        edge.captionEl = document.createElement('div');
+        edge.captionEl.className = 'flow-edge-label edge-caption';
+        edge.captionEl.contentEditable = 'true';
+        flowCanvasInner.appendChild(edge.captionEl);
+      }
+      edge.captionEl.textContent = text;
+      drawEdge(edge);
+    } else if (lastCreatedKind === 'node' && lastCreatedRef) {
+      const cap = lastCreatedRef.el.querySelector('[data-role="caption"]');
+      if (cap) cap.textContent = text;
+    }
+  }
+  function applyActionToCanvas(action, chosenTool, dropPos) {
+    const toolbox = weekData.toolbox;
+    if (action.type === 'place') {
+      createNode(chosenTool || toolList(action.requiredTool)[0], dropPos ? { pos: dropPos } : undefined);
+    } else if (action.type === 'connect') {
+      const lineType = chosenTool || toolList(action.requiredTool)[0];
+      const branch = lineTypeBranch(lineType);
+      const fromText = action.from || '';
+      let fromNode;
+      if (isYesNoLiteral(fromText) || normName(fromText) === 'decision') {
+        // "Connect YES/NO → X" always branches out of the decision just placed, not out of
+        // whatever the previous branch happened to connect to.
+        fromNode = lastDecisionNode || resolveNode(fromText, toolbox, null, false) || lastActiveNode;
+      } else {
+        fromNode = resolveNode(fromText, toolbox, null, false) || null;
+      }
+      const toNode = resolveNode(action.to, toolbox, branch, true);
+      if (!fromNode && /\ball\b/i.test(fromText)) {
+        // e.g. "Connect all final results → End": wire every dangling node into the target
+        nodes.filter(n => n !== toNode && !hasOutgoing(n) && !/^start$/i.test(n.type)).forEach(n => connectNodes(n, toNode, lineType));
+      } else {
+        connectNodes(fromNode || lastActiveNode, toNode, lineType);
+        // If the box we just connected into has no caption yet (e.g. it was auto-created by
+        // this very connect step, like an implicit Decision or Display), the next "Add text"
+        // action should fill *that box's* caption rather than annotate the arrow.
+        const cap = toNode && toNode.el && toNode.el.querySelector('[data-role="caption"]');
+        if (cap && !cap.textContent.trim()) { lastCreatedKind = 'node'; lastCreatedRef = toNode; }
+      }
+    } else if (action.type === 'label') {
+      attachLabelToLast(action.label);
+    }
+  }
+
+  // ---- Dashboard (reuses the existing 4-cell dashboard bar) ----
+  function computeTotals() {
+    let total = 0, done = 0;
+    weekData.steps.forEach(s => s.actions.forEach(a => { total++; if (a.done) done++; }));
+    return { total, done };
+  }
+  function updateDashboard() {
+    if (!weekData) return;
+    const totalSteps = weekData.steps.length;
+    document.getElementById('statStage').textContent = `${Math.min(stepIndex + 1, totalSteps)} / ${totalSteps}`;
+    const step = weekData.steps[stepIndex];
+    if (step) {
+      const a = step.actions[actionIndex];
+      document.getElementById('flashStatValue').textContent = a ? `NOW: ${a.text}` : '✓ Step complete';
+      document.getElementById('statExfil').textContent = `${Math.min(actionIndex, step.actions.length)} / ${step.actions.length}`;
+    } else {
+      document.getElementById('flashStatValue').textContent = '✔ Flowchart Complete!';
+      document.getElementById('statExfil').textContent = '—';
+    }
+    const { total, done } = computeTotals();
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    document.getElementById('healthFill').style.width = pct + '%';
+    document.getElementById('healthText').textContent = pct + '%';
+  }
+
+  // ---- Right-panel permanent history log ----
+  function renderActivityFeed() {
+    if (!weekData) { activityFeedEl.innerHTML = ''; return; }
+    let html = '';
+    weekData.steps.forEach((s, i) => {
+      if (s.done) html += `<div class="hist-item hist-done">✓ Step ${s.step} Completed — ${escapeHtml(s.stepLabel)}</div>`;
+      else if (i === stepIndex) html += `<div class="hist-item hist-current">→ Step ${s.step} Current — ${escapeHtml(s.stepLabel)}</div>`;
+    });
+    activityFeedEl.innerHTML = html;
+    activityFeedEl.scrollTop = activityFeedEl.scrollHeight;
+  }
+
+  // ---- Step / action progression ----
+  function startStep() {
+    if (stepIndex >= weekData.steps.length) { completeFlowchart(); return; }
+    actionIndex = 0;
+    renderActivityFeed();
+    advanceAction();
+  }
+  function advanceAction() {
+    const step = weekData.steps[stepIndex];
+    if (actionIndex >= step.actions.length) {
+      step.done = true;
+      stepIndex++;
+      renderActivityFeed();
+      startStep();
+      return;
+    }
+    const action = step.actions[actionIndex];
+    updateDashboard();
+    updateInstructionBar(action);
+    if (action.type === 'label' || action.type === 'info') {
+      applyActionToCanvas(action);
+      action.done = true;
+      clearHighlight();
+      setTimeout(() => { actionIndex++; advanceAction(); }, 450);
+    } else {
+      highlightRequiredTool(action.requiredTool);
+    }
+  }
+  function onToolClick(toolName, dropClientPos) {
+    if (!weekData) return;
+    const dropPos = dropClientPos ? clientDropToCanvasPos(dropClientPos.clientX, dropClientPos.clientY) : null;
+    const el = findPoolItem(toolName);
+    // A shape was just placed but has no line into it yet — force a connector choice
+    // before letting the student move on to whatever the next scripted action is.
+    if (pendingConnect) {
+      const isConnector = /connection line/i.test(toolName);
+      if (isConnector) {
+        connectNodes(pendingConnect.fromNode, pendingConnect.toNode, toolName);
+        const cap = pendingConnect.toNode.el.querySelector('[data-role="caption"]');
+        if (cap && !cap.textContent.trim()) { lastCreatedKind = 'node'; lastCreatedRef = pendingConnect.toNode; }
+        if (el) { el.classList.remove('required'); el.classList.add('correct-flash'); setTimeout(() => el.classList.remove('correct-flash'), 400); }
+        pendingConnect = null;
+        advanceAction();
+      } else if (el) {
+        el.classList.add('wrong-flash');
+        setTimeout(() => el.classList.remove('wrong-flash'), 400);
+      }
+      return;
+    }
+    const step = weekData.steps[stepIndex];
+    if (!step) return;
+    const action = step.actions[actionIndex];
+    if (!action || (action.type !== 'place' && action.type !== 'connect')) return;
+    const isMatch = toolList(action.requiredTool).some(req =>
+      normName(toolName) === normName(req) || normName(req).includes(normName(toolName)) || normName(toolName).includes(normName(req))
+    );
+    if (isMatch) {
+      const prevActive = lastActiveNode;
+      applyActionToCanvas(action, toolName, dropPos);
+      action.done = true;
+      if (el) { el.classList.remove('required'); el.classList.add('correct-flash'); setTimeout(() => el.classList.remove('correct-flash'), 400); }
+      actionIndex++;
+      if (action.type === 'place') {
+        const newNode = nodes[nodes.length - 1];
+        const nextAction = step.actions[actionIndex];
+        const isTrunkStart = newNode && /^start$/i.test(newNode.type);
+        if (newNode && !newNode.hasIncoming && !isTrunkStart && prevActive && (!nextAction || nextAction.type !== 'connect')) {
+          pendingConnect = { fromNode: prevActive, toNode: newNode };
+          updatePendingConnectInstruction();
+          highlightRequiredTool(connectorToolNames());
+          return;
+        }
+      }
+      advanceAction();
+    } else if (el) {
+      el.classList.add('wrong-flash');
+      setTimeout(() => el.classList.remove('wrong-flash'), 400);
+    }
+  }
+
+  // ---- Completion ----
+  function completeFlowchart() {
+    updateInstructionBar(null);
+    document.getElementById('flashStatValue').textContent = '✔ Flowchart Complete!';
+    document.getElementById('healthFill').style.width = '100%';
+    document.getElementById('healthText').textContent = '100%';
+    renderActivityFeed();
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.innerHTML = `
+      <div class="modal-box completion-box">
+        <h2>🏁 FLOWCHART COMPLETE</h2>
+        <p>${escapeHtml(weekData.flowchartTitle)}</p>
+        <div class="final-check-box">${escapeHtml(weekData.finalCheck)}</div>
+        <div class="options"><button id="completeOk" style="text-align:center; font-weight:700;">Close</button></div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelector('#completeOk').addEventListener('click', () => overlay.remove());
+    certPdfBtn.disabled = false;
+  }
+
+
+  // ---- PDF / Lab Report (adapted from the reference lab's PDF logic) ----
+  const PDF_BG_SVG_DATAURL = "data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCA1OTUgODQyIj4KICA8ZGVmcz4KICAgIDxwYXR0ZXJuIGlkPSJkb3RncmlkIiB3aWR0aD0iMTQiIGhlaWdodD0iMTQiIHBhdHRlcm5Vbml0cz0idXNlclNwYWNlT25Vc2UiPgogICAgICA8Y2lyY2xlIGN4PSIyIiBjeT0iMiIgcj0iMSIgZmlsbD0iIzhlYzllZSIgb3BhY2l0eT0iMC41NSI+PC9jaXJjbGU+CiAgICA8L3BhdHRlcm4+CiAgICA8cGF0dGVybiBpZD0iY2lyY3VpdGxpbmUiIHdpZHRoPSI0MCIgaGVpZ2h0PSI0MCIgcGF0dGVyblVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxwYXRoIGQ9Ik0yIDIwIEgxNCBWOCBIMjggVjMyIEgzOCIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNzliZmU5IiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuNCI+PC9wYXRoPgogICAgICA8Y2lyY2xlIGN4PSIyIiBjeT0iMjAiIHI9IjEuNiIgZmlsbD0iIzVhYThkYSIgb3BhY2l0eT0iMC41NSI+PC9jaXJjbGU+CiAgICAgIDxjaXJjbGUgY3g9IjM4IiBjeT0iMzIiIHI9IjEuNiIgZmlsbD0iIzVhYThkYSIgb3BhY2l0eT0iMC41NSI+PC9jaXJjbGU+CiAgICAgIDxyZWN0IHg9IjEyIiB5PSI2IiB3aWR0aD0iNCIgaGVpZ2h0PSI0IiBmaWxsPSJub25lIiBzdHJva2U9IiM1YWE4ZGEiIHN0cm9rZS13aWR0aD0iMC42IiBvcGFjaXR5PSIwLjQiPjwvcmVjdD4KICAgIDwvcGF0dGVybj4KICAgIDxsaW5lYXJHcmFkaWVudCBpZD0iZmFkZVRvcCIgeDE9IjAiIHkxPSIwIiB4Mj0iMCIgeTI9IjEiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNiZmUzZmEiIHN0b3Atb3BhY2l0eT0iMC42Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2JmZTNmYSIgc3RvcC1vcGFjaXR5PSIwIj48L3N0b3A+CiAgICA8L2xpbmVhckdyYWRpZW50PgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJmYWRlQm90dG9tIiB4MT0iMCIgeTE9IjEiIHgyPSIwIiB5Mj0iMCI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2JmZTNmYSIgc3RvcC1vcGFjaXR5PSIwLjYiPjwvc3RvcD4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYmZlM2ZhIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImZhZGVMZWZ0IiB4MT0iMCIgeTE9IjAiIHgyPSIxIiB5Mj0iMCI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iI2JmZTNmYSIgc3RvcC1vcGFjaXR5PSIwLjYiPjwvc3RvcD4KICAgICAgPHN0b3Agb2Zmc2V0PSIxIiBzdG9wLWNvbG9yPSIjYmZlM2ZhIiBzdG9wLW9wYWNpdHk9IjAiPjwvc3RvcD4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImZhZGVSaWdodCIgeDE9IjEiIHkxPSIwIiB4Mj0iMCIgeTI9IjAiPgogICAgICA8c3RvcCBvZmZzZXQ9IjAiIHN0b3AtY29sb3I9IiNiZmUzZmEiIHN0b3Atb3BhY2l0eT0iMC42Ij48L3N0b3A+CiAgICAgIDxzdG9wIG9mZnNldD0iMSIgc3RvcC1jb2xvcj0iI2JmZTNmYSIgc3RvcC1vcGFjaXR5PSIwIj48L3N0b3A+CiAgICA8L2xpbmVhckdyYWRpZW50PgogIDwvZGVmcz4KCiAgPCEtLSB0b3AgYmFuZCAtLT4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iNTk1IiBoZWlnaHQ9IjM0IiBmaWxsPSJ1cmwoI2RvdGdyaWQpIj48L3JlY3Q+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjU5NSIgaGVpZ2h0PSIzNCIgZmlsbD0idXJsKCNjaXJjdWl0bGluZSkiIG9wYWNpdHk9IjAuNiI+PC9yZWN0PgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSI1OTUiIGhlaWdodD0iMzQiIGZpbGw9InVybCgjZmFkZVRvcCkiPjwvcmVjdD4KCiAgPCEtLSBib3R0b20gYmFuZCAtLT4KICA8cmVjdCB4PSIwIiB5PSI4MDgiIHdpZHRoPSI1OTUiIGhlaWdodD0iMzQiIGZpbGw9InVybCgjZG90Z3JpZCkiPjwvcmVjdD4KICA8cmVjdCB4PSIwIiB5PSI4MDgiIHdpZHRoPSI1OTUiIGhlaWdodD0iMzQiIGZpbGw9InVybCgjY2lyY3VpdGxpbmUpIiBvcGFjaXR5PSIwLjYiPjwvcmVjdD4KICA8cmVjdCB4PSIwIiB5PSI4MDgiIHdpZHRoPSI1OTUiIGhlaWdodD0iMzQiIGZpbGw9InVybCgjZmFkZUJvdHRvbSkiPjwvcmVjdD4KCiAgPCEtLSBsZWZ0IGJhbmQgLS0+CiAgPHJlY3QgeD0iMCIgeT0iMCIgd2lkdGg9IjM0IiBoZWlnaHQ9Ijg0MiIgZmlsbD0idXJsKCNkb3RncmlkKSI+PC9yZWN0PgogIDxyZWN0IHg9IjAiIHk9IjAiIHdpZHRoPSIzNCIgaGVpZ2h0PSI4NDIiIGZpbGw9InVybCgjY2lyY3VpdGxpbmUpIiBvcGFjaXR5PSIwLjYiPjwvcmVjdD4KICA8cmVjdCB4PSIwIiB5PSIwIiB3aWR0aD0iMzQiIGhlaWdodD0iODQyIiBmaWxsPSJ1cmwoI2ZhZGVMZWZ0KSI+PC9yZWN0PgoKICA8IS0tIHJpZ2h0IGJhbmQgLS0+CiAgPHJlY3QgeD0iNTYxIiB5PSIwIiB3aWR0aD0iMzQiIGhlaWdodD0iODQyIiBmaWxsPSJ1cmwoI2RvdGdyaWQpIj48L3JlY3Q+CiAgPHJlY3QgeD0iNTYxIiB5PSIwIiB3aWR0aD0iMzQiIGhlaWdodD0iODQyIiBmaWxsPSJ1cmwoI2NpcmN1aXRsaW5lKSIgb3BhY2l0eT0iMC42Ij48L3JlY3Q+CiAgPHJlY3QgeD0iNTYxIiB5PSIwIiB3aWR0aD0iMzQiIGhlaWdodD0iODQyIiBmaWxsPSJ1cmwoI2ZhZGVSaWdodCkiPjwvcmVjdD4KCiAgPCEtLSB0aGluIGlubmVyIGNvbnRlbnQtYXJlYSBydWxlIC0tPgogIDxyZWN0IHg9IjM0IiB5PSIzNCIgd2lkdGg9IjUyNyIgaGVpZ2h0PSI3NzQiIGZpbGw9Im5vbmUiIHN0cm9rZT0iI2JmZTNmYSIgc3Ryb2tlLXdpZHRoPSIwLjc1IiBvcGFjaXR5PSIwLjUiIHJ4PSI0IiByeT0iNCI+PC9yZWN0PgoKICA8IS0tIGNvcm5lciBhY2NlbnRzIC0tPgogIDxwYXRoIGQ9Ik0zNCA0NiBWMzQgSDQ2IiBmaWxsPSJub25lIiBzdHJva2U9IiM1YWE4ZGEiIHN0cm9rZS13aWR0aD0iMSIgb3BhY2l0eT0iMC41NSI+PC9wYXRoPgogIDxwYXRoIGQ9Ik01NjEgNDYgVjM0IEg1NDkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhYThkYSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjU1Ij48L3BhdGg+CiAgPHBhdGggZD0iTTM0IDc5NiBWODA4IEg0NiIgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjNWFhOGRhIiBzdHJva2Utd2lkdGg9IjEiIG9wYWNpdHk9IjAuNTUiPjwvcGF0aD4KICA8cGF0aCBkPSJNNTYxIDc5NiBWODA4IEg1NDkiIGZpbGw9Im5vbmUiIHN0cm9rZT0iIzVhYThkYSIgc3Ryb2tlLXdpZHRoPSIxIiBvcGFjaXR5PSIwLjU1Ij48L3BhdGg+CgogIDwhLS0gaGVhZGVyIC0tPgogIDx0ZXh0IHg9IjI5Ny41IiB5PSIyMCIgdGV4dC1hbmNob3I9Im1pZGRsZSIgZm9udC1mYW1pbHk9IkhlbHZldGljYSwgQXJpYWwsIHNhbnMtc2VyaWYiIGZvbnQtc2l6ZT0iOSIgbGV0dGVyLXNwYWNpbmc9IjMiIGZvbnQtd2VpZ2h0PSI3MDAiIGZpbGw9IiMzYjdiYjAiIG9wYWNpdHk9IjAuODUiPkNZQkVSU0VDVVJJVFkgRk9VTkRBVElPTlM8L3RleHQ+Cjwvc3ZnPgo=";
+
+  let _pdfBgPngCache = null;
+  function loadPdfBgPng(pxW, pxH) {
+    return new Promise((resolve, reject) => {
+      if (_pdfBgPngCache) { resolve(_pdfBgPngCache); return; }
+      const img = new Image();
+      img.onload = () => {
+        const canvas = document.createElement('canvas');
+        canvas.width = pxW; canvas.height = pxH;
+        const ctx = canvas.getContext('2d');
+        ctx.drawImage(img, 0, 0, pxW, pxH);
+        _pdfBgPngCache = canvas.toDataURL('image/png');
+        resolve(_pdfBgPngCache);
+      };
+      img.onerror = reject;
+      img.src = PDF_BG_SVG_DATAURL;
+    });
+  }
+
+  async function generateFlowchartPDF(name, id, grade, triggerBtn) {
+    const originalLabel = triggerBtn ? triggerBtn.textContent : '';
+    if (triggerBtn) { triggerBtn.disabled = true; triggerBtn.textContent = 'Generating PDF\u2026'; }
+    try {
+      const { jsPDF } = window.jspdf;
+      const doc = new jsPDF({ orientation: 'portrait', unit: 'pt', format: 'a4' });
+      const pageW = doc.internal.pageSize.getWidth(), pageH = doc.internal.pageSize.getHeight();
+      const margin = 48;
+
+      const bgPng = await loadPdfBgPng(Math.round(pageW * 2), Math.round(pageH * 2));
+      const drawBg = () => doc.addImage(bgPng, 'PNG', 0, 0, pageW, pageH);
+      drawBg();
+
+      const labTitle = (weekData && (weekData.flowchartTitle || weekData.title)) || 'Cybersecurity Flowchart Builder Lab';
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.setTextColor(18, 26, 43);
+      doc.text(labTitle, margin, 62, { maxWidth: pageW - margin * 2 });
+
+      doc.setDrawColor(255, 159, 28); doc.setLineWidth(1.5);
+      doc.line(margin, 80, pageW - margin, 80);
+
+      const now = new Date();
+      const dateStr = now.toLocaleDateString(undefined, { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' });
+      const timeStr = now.toLocaleTimeString();
+
+      doc.setFont('helvetica', 'normal'); doc.setFontSize(11); doc.setTextColor(90, 100, 120);
+      doc.text('Date: ' + dateStr, margin, 102);
+      doc.text('Time: ' + timeStr, pageW - margin, 102, { align: 'right' });
+
+      doc.setDrawColor(210, 210, 210); doc.setLineWidth(0.75);
+      doc.roundedRect(margin, 118, pageW - margin * 2, 64, 6, 6);
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5); doc.setTextColor(30, 40, 60);
+      doc.text('STUDENT NAME:', margin + 16, 140);
+      doc.setFont('helvetica', 'normal');
+      doc.text(name || '', margin + 112, 140, { maxWidth: 185 });
+      doc.setFont('helvetica', 'bold');
+      doc.text('ID:', margin + 300, 140);
+      doc.setFont('helvetica', 'normal');
+      doc.text(id || '', margin + 322, 140, { maxWidth: 48 });
+      doc.setFont('helvetica', 'bold');
+      doc.text('GRADE:', margin + 372, 140);
+      doc.setFont('helvetica', 'normal');
+      doc.text(grade || '', margin + 426, 140, { maxWidth: 73 });
+
+      const totalSteps = weekData ? weekData.steps.length : 0;
+      const isComplete = !!(weekData && stepIndex >= totalSteps);
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(10.5);
+      if (isComplete) {
+        doc.setTextColor(20, 140, 110);
+        doc.text('Flowchart: Completed', margin + 16, 166);
+      } else {
+        doc.setTextColor(160, 70, 70);
+        doc.text('Flowchart: In Progress (' + stepIndex + ' / ' + totalSteps + ' steps)', margin + 16, 166);
+      }
+      if (currentWeekKey) { doc.setTextColor(20, 140, 110); doc.text('Week: ' + currentWeekKey, margin + 300, 166); }
+
+      doc.setFont('helvetica', 'bold'); doc.setFontSize(13); doc.setTextColor(18, 26, 43);
+      doc.text('Algorithm Introduction', margin, 212);
+
+      // The on-screen scenario modal allows light <b> markup in algorithmIntro; strip it for the PDF's plain text.
+      const introText = (weekData && weekData.algorithmIntro ? String(weekData.algorithmIntro) : '').replace(/<[^>]+>/g, '');
+
+      doc.setFontSize(9); doc.setTextColor(150, 150, 150);
+      doc.text('LoneVLabs Cybersecurity \u2014 Flowchart Builder Lab', margin, pageH - 30);
+
+      doc.setFont('times', 'normal'); doc.setFontSize(16); doc.setTextColor(60, 70, 90);
+      const introMaxW = pageW - margin * 2;
+      const wrapped = doc.splitTextToSize(introText, introMaxW);
+      const introLineHeight = 16 * 1.15;
+      const introBottomLimit = pageH - 50;
+      let introY = 234;
+      wrapped.forEach((line) => {
+        if (introY > introBottomLimit) { doc.addPage(); drawBg(); introY = margin; }
+        if (line.trim() !== '') doc.text(line, margin, introY, { maxWidth: introMaxW });
+        introY += introLineHeight;
+      });
+
+      // ---- Flowchart image: placed just below the Algorithm Introduction text. If there
+      // isn't enough room left on that page, it moves to a fresh page instead. ----
+      const canvas = await html2canvas(document.querySelector('.app'), { backgroundColor: '#0a0f1c', scale: 1.5, useCORS: true });
+      const shotDataUrl = canvas.toDataURL('image/png');
+      const imgProps = doc.getImageProperties(shotDataUrl);
+      const shotMaxW = pageW - margin * 2;
+      const naturalH = shotMaxW * (imgProps.height / imgProps.width);
+      const imgLabelH = 18;
+      const bottomLimit = pageH - 40;
+      const remainingOnPage = bottomLimit - (introY + imgLabelH);
+
+      if (remainingOnPage >= Math.min(naturalH, 140)) {
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(10); doc.setTextColor(18, 26, 43);
+        doc.text('Student Work \u2014 Flowchart Builder', margin, introY + 12);
+        let w = shotMaxW, h = naturalH;
+        if (h > remainingOnPage) { h = remainingOnPage; w = (imgProps.width * h) / imgProps.height; }
+        const shotX = margin + (shotMaxW - w) / 2;
+        doc.addImage(shotDataUrl, 'PNG', shotX, introY + imgLabelH, w, h);
+      } else {
+        doc.addPage();
+        drawBg();
+        let py = margin;
+        doc.setFont('helvetica', 'bold'); doc.setFontSize(12); doc.setTextColor(18, 26, 43);
+        doc.text('Student Work \u2014 Flowchart Builder', margin, py);
+        py += 20;
+        const availH2 = pageH - margin - py;
+        let w2 = shotMaxW, h2 = naturalH;
+        if (h2 > availH2) { h2 = availH2; w2 = (imgProps.width * h2) / imgProps.height; }
+        const shotX2 = margin + (shotMaxW - w2) / 2;
+        doc.addImage(shotDataUrl, 'PNG', shotX2, py, w2, h2);
+      }
+
+      const safeName = (name || 'student').replace(/\s+/g, '_');
+      doc.save('Flowchart_Lab_Report_' + safeName + '.pdf');
+    } catch (err) {
+      console.error(err);
+      alert('Something went wrong generating the PDF. Please try again.');
+    } finally {
+      if (triggerBtn) { triggerBtn.disabled = false; triggerBtn.textContent = originalLabel; }
+    }
+  }
+
+  // ---- Week selection ----
+  function updateWeekTitle(title) { weekTitleEl.textContent = title || ''; }
+  function loadWeek(weekKey) {
+    const raw = ALLWEEKS[weekKey];
+    if (!raw) { alert('No flowchart data found for ' + weekKey + ' in the JSON file yet.'); return; }
+    currentWeekKey = weekKey;
+    weekData = parseWeek(raw);
+    stepIndex = 0; actionIndex = 0;
+    clearStage();
+    clearHighlight();
+    renderToolboxForWeek(weekData.toolbox);
+    updateWeekTitle(weekData.title);
+    certPdfBtn.disabled = true;
+    renderActivityFeed();
+    updateDashboard();
+    showScenarioModal({
+      title: weekData.flowchartTitle || weekData.title,
+      introParagraphs: [weekData.algorithmIntro],
+      requireStudentInfo: !studentName,
+      okLabel: studentName ? '🛡️ START WEEK 🛡️' : '🛡️ LOAD CYBER LAB 🛡️'
+    }, () => { updateStageHeader(); startStep(); });
+  }
+
+  // ---- Weeks flip-card modal (front: CYBER FLOWCHART / WEEK-N — back: scenario title + LOAD).
+  // Cards flip on hover via CSS; a click also toggles as a touch-device fallback. Only weeks
+  // that actually exist in the loaded JSON are unlocked — the rest render locked. ----
+  function showWeeksModal() {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    const cardsHtml = ALL_WEEK_SLOT_KEYS.map(key => {
+      const raw = ALLWEEKS[key];
+      const num = (key.match(/Week(\d+)/i) || [, '?'])[1];
+      if (!raw) {
+        return `
+          <div class="flip-card locked" data-week="${key}">
+            <div class="flip-card-inner">
+              <div class="flip-card-front">
+                <div class="fc-line1">CYBER FLOWCHART</div>
+                <div class="fc-line2">WEEK-${num}</div>
+              </div>
+              <div class="flip-card-back">
+                <span class="fc-lock">🔒</span>
+                <div class="fc-locked-label">LOCKED</div>
+              </div>
+            </div>
+          </div>`;
+      }
+      return `
+        <div class="flip-card" data-week="${key}">
+          <div class="flip-card-inner">
+            <div class="flip-card-front">
+              <div class="fc-line1">CYBER FLOWCHART</div>
+              <div class="fc-line2">WEEK-${num}</div>
+            </div>
+            <div class="flip-card-back">
+              <div class="fc-title">${escapeHtml(raw.title || key)}</div>
+              <button type="button" class="fc-load-btn">🛡️ LOAD</button>
+            </div>
+          </div>
+        </div>`;
+    }).join('');
+    overlay.innerHTML = `
+      <div class="modal-box weeks-modal-box">
+        <h2>🛡️ Cybersecurity Flowchart Labs</h2>
+        <div class="weeks-grid">${cardsHtml}</div>
+      </div>`;
+    document.body.appendChild(overlay);
+    overlay.querySelectorAll('.flip-card:not(.locked)').forEach(card => {
+      card.style.cursor = 'pointer';
+      card.addEventListener('click', (e) => {
+        if (e.target.closest('.fc-load-btn')) return;
+        card.classList.toggle('flipped');
+      });
+      const loadBtn = card.querySelector('.fc-load-btn');
+      loadBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const key = card.dataset.week;
+        if (weekData && stepIndex < weekData.steps.length && key !== currentWeekKey) {
+          if (!window.confirm('Switching weeks will reset your current progress on ' + currentWeekKey + '. Continue?')) return;
+        }
+        overlay.remove();
+        loadWeek(key);
+      });
+    });
+  }
+  const changeWeekBtn = document.getElementById('changeWeekBtn');
+  if (changeWeekBtn) {
+    changeWeekBtn.addEventListener('click', () => {
+      adminMenu.classList.remove('open');
+      showWeeksModal();
+    });
+  }
+  if (certPdfBtn) certPdfBtn.addEventListener('click', () => generateFlowchartPDF(studentName, studentId, studentGrade, certPdfBtn));
+
+  // ---- 3D SCENE (decorative dashboard visual — unchanged, kept running behind the flow-canvas overlay) ----
+  let renderer, scene, camera, controls, clock;
+
+  function initThree() {
+    const w = stageEl.clientWidth, h = stageEl.clientHeight;
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0f1c);
+
+    camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 290);
+    camera.position.set(0, 40, 60);
+
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(w, h);
+    stageEl.appendChild(renderer.domElement);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.8;
+    controls.minDistance = 20;
+    controls.maxDistance = 120;
+    controls.maxPolarAngle = Math.PI / 2 - 0.03;
+    controls.update();
+
+    scene.add(new THREE.AmbientLight(0x446688, 0.7));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(10, 20, 10);
+    scene.add(dir);
+    const fill = new THREE.DirectionalLight(0x4488cc, 0.4);
+    fill.position.set(-10, 5, -10);
+    scene.add(fill);
+
+    const gridHelper = new THREE.GridHelper(80, 40, 0x2a4a6a, 0x1a2a44);
+    gridHelper.position.y = -0.01;
+    scene.add(gridHelper);
+
+    const groundGeo = new THREE.PlaneGeometry(100, 100);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0f1c, roughness: 0.9, metalness: 0.1, transparent: true, opacity: 0.6 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.02;
+    scene.add(ground);
+
+    clock = new THREE.Clock();
+    window.addEventListener('resize', onResize);
+    animate();
+  }
+
+  function onResize() {
+    const w = stageEl.clientWidth, h = stageEl.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+
+  function animate() {
+    requestAnimationFrame(animate);
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  // ---- INIT ----
+  initThree();
+  clearStage();
+  loadAllWeeksData().then(() => {
+    if (loadError || !ALLWEEKS || !Object.keys(ALLWEEKS).length) {
+      iconPoolGrid.innerHTML = '<div style="grid-column:1/-1;color:var(--danger);font-family:var(--mono);font-size:11px;text-align:center;padding:24px 6px;">Could not load "' + escapeHtml(JSON_PATH) + '". Make sure this HTML file and "' + escapeHtml(JSON_PATH) + '" are in the same folder and served over a web server, then reload the page.</div>';
+      weekTitleEl.textContent = 'JSON file not found — see toolbox panel';
+    } else {
+      iconPoolGrid.innerHTML = '<div style="grid-column:1/-1;color:var(--muted);font-family:var(--mono);font-size:11px;text-align:center;padding:24px 6px;">Load a week from the flip-card menu to begin →</div>';
+    }
+    // The weeks flip-card modal is the very first thing the student sees — weeks with no
+    // matching entry in the JSON simply render locked, so the modal is always useful even if
+    // only some weeks have been authored yet.
+    showWeeksModal();
+  });
+})();
+</script>
+<script>
+// Prevent Save As
+document.addEventListener('keydown', function (e) {
+
+    if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+
+});
+
+// Disable right-click menu on the main page
+document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+});
+
+</script>
+<script>
+// Prevent Save As
+document.addEventListener('keydown', function (e) {
+
+    if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+
+});
+
+// Disable right-click menu on the main page
+document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+});
+
+</script>
+</body>
+</html>
