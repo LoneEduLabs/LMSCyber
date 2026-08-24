@@ -598,10 +598,18 @@ transition: opacity 1.3s ease, transform 1.6s cubic-bezier(.19,1,.22,1);
         footer.note { font-size: 11px; color: var(--muted-2); text-align: center; line-height: 1.4; flex-shrink: 0; padding-top: 4px; }
 
         .modal-overlay { position: fixed; inset: 0; background: rgba(0,0,0,0.7); display: flex; align-items: center; justify-content: center; z-index: 1000; backdrop-filter: blur(4px); }
-        .modal-box { background: var(--panel); border: 1px solid var(--border-soft); border-radius: 30px; padding: 20px 35px; max-width: 480px; width: 90%; max-height: 58vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
+        .modal-box { background: var(--panel); border: 1px solid var(--border-soft); border-radius: 20px; padding: 10px 10px; max-width: 480px; width: 90%; max-height: 58vh; overflow-y: auto; scrollbar-width: none; -ms-overflow-style: none; box-shadow: 0 20px 60px rgba(0,0,0,0.8); }
 
         /* ---- Week/Lab picker modal ---- */
-        .modal-box.wk-lab-modal-box { max-width: 700px; width: 94vw; max-height: 86vh; background-image: url('LabImages/WeeksModalBg2.png'); background-size: cover; background-position: center; background-repeat: no-repeat; }
+      .modal-box.wk-lab-modal-box {
+    max-width: 700px;
+    width: 94vw;
+    max-height: 86vh;
+    background:
+        radial-gradient(circle at 20% 20%, rgba(0, 180, 255, 0.12), transparent 35%),
+        radial-gradient(circle at 80% 80%, rgba(0, 120, 255, 0.10), transparent 35%),
+        linear-gradient(135deg, #050b16, #0b1424, #02060d);
+}
         .wk-lab-modal-title { font-size: 18px; font-weight: 800; text-align: center; margin-bottom: 4px; letter-spacing: .5px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
         .wk-lab-modal-sub { font-size: 12px; opacity: .85; text-align: center; margin-bottom: 16px; text-shadow: 0 1px 4px rgba(0,0,0,0.6); }
         .wk-week-grid { display: grid; grid-template-columns: repeat(4, 0fr); gap: 0px; justify-items: center;margin-top:50px; }
@@ -651,23 +659,28 @@ transition: opacity 1.3s ease, transform 1.6s cubic-bezier(.19,1,.22,1);
           border-radius: 0rem;
           cursor:pointer;
         }
-        .flip-card-front {
-          background-image: url('LabImages/flipcardbg.png'), linear-gradient(120deg, bisque 60%, rgb(255, 231, 222) 88%,
-             rgb(255, 211, 195) 40%, rgba(255, 127, 80, 0.603) 48%);
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-    
-        }
-        .flip-card-back {
-        background-image: url('LabImages/flipcardbg.png'), linear-gradient(120deg, bisque 60%, rgb(255, 231, 222) 88%,
-             rgb(255, 211, 195) 40%, rgba(255, 127, 80, 0.603) 48%);
-          background-size: cover;
-          background-position: center;
-          background-repeat: no-repeat;
-          color: white;
-          transform: rotateY(180deg);
-        }
+.flip-card-front {
+    background:
+        radial-gradient(circle at 20% 20%, rgba(0, 200, 255, 0.22), transparent 35%),
+        radial-gradient(circle at 80% 80%, rgba(70, 150, 255, 0.18), transparent 40%),
+        linear-gradient(135deg, #dff7ff 0%, #c8eaf5 45%, #b8dff0 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: #123047;
+}
+
+.flip-card-back {
+    background:
+        radial-gradient(circle at 80% 20%, rgba(0, 180, 255, 0.25), transparent 35%),
+        radial-gradient(circle at 20% 80%, rgba(70, 150, 255, 0.20), transparent 40%),
+        linear-gradient(135deg, #c9edf8 0%, #b5ddec 50%, #a8d5e8 100%);
+    background-size: cover;
+    background-position: center;
+    background-repeat: no-repeat;
+    color: #123047;
+    transform: rotateY(180deg);
+}
 
         /* Additive: lets a tap toggle the flip on touch devices, same visual effect as :hover above */
         .flip-card.wk-flipped .flip-card-inner { transform: rotateY(180deg); }
