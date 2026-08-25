@@ -12,12 +12,17 @@
 <link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Preload the card background image: it's reused on all 24 card faces
+     (front + back x 12 weeks), so getting the single request started
+     early — in parallel with HTML/CSS parsing — avoids the visible delay
+     before the flip-card artwork appears. -->
+<link rel="preload" as="image" href="scriptB/cardbgback2.webp" fetchpriority="high">
 
 
 
   <style>
     /* Week Grid Styles */
-/* ===== WEEK GRID (UNCHANGED) ===== */
+/* ===== WEEK GRID (RESPONSIVE / FULLSCREEN-AWARE) ===== */
 /* Basic sample */
 
 body {
@@ -30,6 +35,7 @@ body {
     height: 100vh;
     padding: 10px;
     box-sizing: border-box;
+   
 }
 
 .flipbook-viewport {
@@ -39,34 +45,56 @@ body {
     overflow: hidden;
     width: 100%;
     height: 100%;
+
    
 }
 
+/* Uses an inset box-shadow instead of `border` for the white frame.
+   A box-shadow never adds to the element's own size the way a border
+   does (border adds its width on top of height/width in the default
+   box model), and `inset` draws it INSIDE the existing box edges — so
+   it can never get clipped by an ancestor's overflow:hidden, no matter
+   what height this container ends up at (including auto, which is
+   required here so the container keeps following .flipbook's
+   JS-assigned size on resize/fullscreen — see scheduleResync below).
+   It also naturally follows border-radius, unlike outline. */
 .flipbook-viewport .container {
     width: 100%;
-    height: 100%;
- border-radius:50px;
-    border:5px solid white;
- background:white;
+    height: auto;
+border-radius:50px;
+background: white;
+
+ 
 }
 
 .flipbook-viewport .flipbook {
     width: 100%;
     height: 100%;
-}
-.week-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 0fr);
-  gap: 2px;
-  padding: 0px;
-  justify-items: center;
+
 }
 
-/* ===== WEEK CARD (UIVERSE LOOK) ===== */
+/* Grid now uses fractional columns (1fr) instead of shrink-to-fit (0fr)
+   so it always fills the available width of the page, whether the
+   flipbook is windowed or fullscreen. */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0vw;
+  padding: 0vw 0;
+  justify-items: stretch;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* ===== WEEK CARD (UIVERSE LOOK, NOW SCALABLE) ===== */
+/* Cards now size relative to their grid column (width:100%) and keep
+   their original proportions via aspect-ratio instead of a fixed
+   195px x 135px box. This makes them grow/shrink automatically when
+   turn.js resizes the flipbook (e.g. on F11 fullscreen). */
 .week-item {
   background-color: transparent;
-  width: 195px;
-  height: 135px;
+  width: 100%;
+  aspect-ratio: 195 / 135;
   perspective: 1000px;
   font-family: sans-serif;
   cursor: pointer;
@@ -100,20 +128,33 @@ body {
 }
 
 /* FRONT */
+/* Uses a WebP (resized to 1200x800 + compressed, ~97KB vs the original
+   2MB/1536x1024 PNG) with the resized/pngquant PNG as a fallback for any
+   browser that doesn't support WebP. image-set() lets the browser pick
+   whichever it supports without extra JS. */
 .week-item-front {
-  background: url("scriptB/cardbgback2.png") center center / contain no-repeat;
-
+  background: image-set(
+    url("scriptB/cardbgback2.webp") type("image/webp"),
+    url("scriptB/cardbgback2.png") type("image/png")
+  ) center center / contain no-repeat;
 }
 
 /* BACK */
 .week-item-back {
-  background: url("scriptB/cardbgback2.png") center center / contain no-repeat;
+  background: image-set(
+    url("scriptB/cardbgback2.webp") type("image/webp"),
+    url("scriptB/cardbgback2.png") type("image/png")
+  ) center center / contain no-repeat;
  
   transform: rotateY(180deg);
 }
+
+/* Font size now scales with viewport width via clamp() instead of a
+   fixed 18px, so labels stay proportionate to the card size at any
+   flipbook/fullscreen dimension. */
 h5 {
     font-family: "Times New Roman", serif;
-    font-size: 18px;
+    font-size: clamp(11px, 1.6vw, 22px);
     font-weight: 600;
     color: #0b3ea8;
     text-transform: uppercase;
@@ -132,9 +173,9 @@ h5 {
 
     /* Week 1 Content Styles */
 .lesson-container {
-  padding: 0px 15px;
+  padding: 0px 0px;
   height: 100%;
-  width: 96%;
+  width: 99%;
   overflow-y: auto;
   font-family: 'Source Sans Pro', sans-serif;
   color: #2c3e50;
@@ -143,6 +184,7 @@ h5 {
   /* Hide scrollbar */
   scrollbar-width: none;        /* Firefox */
   -ms-overflow-style: none;     /* IE / Edge */
+  border:5px solid white;
 }
 
 /* Chrome, Safari, Opera */
@@ -156,6 +198,7 @@ h5 {
       position: relative;
       height: 100%;
       box-sizing: border-box;
+     
     }
     
 /* Adjust lesson container for toggle buttons */
@@ -246,9 +289,9 @@ h5 {
       color: #fff;
       font-size:16px;
     }
-    .bookmarkBtn.lab .IconContainer { background: linear-gradient(to bottom, #4fc3f7, #1565c0); }
-    .bookmarkBtn.flow .IconContainer { background: linear-gradient(to bottom, #ba68c8, #6a1b9a); }
-    .bookmarkBtn.test .IconContainer { background: linear-gradient(to bottom, #81c784, #2e7d32); }
+    .bookmarkBtn.lab .IconContainer { background:red; }
+    .bookmarkBtn.flow .IconContainer { background: red; }
+    .bookmarkBtn.test .IconContainer { background:red; }
     .bookmarkBtn .text {
       flex: 1 1 auto;
       height: 100%;
@@ -291,10 +334,21 @@ h5 {
      style="
        width: 100%;
        height: auto;
-       background: white url('Front Matter/Cover.WEBP') no-repeat left center;
-       background-size: 50% 100%;
        overflow: hidden;
+       position: relative;
      ">
+
+  <embed
+    src="Front Matter/covernew2.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+    type="application/pdf"
+    style="
+      position: absolute;
+      left:0;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      border: none;background:#a6d4ff;
+    ">
 
 <div class="flipbook" style="background:transparent;position:relative;z-index:1;">
       <!-- Page 1 (Week Page) -->
@@ -306,7 +360,7 @@ h5 {
     <div class="week-item" onclick="goToWeek(1)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 1</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 1</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -317,7 +371,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(2)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 2</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 2</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -328,7 +382,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(3)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 3</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 3</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -339,7 +393,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(4)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 4</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 4</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -350,7 +404,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(5)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 5</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 5</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -361,7 +415,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(6)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 6</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 6</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -372,7 +426,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(7)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 7</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 7</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -383,7 +437,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(8)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 8</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 8</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -394,7 +448,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(9)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 9</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 9</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -405,7 +459,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(10)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 10</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 10</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -416,7 +470,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(11)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 11</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 11</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -427,7 +481,7 @@ h5 {
 <div class="week-item" onclick="goToWeek(12)">
   <div class="week-item-inner">
     <div class="week-item-front">
-      <h5 style="font-size:22px; font-weight:800;">WEEK 12</h5>
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 12</h5>
     </div>
     <div class="week-item-back">
       <h5>CYBERSECURITY FOUNDATIONS</h5>
@@ -476,7 +530,7 @@ h5 {
         color:black;
       "
     >
-      CYBERSECURITY FOUNDATIONS-WEEK-1
+      CYBERSECURITY FOUNDATIONS
     </h2>
 
     
@@ -493,13 +547,13 @@ h5 {
     class="lesson-container"
     style="
         position:relative;
-        height:98%;
+        height:95%;
         overflow:hidden;
     "
 >
  <iframe
     id="pdfViewerWk1"
-    src="E GUIDE/WEEK 1/Week1.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+    src="E GUIDE/WEEK 1/Week1.pdf#toolbar=0&navpanes=0&view=FitH"
     style="
         width:100%;
         height:100%;
@@ -524,7 +578,7 @@ h5 {
             z-index:10;
             box-sizing:border-box;
         "
-    >
+    > WEEK 1
         <!-- Footer content here -->
     </div>
 
@@ -537,8 +591,8 @@ h5 {
 </div>
 
       <!-- Page 3 - Week 1 Lab Page (Odd page) -->
-<div id="page3" style="width:100%; padding-left:0%; padding-right:3%; background-image: linear-gradient(to right, #b8b8b8, transparent); background-position: left; background-repeat: no-repeat; background-size: 4% 100%;">
-  <div class="page-content">
+<div id="page3" style="width:100%;padding-left:1.5%;padding-right:3%;background-color:#eef2f7;background-image:linear-gradient(to right,rgba(45,65,90,0.55) 0%,rgba(75,95,120,0.42) 5%,rgba(115,135,160,0.28) 12%,rgba(165,180,200,0.16) 25%,rgba(210,220,232,0.08) 45%,rgba(238,242,247,0) 75%);background-position:left;background-repeat:no-repeat;background-size:8% 100%;border-left:3px solid grey;">
+<div class="page-content" style="background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);">  
 
   <div
     style="
@@ -641,7 +695,7 @@ h5 {
 
 <div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;width:90%;height:34px;">
 
-<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">      CYBERSECURITY FOUNDATIONS-WEEK-2</h2>
+<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">CYBERSECURITY FOUNDATIONS</h2>
 
 </div>
 
@@ -650,10 +704,11 @@ h5 {
     class="lesson-container"
     style="
         position:relative;
-        height:98%;
+        height:95%;
         overflow:hidden;
     "
 >
+
     <iframe
         id="pdfViewerWk2"
         src="E GUIDE/WEEK 2/Week2.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
@@ -683,7 +738,7 @@ h5 {
             box-sizing:border-box;
         "
     >
-        <!-- Footer content here -->
+        WEEK 2
     </div>
 
 </div>
@@ -692,9 +747,8 @@ h5 {
 
 </div>
 
-<div id="page3" style="width:100%; padding-left:0%; padding-right:3%; background-image: linear-gradient(to right, #b8b8b8, transparent); background-position: left; background-repeat: no-repeat; background-size: 4% 100%;">
-
-<div class="page-content">
+<div id="page3" style="width:100%;padding-left:1.5%;padding-right:3%;background-color:#eef2f7;background-image:linear-gradient(to right,rgba(45,65,90,0.55) 0%,rgba(75,95,120,0.42) 5%,rgba(115,135,160,0.28) 12%,rgba(165,180,200,0.16) 25%,rgba(210,220,232,0.08) 45%,rgba(238,242,247,0) 75%);background-position:left;background-repeat:no-repeat;background-size:8% 100%;border-left:3px solid grey;">
+<div class="page-content" style="background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);">  
 
 <div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;">
 
@@ -756,7 +810,7 @@ h5 {
 
 <div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;width:90%;height:34px;">
 
-<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">      CYBERSECURITY FOUNDATIONS-WEEK-3</h2>
+<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">CYBERSECURITY FOUNDATIONS</h2>
 
 </div>
 
@@ -765,10 +819,11 @@ h5 {
     class="lesson-container"
     style="
         position:relative;
-        height:98%;
+        height:95%;
         overflow:hidden;
     "
 >
+
     <iframe
         id="pdfViewerWk3"
         src="E GUIDE/WEEK 3/Week 3.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
@@ -798,7 +853,7 @@ style="
             box-sizing:border-box;
         "
     >
-        <!-- Footer content here -->
+        WEEK 3
     </div>
 
 </div>
@@ -807,9 +862,8 @@ style="
 
 </div>
 
-<div id="page3" style="width:100%; padding-left:0%; padding-right:3%; background-image: linear-gradient(to right, #b8b8b8, transparent); background-position: left; background-repeat: no-repeat; background-size: 4% 100%;">
-
-<div class="page-content">
+<div id="page3" style="width:100%;padding-left:1.5%;padding-right:3%;background-color:#eef2f7;background-image:linear-gradient(to right,rgba(45,65,90,0.55) 0%,rgba(75,95,120,0.42) 5%,rgba(115,135,160,0.28) 12%,rgba(165,180,200,0.16) 25%,rgba(210,220,232,0.08) 45%,rgba(238,242,247,0) 75%);background-position:left;background-repeat:no-repeat;background-size:8% 100%;border-left:3px solid grey;">
+<div class="page-content" style="background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);"> 
 
 <div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;">
 
@@ -932,6 +986,12 @@ function loadApp() {
     // behind the 'resize' event in some browsers, so measuring immediately
     // when 'resize' fires can still return the old (pre-fullscreen) height.
     // To catch the settled value, we re-measure a few times after resize.
+    //
+    // NOTE: the inner .week-grid / .week-item content now uses fr columns,
+    // aspect-ratio, and clamp() font sizing (see CSS above), so once
+    // turn.js resizes the page container to the new viewport, the grid and
+    // cards flow to fill it automatically — no extra JS is needed to
+    // resize them manually.
     let resizeTimer;
     function resyncFlipbookNow() {
         if (!flipbook.data('turn')) return;
