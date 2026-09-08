@@ -1,0 +1,1384 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>APCSP GUIDE</title>
+
+<script type="text/javascript" src="scriptB/jquery.min.js"></script>
+<script type="text/javascript" src="scriptB/turn.min.js"></script>
+<link rel="stylesheet" href="scriptB/basic.css">
+<link href="https://fonts.googleapis.com/css2?family=Roboto:wght@700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Source+Sans+Pro:wght@300;400;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+<!-- Preload the card background image: it's reused on all 24 card faces
+     (front + back x 12 weeks), so getting the single request started
+     early — in parallel with HTML/CSS parsing — avoids the visible delay
+     before the flip-card artwork appears. -->
+<link rel="preload" as="image" href="scriptB/cardbgback2.webp" fetchpriority="high">
+
+
+
+  <style>
+    /* Week Grid Styles */
+/* ===== WEEK GRID (RESPONSIVE / FULLSCREEN-AWARE) ===== */
+/* Basic sample */
+
+body {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    background: black;
+    margin: 0;
+    height: 100vh;
+    padding: 10px;
+    box-sizing: border-box;
+   
+}
+
+.flipbook-viewport {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    overflow: hidden;
+    width: 100%;
+    height: 100%;
+
+   
+}
+
+/* Uses an inset box-shadow instead of `border` for the white frame.
+   A box-shadow never adds to the element's own size the way a border
+   does (border adds its width on top of height/width in the default
+   box model), and `inset` draws it INSIDE the existing box edges — so
+   it can never get clipped by an ancestor's overflow:hidden, no matter
+   what height this container ends up at (including auto, which is
+   required here so the container keeps following .flipbook's
+   JS-assigned size on resize/fullscreen — see scheduleResync below).
+   It also naturally follows border-radius, unlike outline. */
+.flipbook-viewport .container {
+    width: 100%;
+    height: auto;
+border-radius:50px;
+background: white;
+
+ 
+}
+
+.flipbook-viewport .flipbook {
+    width: 100%;
+    height: 100%;
+
+}
+
+/* Grid now uses fractional columns (1fr) instead of shrink-to-fit (0fr)
+   so it always fills the available width of the page, whether the
+   flipbook is windowed or fullscreen. */
+.week-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 0vw;
+  padding: 0vw 0;
+  justify-items: stretch;
+  align-items: stretch;
+  width: 100%;
+}
+
+/* ===== WEEK CARD (UIVERSE LOOK, NOW SCALABLE) ===== */
+/* Cards now size relative to their grid column (width:100%) and keep
+   their original proportions via aspect-ratio instead of a fixed
+   195px x 135px box. This makes them grow/shrink automatically when
+   turn.js resizes the flipbook (e.g. on F11 fullscreen). */
+.week-item {
+  background-color: transparent;
+  width: 100%;
+  aspect-ratio: 195 / 135;
+  perspective: 1000px;
+  font-family: sans-serif;
+  cursor: pointer;
+}
+
+.week-item-inner {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  text-align: center;
+  transition: transform 0.8s;
+  transform-style: preserve-3d;
+}
+
+.week-item:hover .week-item-inner {
+  transform: rotateY(180deg);
+}
+
+.week-item-front,
+.week-item-back {
+  box-shadow: 0 8px 14px rgba(0,0,0,0.2);
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  backface-visibility: hidden;
+  border: 0px solid coral;
+  border-radius: 0rem;
+}
+
+/* FRONT */
+/* Uses a WebP (resized to 1200x800 + compressed, ~97KB vs the original
+   2MB/1536x1024 PNG) with the resized/pngquant PNG as a fallback for any
+   browser that doesn't support WebP. image-set() lets the browser pick
+   whichever it supports without extra JS. */
+.week-item-front {
+  background: image-set(
+    url("scriptB/cardbgback2.webp") type("image/webp"),
+    url("scriptB/cardbgback2.png") type("image/png")
+  ) center center / contain no-repeat;
+}
+
+/* BACK */
+.week-item-back {
+  background: image-set(
+    url("scriptB/cardbgback2.webp") type("image/webp"),
+    url("scriptB/cardbgback2.png") type("image/png")
+  ) center center / contain no-repeat;
+ 
+  transform: rotateY(180deg);
+}
+
+/* Font size now scales with viewport width via clamp() instead of a
+   fixed 18px, so labels stay proportionate to the card size at any
+   flipbook/fullscreen dimension. */
+h5 {
+    font-family: "Times New Roman", serif;
+    font-size: clamp(11px, 1.6vw, 22px);
+    font-weight: 600;
+    color: #0b3ea8;
+    text-transform: uppercase;
+    text-align: center;
+    line-height: 1.1;
+    letter-spacing: 1px;
+
+    padding: 10px;
+    margin-top: 25px;
+    margin-bottom: 0;
+
+    text-shadow:
+        0 1px 0 #ffffff,
+        0 2px 4px rgba(0,0,0,0.18);
+}
+
+    /* Week 1 Content Styles */
+.lesson-container {
+  padding: 0px 0px;
+  height: 100%;
+  width: 99%;
+  overflow-y: auto;
+  font-family: 'Source Sans Pro', sans-serif;
+  color: #2c3e50;
+  line-height: 1.0;
+
+  /* Hide scrollbar */
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE / Edge */
+  border:5px solid white;
+}
+
+/* Chrome, Safari, Opera */
+.lesson-container::-webkit-scrollbar {
+  width: 0px;
+  height: 0px;
+}
+
+
+    .page-content {
+      position: relative;
+      height: 100%;
+      box-sizing: border-box;
+     
+    }
+    
+/* Adjust lesson container for toggle buttons */
+.lesson-container {
+  padding:0px 0px;
+  height:100%;
+  overflow-y: auto;
+ /* Hide scrollbar */
+  scrollbar-width: none;        /* Firefox */
+  -ms-overflow-style: none;     /* IE / Edge */
+}
+
+    /* Icon navigation buttons */
+    .nav-button-icon {
+      width: 33px;
+      height: 33px;
+      margin:2px;
+      background: rgba(255, 255, 255, 0.2);
+      border: 2px solid white;
+      border-radius: 50%;
+      color: white;
+      font-size: 18px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .nav-button-icon:hover {
+      background: white;
+      color: #3498db;
+      transform: scale(1.1);
+    }
+
+    /* ===== PRO NAV BUTTONS (new professional lab-bar buttons) ===== */
+    .pro-btn-bar {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      align-items: center;
+      width: 95%;
+      margin: 0 auto;
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 10;
+      z-index: 20000;
+      pointer-events: none;
+    }
+
+    .btn-cell {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* From Uiverse.io by vinodjangid07 — adapted: shared light bg, icon
+       color-coded per button (blue/purple/green) to match the site's theme. */
+    .bookmarkBtn {
+      pointer-events: auto;
+      width: 190px;
+      height: 32px;
+      border-radius: 30px;
+      border: 1px solid rgba(11, 22, 38, 0.18);
+      background: linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);
+      display: flex;
+      align-items: center;
+      justify-content: flex-start;
+      padding: 0 4px;
+      gap: 6px;
+      cursor: pointer;
+      transition-duration: 0.3s;
+      overflow: hidden;
+      color:blue;
+    }
+    .bookmarkBtn .IconContainer {
+      flex: 0 0 auto;
+      width: 30px;
+      height: 30px;
+      border-radius: 50px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+      z-index: 2;
+      transition-duration: 0.3s;
+      color: #fff;
+      font-size:16px;
+    }
+    .bookmarkBtn.lab .IconContainer { background:red; }
+    .bookmarkBtn.flow .IconContainer { background: red; }
+    .bookmarkBtn.test .IconContainer { background:red; }
+    .bookmarkBtn .text {
+      flex: 1 1 auto;
+      height: 100%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: #16212e;
+      font-weight: 700;
+      z-index: 1;
+      transition-duration: 0.3s;
+      font-size: 13px;
+      white-space: nowrap;
+      margin: 0;
+            color:blue;
+
+    }
+    .bookmarkBtn:hover .IconContainer {
+      width: 190px;
+      transition-duration: 0.3s;
+    }
+    .bookmarkBtn:hover .text {
+      transform: translate(10px);
+      width: 0;
+      font-size: 0;
+      transition-duration: 0.3s;
+    }
+    .bookmarkBtn:active {
+      transform: scale(0.95);
+      transition-duration: 0.3s;
+    }
+
+
+
+  </style>
+</head>
+<body>
+<div class="flipbook-viewport">
+
+<div class="container"
+     style="
+       width: 100%;
+       height: auto;
+       overflow: hidden;
+       position: relative;
+     ">
+
+  <embed
+    src="Front Matter/covernew2.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+    type="application/pdf"
+    style="
+      position: absolute;
+      left:0;
+      top: 0;
+      width: 50%;
+      height: 100%;
+      border: none;background:#a6d4ff;
+    ">
+
+<div class="flipbook" style="background:transparent;position:relative;z-index:1;">
+      <!-- Page 1 (Week Page) -->
+      <div id="page1" style="width:100%; padding-left:3%; padding-right:3%; background-image: linear-gradient(to right, #8ec5ff, transparent); background-position: left; background-repeat: no-repeat; background-size: 8% 100%;">
+
+<div class="page-content" style="background:#a6d4ff;padding-top:10px;">  
+<div class="week-grid"style="width:95%;">
+
+    <div class="week-item" onclick="goToWeek(1)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 1</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(2)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 2</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(3)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 3</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(4)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 4</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(5)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 5</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(6)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 6</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(7)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 7</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(8)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 8</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(9)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 9</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(10)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 10</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(11)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 11</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+<div class="week-item" onclick="goToWeek(12)">
+  <div class="week-item-inner">
+    <div class="week-item-front">
+      <h5 style="font-size:clamp(14px,2vw,26px); font-weight:800;">WEEK 12</h5>
+    </div>
+    <div class="week-item-back">
+      <h5>CYBERSECURITY FOUNDATIONS</h5>
+    </div>
+  </div>
+</div>
+
+
+
+
+
+
+
+  </div>
+
+</div>
+
+
+</div>
+              
+      
+      <!-- Page 2 - Week 1 Content -->
+<div style="width:100%;background:white;">
+<div class="page-content">
+
+  <div
+    style="
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:#ccc;
+      padding:0px 5px;
+      background:transparent;
+      width:90%;
+      height:34px;
+    "
+  >
+    <h2
+      style="
+        font-family:'Times New Roman', Times, serif;
+        text-transform:uppercase;
+        margin:0;
+        font-size:20px;
+        text-align:center;
+        flex:1;
+        color:black;
+      "
+    >
+      CYBERSECURITY FOUNDATIONS
+    </h2>
+
+    
+
+
+</div>
+
+ 
+
+  <!-- Web Book Content (Default) -->
+
+<div
+    id="webBookContent"
+    class="lesson-container"
+    style="
+        position:relative;
+        height:95%;
+        overflow:hidden;
+    "
+>
+ <iframe
+    id="pdfViewerWk1"
+    src="E GUIDE/WEEK 1/Week1.pdf#toolbar=0&navpanes=0&view=FitH"
+    style="
+        width:100%;
+        height:100%;
+        border:0;
+        background:#fff;
+        display:block;
+    ">
+</iframe>
+
+    <!-- FIXED FOOTER -->
+    <div
+        style="
+            position:absolute;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:45px;
+            background:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:10;
+            box-sizing:border-box;
+        "
+    > WEEK 1
+        <!-- Footer content here -->
+    </div>
+
+</div>
+
+</div>
+
+
+
+</div>
+
+      <!-- Page 3 - Week 1 Lab Page (Odd page) -->
+<div id="page3" style="width:100%;padding-left:1.5%;padding-right:3%;background-color:#eef2f7;background-image:linear-gradient(to right,rgba(45,65,90,0.55) 0%,rgba(75,95,120,0.42) 5%,rgba(115,135,160,0.28) 12%,rgba(165,180,200,0.16) 25%,rgba(210,220,232,0.08) 45%,rgba(238,242,247,0) 75%);background-position:left;background-repeat:no-repeat;background-size:8% 100%;border-left:3px solid grey;">
+<div class="page-content" style="background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);">  
+
+  <div
+    style="
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      background:#ccc;
+      padding:0px 5px;
+      background:transparent;
+
+    ">
+
+<button
+      onclick="goToWeekPage()"
+      class="nav-button-icon"
+      style="margin-left:10%;"
+    >
+      🏠
+    </button>
+    <h2
+      style="
+        font-family:'Times New Roman', Times, serif;
+        text-transform:uppercase;
+        margin:0;
+        font-size:20px;
+        text-align:center;
+        flex:1;
+        color:black;
+      "
+    >
+      WEEK 1-CYBER LABS
+    </h2>
+
+    
+
+ 
+</div>
+
+ 
+
+<div id="savelab" style="height:calc(100% - 72px);">
+<div id= "WKLAB-1"style="
+    position:relative;
+    width:95%;
+    height:100%;
+    margin:0 auto;
+">
+
+    <iframe
+        id="lab-iframeWk1"
+        srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><style>*{box-sizing:border-box;}html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);}.wrap{display:flex;flex-direction:column;height:100%;width:100%;}.intro{flex:0 0 auto;background:transparent;padding:1.1vh 2vw;border-bottom:2px solid #dbe3ea;}.intro p{margin:0;text-align:left;font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:clamp(12px,1.8vh,15.5px);color:#16212e;line-height:1.5;}.intro i{margin:0 6px 0 0;}.sep{color:#9aa7b5;font-weight:400;margin:0 9px;font-family:Arial,sans-serif;}.c1{color:#1565c0;}.c2{color:#6a1b9a;}.c3{color:#2e7d32;}.c4{color:#b45309;}.cols{flex:1 1 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:0;overflow:hidden;min-height:0;}.col{display:flex;flex-direction:column;padding:1vh 1vw;overflow:hidden;border-right:1px solid #dbe3ea;min-height:0;}.col:last-child{border-right:none;}.col-head{flex:0 0 auto;display:flex;align-items:center;gap:6px;justify-content:center;padding:0.3vh 0.4vw;margin-bottom:0.6vh;background:transparent;font-weight:700;text-transform:uppercase;letter-spacing:.3px;font-size:clamp(12px,1.6vh,16px);text-align:center;}.col1 .col-head{color:#1565c0;}.col2 .col-head{color:#6a1b9a;}.col3 .col-head{color:#2e7d32;}.col-head i{font-size:clamp(13px,1.8vh,17px);}.steps{flex:1 1 auto;list-style:none;margin:0;padding:0 2px 0 0;display:flex;flex-direction:column;justify-content:flex-start;gap:0.55vh;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:none;-ms-overflow-style:none;}.steps::-webkit-scrollbar{width:0;height:0;}.steps li{display:flex;align-items:flex-start;gap:8px;background:#ffffff;border:1px solid #e6ebf1;border-radius:6px;padding:0.55vh 0.6vw;flex:0 0 auto;}.num{flex:0 0 auto;width:clamp(18px,2.3vh,24px);height:clamp(18px,2.3vh,24px);border-radius:50%;color:#fff;font-size:clamp(9px,1.25vh,11.5px);display:flex;align-items:center;justify-content:center;font-weight:700;margin-top:1px;}.col1 .num{background:#1565c0;}.col2 .num{background:#6a1b9a;}.col3 .num{background:#2e7d32;}.txt{font-size:clamp(13px,1.9vh,17px);line-height:1.32;color:#16212e;}</style></head><body><div class="wrap"><div class="intro"><p><i class="fa-solid fa-display c1"></i>Complete all Cyber Labs assigned for this week.<span class="sep">&bull;</span><i class="fa-solid fa-diagram-project c2"></i>Complete the Cyber Flowchart activity for this week.<span class="sep">&bull;</span><i class="fa-solid fa-clipboard-check c3"></i>Complete the Cyber Practice Test for this week.<span class="sep">&bull;</span><i class="fa-solid fa-id-card c4"></i>Enter Your Information Correctly [ Name-Id-Grade ]</p></div><div class="cols"><div class="col col1"><div class="col-head"><i class="fa-solid fa-display"></i>Load Cyber Lab</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 1 given at bottom – Load Cyber Lab .</span></li><li><span class="num">2</span><span class="txt">Select the Week and Lab you want.</span></li><li><span class="num">3</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">4</span><span class="txt">Read the scenario description carefully first.</span></li><li><span class="num">5</span><span class="txt">Select and place each offensive tool shown.</span></li><li><span class="num">6</span><span class="txt">Type or click the required command shown.</span></li><li><span class="num">7</span><span class="txt">Click Network Defense once attack completes.</span></li><li><span class="num">8</span><span class="txt">Select defense tools, apply each remediation step.</span></li><li><span class="num">9</span><span class="txt">Click Check Defense to verify success.</span></li><li><span class="num">10</span><span class="txt">Complete Cyber Test, download certificate and report.</span></li></ul></div><div class="col col2"><div class="col-head"><i class="fa-solid fa-diagram-project"></i>Load Cyber Flowchart</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 2 – Load Flowchart Tool.</span></li><li><span class="num">2</span><span class="txt">Select a Week card from flip menu.</span></li><li><span class="num">3</span><span class="txt">Read the algorithm introduction shown carefully.</span></li><li><span class="num">4</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">5</span><span class="txt">Check instruction bar for next required step.</span></li><li><span class="num">6</span><span class="txt">Drag required tool onto the canvas.</span></li><li><span class="num">7</span><span class="txt">Select correct connecting line for shapes.</span></li><li><span class="num">8</span><span class="txt">Add text labels when instructed to.</span></li><li><span class="num">9</span><span class="txt">Repeat steps until flowchart is complete.</span></li><li><span class="num">10</span><span class="txt">Review summary, download Lab Report PDF.</span></li></ul></div><div class="col col3"><div class="col-head"><i class="fa-solid fa-clipboard-check"></i>Load Cyber Practice</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 3 – Load Practice Test.</span></li><li><span class="num">2</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">3</span><span class="txt">Select a week card from sidebar directory.</span></li><li><span class="num">4</span><span class="txt">Wait for the test to load fully.</span></li><li><span class="num">5</span><span class="txt">Read questions, select the correct option.</span></li><li><span class="num">6</span><span class="txt">Answer Yes/No questions using given buttons.</span></li><li><span class="num">7</span><span class="txt">Drag matching pairs, click Check Answers.</span></li><li><span class="num">8</span><span class="txt">Type short answers into the text box.</span></li><li><span class="num">9</span><span class="txt">Click Submit to lock in answers.</span></li><li><span class="num">10</span><span class="txt">Watch countdown timer while completing test.</span></li></ul></div></div></div></body></html>'
+        style="
+            width:100%;
+            height:100%;
+            border:none;
+            border-radius:0 0 10px 10px;
+            background:white;
+        "
+      sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+></iframe>
+
+</div>
+  </div>
+
+
+<!-- Bottom Navigation Bar (fixed, just below the iframe) -->
+<div class="pro-btn-bar">
+<div class="btn-cell">
+<button class="bookmarkBtn lab" onclick="loadLabWk1('MASTER LABS/Master Labs All Weeks.html')">
+  <span class="IconContainer"><i class="fa-solid fa-display"></i></span>
+  <p class="text">Load Cyber Lab</p>
+</button>
+</div>
+
+<div class="btn-cell">
+<button class="bookmarkBtn flow" onclick="loadLabWk1('MASTER LABS/Flowchart Tool.html')">
+  <span class="IconContainer"><i class="fa-solid fa-diagram-project"></i></span>
+  <p class="text">Load Flowchart Tool</p>
+</button>
+</div>
+
+<div class="btn-cell">
+<button class="bookmarkBtn test" onclick="loadLabWk1('MASTER LABS/quiz-app/weekspractice.html')">
+  <span class="IconContainer"><i class="fa-solid fa-clipboard-check"></i></span>
+  <p class="text">Load Practice Test</p>
+</button>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+<!-- ===================== START WEEK 2 ===================== -->
+
+<div style="width:100%;background:white;">
+
+<div class="page-content">
+
+<div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;width:90%;height:34px;">
+
+<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">CYBERSECURITY FOUNDATIONS</h2>
+
+</div>
+
+<div
+    id="webBookContent"
+    class="lesson-container"
+    style="
+        position:relative;
+        height:95%;
+        overflow:hidden;
+    "
+>
+
+    <iframe
+        id="pdfViewerWk2"
+        src="E GUIDE/WEEK 2/Week2.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+  style="
+            width:100%;
+            height:100%;
+            border:0;
+            background:#fff;
+            display:block;
+        ">
+    </iframe>
+
+
+    <!-- FIXED FOOTER -->
+    <div
+        style="
+            position:absolute;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:45px;
+            background:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:10;
+            box-sizing:border-box;
+        "
+    >
+        WEEK 2
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="page3" style="width:100%;padding-left:1.5%;padding-right:3%;background-color:#eef2f7;background-image:linear-gradient(to right,rgba(45,65,90,0.55) 0%,rgba(75,95,120,0.42) 5%,rgba(115,135,160,0.28) 12%,rgba(165,180,200,0.16) 25%,rgba(210,220,232,0.08) 45%,rgba(238,242,247,0) 75%);background-position:left;background-repeat:no-repeat;background-size:8% 100%;border-left:3px solid grey;">
+<div class="page-content" style="background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);">  
+
+<div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;">
+
+<button onclick="goToWeekPage()" class="nav-button-icon" style="margin-left:10%;">🏠</button>
+
+<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">WEEK 2-CYBER LABS</h2>
+
+</div>
+
+<div id="savelab" style="height:calc(100% - 72px);">
+
+<div id="WKLAB-2" style="position:relative;width:95%;height:100%;margin:0 auto;">
+
+<iframe id="lab-iframeWk2" srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><style>*{box-sizing:border-box;}html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);}.wrap{display:flex;flex-direction:column;height:100%;width:100%;}.intro{flex:0 0 auto;background:transparent;padding:1.1vh 2vw;border-bottom:2px solid #dbe3ea;}.intro p{margin:0;text-align:left;font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:clamp(12px,1.8vh,15.5px);color:#16212e;line-height:1.5;}.intro i{margin:0 6px 0 0;}.sep{color:#9aa7b5;font-weight:400;margin:0 9px;font-family:Arial,sans-serif;}.c1{color:#1565c0;}.c2{color:#6a1b9a;}.c3{color:#2e7d32;}.c4{color:#b45309;}.cols{flex:1 1 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:0;overflow:hidden;min-height:0;}.col{display:flex;flex-direction:column;padding:1vh 1vw;overflow:hidden;border-right:1px solid #dbe3ea;min-height:0;}.col:last-child{border-right:none;}.col-head{flex:0 0 auto;display:flex;align-items:center;gap:6px;justify-content:center;padding:0.3vh 0.4vw;margin-bottom:0.6vh;background:transparent;font-weight:700;text-transform:uppercase;letter-spacing:.3px;font-size:clamp(12px,1.6vh,16px);text-align:center;}.col1 .col-head{color:#1565c0;}.col2 .col-head{color:#6a1b9a;}.col3 .col-head{color:#2e7d32;}.col-head i{font-size:clamp(13px,1.8vh,17px);}.steps{flex:1 1 auto;list-style:none;margin:0;padding:0 2px 0 0;display:flex;flex-direction:column;justify-content:flex-start;gap:0.55vh;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:none;-ms-overflow-style:none;}.steps::-webkit-scrollbar{width:0;height:0;}.steps li{display:flex;align-items:flex-start;gap:8px;background:#ffffff;border:1px solid #e6ebf1;border-radius:6px;padding:0.55vh 0.6vw;flex:0 0 auto;}.num{flex:0 0 auto;width:clamp(18px,2.3vh,24px);height:clamp(18px,2.3vh,24px);border-radius:50%;color:#fff;font-size:clamp(9px,1.25vh,11.5px);display:flex;align-items:center;justify-content:center;font-weight:700;margin-top:1px;}.col1 .num{background:#1565c0;}.col2 .num{background:#6a1b9a;}.col3 .num{background:#2e7d32;}.txt{font-size:clamp(13px,1.9vh,17px);line-height:1.32;color:#16212e;}</style></head><body><div class="wrap"><div class="intro"><p><i class="fa-solid fa-display c1"></i>Complete all Cyber Labs assigned for this week.<span class="sep">&bull;</span><i class="fa-solid fa-diagram-project c2"></i>Complete the Cyber Flowchart activity for this week.<span class="sep">&bull;</span><i class="fa-solid fa-clipboard-check c3"></i>Complete the Cyber Practice Test for this week.<span class="sep">&bull;</span><i class="fa-solid fa-id-card c4"></i>Enter Your Information Correctly [ Name-Id-Grade ]</p></div><div class="cols"><div class="col col1"><div class="col-head"><i class="fa-solid fa-display"></i>Load Cyber Lab</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 1 given at bottom – Load Cyber Lab .</span></li><li><span class="num">2</span><span class="txt">Select the Week and Lab you want.</span></li><li><span class="num">3</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">4</span><span class="txt">Read the scenario description carefully first.</span></li><li><span class="num">5</span><span class="txt">Select and place each offensive tool shown.</span></li><li><span class="num">6</span><span class="txt">Type or click the required command shown.</span></li><li><span class="num">7</span><span class="txt">Click Network Defense once attack completes.</span></li><li><span class="num">8</span><span class="txt">Select defense tools, apply each remediation step.</span></li><li><span class="num">9</span><span class="txt">Click Check Defense to verify success.</span></li><li><span class="num">10</span><span class="txt">Complete Cyber Test, download certificate and report.</span></li></ul></div><div class="col col2"><div class="col-head"><i class="fa-solid fa-diagram-project"></i>Load Cyber Flowchart</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 2 – Load Flowchart Tool.</span></li><li><span class="num">2</span><span class="txt">Select a Week card from flip menu.</span></li><li><span class="num">3</span><span class="txt">Read the algorithm introduction shown carefully.</span></li><li><span class="num">4</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">5</span><span class="txt">Check instruction bar for next required step.</span></li><li><span class="num">6</span><span class="txt">Drag required tool onto the canvas.</span></li><li><span class="num">7</span><span class="txt">Select correct connecting line for shapes.</span></li><li><span class="num">8</span><span class="txt">Add text labels when instructed to.</span></li><li><span class="num">9</span><span class="txt">Repeat steps until flowchart is complete.</span></li><li><span class="num">10</span><span class="txt">Review summary, download Lab Report PDF.</span></li></ul></div><div class="col col3"><div class="col-head"><i class="fa-solid fa-clipboard-check"></i>Load Cyber Practice</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 3 – Load Practice Test.</span></li><li><span class="num">2</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">3</span><span class="txt">Select a week card from sidebar directory.</span></li><li><span class="num">4</span><span class="txt">Wait for the test to load fully.</span></li><li><span class="num">5</span><span class="txt">Read questions, select the correct option.</span></li><li><span class="num">6</span><span class="txt">Answer Yes/No questions using given buttons.</span></li><li><span class="num">7</span><span class="txt">Drag matching pairs, click Check Answers.</span></li><li><span class="num">8</span><span class="txt">Type short answers into the text box.</span></li><li><span class="num">9</span><span class="txt">Click Submit to lock in answers.</span></li><li><span class="num">10</span><span class="txt">Watch countdown timer while completing test.</span></li></ul></div></div></div></body></html>' style="width:100%;height:100%;border:none;border-radius:0 0 10px 10px;background:white;"  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+></iframe>
+
+
+</div>
+
+</div>
+
+<div class="pro-btn-bar">
+
+<div class="btn-cell">
+<button class="bookmarkBtn lab" onclick="loadLabWk1('MASTER LABS/Master Labs All Weeks.html')">
+  <span class="IconContainer"><i class="fa-solid fa-display"></i></span>
+  <p class="text">Load Cyber Lab</p>
+</button>
+</div>
+
+<div class="btn-cell">
+<button class="bookmarkBtn flow" onclick="loadLabWk1('MASTER LABS/Flowchart Tool.html')">
+  <span class="IconContainer"><i class="fa-solid fa-diagram-project"></i></span>
+  <p class="text">Load Flowchart Tool</p>
+</button>
+</div>
+
+<div class="btn-cell">
+<button class="bookmarkBtn test" onclick="loadLabWk1('MASTER LABS/quiz-app/weekspractice.html')">
+  <span class="IconContainer"><i class="fa-solid fa-clipboard-check"></i></span>
+  <p class="text">Load Practice Test</p>
+</button>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ===================== START WEEK 3 ===================== -->
+
+
+
+<div style="width:100%;background:white;">
+
+<div class="page-content">
+
+<div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;width:90%;height:34px;">
+
+<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">CYBERSECURITY FOUNDATIONS</h2>
+
+</div>
+
+<div
+    id="webBookContent"
+    class="lesson-container"
+    style="
+        position:relative;
+        height:95%;
+        overflow:hidden;
+    "
+>
+
+    <iframe
+        id="pdfViewerWk3"
+        src="E GUIDE/WEEK 3/Week 3.pdf#toolbar=0&navpanes=0&scrollbar=0&view=FitH"
+style="
+            width:100%;
+            height:100%;
+            border:0;
+            background:#fff;
+            display:block;
+        ">
+    </iframe>
+
+
+    <!-- FIXED FOOTER -->
+    <div
+        style="
+            position:absolute;
+            bottom:0;
+            left:0;
+            width:100%;
+            height:45px;
+            background:white;
+            display:flex;
+            align-items:center;
+            justify-content:center;
+            z-index:10;
+            box-sizing:border-box;
+        "
+    >
+        WEEK 3
+    </div>
+
+</div>
+
+</div>
+
+</div>
+
+<div id="page3" style="width:100%;padding-left:1.5%;padding-right:3%;background-color:#eef2f7;background-image:linear-gradient(to right,rgba(45,65,90,0.55) 0%,rgba(75,95,120,0.42) 5%,rgba(115,135,160,0.28) 12%,rgba(165,180,200,0.16) 25%,rgba(210,220,232,0.08) 45%,rgba(238,242,247,0) 75%);background-position:left;background-repeat:no-repeat;background-size:8% 100%;border-left:3px solid grey;">
+<div class="page-content" style="background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);"> 
+
+<div style="display:flex;align-items:center;justify-content:space-between;background:#ccc;padding:0px 5px;background:transparent;">
+
+<button onclick="goToWeekPage()" class="nav-button-icon" style="margin-left:10%;">🏠</button>
+
+<h2 style="font-family:'Times New Roman', Times, serif;text-transform:uppercase;margin:0;font-size:20px;text-align:center;flex:1;color:black;">WEEK 3-CYBER LABS</h2>
+
+</div>
+
+<div id="savelab" style="height:calc(100% - 72px);">
+
+<div ID="WKLAB-3" style="position:relative;width:95%;height:100%;margin:0 auto;">
+
+<iframe id="lab-iframeWk3" srcdoc='<!DOCTYPE html><html><head><meta charset="UTF-8"><link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"><style>*{box-sizing:border-box;}html,body{margin:0;padding:0;height:100%;width:100%;overflow:hidden;font-family:"Segoe UI",Roboto,Arial,sans-serif;background:linear-gradient(160deg,#eef2f7 0%,#dde7f3 100%);}.wrap{display:flex;flex-direction:column;height:100%;width:100%;}.intro{flex:0 0 auto;background:transparent;padding:1.1vh 2vw;border-bottom:2px solid #dbe3ea;}.intro p{margin:0;text-align:left;font-family:Georgia,"Times New Roman",serif;font-weight:600;font-size:clamp(12px,1.8vh,15.5px);color:#16212e;line-height:1.5;}.intro i{margin:0 6px 0 0;}.sep{color:#9aa7b5;font-weight:400;margin:0 9px;font-family:Arial,sans-serif;}.c1{color:#1565c0;}.c2{color:#6a1b9a;}.c3{color:#2e7d32;}.c4{color:#b45309;}.cols{flex:1 1 auto;display:grid;grid-template-columns:repeat(3,1fr);gap:0;overflow:hidden;min-height:0;}.col{display:flex;flex-direction:column;padding:1vh 1vw;overflow:hidden;border-right:1px solid #dbe3ea;min-height:0;}.col:last-child{border-right:none;}.col-head{flex:0 0 auto;display:flex;align-items:center;gap:6px;justify-content:center;padding:0.3vh 0.4vw;margin-bottom:0.6vh;background:transparent;font-weight:700;text-transform:uppercase;letter-spacing:.3px;font-size:clamp(12px,1.6vh,16px);text-align:center;}.col1 .col-head{color:#1565c0;}.col2 .col-head{color:#6a1b9a;}.col3 .col-head{color:#2e7d32;}.col-head i{font-size:clamp(13px,1.8vh,17px);}.steps{flex:1 1 auto;list-style:none;margin:0;padding:0 2px 0 0;display:flex;flex-direction:column;justify-content:flex-start;gap:0.55vh;overflow-y:auto;overflow-x:hidden;min-height:0;scrollbar-width:none;-ms-overflow-style:none;}.steps::-webkit-scrollbar{width:0;height:0;}.steps li{display:flex;align-items:flex-start;gap:8px;background:#ffffff;border:1px solid #e6ebf1;border-radius:6px;padding:0.55vh 0.6vw;flex:0 0 auto;}.num{flex:0 0 auto;width:clamp(18px,2.3vh,24px);height:clamp(18px,2.3vh,24px);border-radius:50%;color:#fff;font-size:clamp(9px,1.25vh,11.5px);display:flex;align-items:center;justify-content:center;font-weight:700;margin-top:1px;}.col1 .num{background:#1565c0;}.col2 .num{background:#6a1b9a;}.col3 .num{background:#2e7d32;}.txt{font-size:clamp(13px,1.9vh,17px);line-height:1.32;color:#16212e;}</style></head><body><div class="wrap"><div class="intro"><p><i class="fa-solid fa-display c1"></i>Complete all Cyber Labs assigned for this week.<span class="sep">&bull;</span><i class="fa-solid fa-diagram-project c2"></i>Complete the Cyber Flowchart activity for this week.<span class="sep">&bull;</span><i class="fa-solid fa-clipboard-check c3"></i>Complete the Cyber Practice Test for this week.<span class="sep">&bull;</span><i class="fa-solid fa-id-card c4"></i>Enter Your Information Correctly [ Name-Id-Grade ]</p></div><div class="cols"><div class="col col1"><div class="col-head"><i class="fa-solid fa-display"></i>Load Cyber Lab</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 1 given at bottom – Load Cyber Lab .</span></li><li><span class="num">2</span><span class="txt">Select the Week and Lab you want.</span></li><li><span class="num">3</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">4</span><span class="txt">Read the scenario description carefully first.</span></li><li><span class="num">5</span><span class="txt">Select and place each offensive tool shown.</span></li><li><span class="num">6</span><span class="txt">Type or click the required command shown.</span></li><li><span class="num">7</span><span class="txt">Click Network Defense once attack completes.</span></li><li><span class="num">8</span><span class="txt">Select defense tools, apply each remediation step.</span></li><li><span class="num">9</span><span class="txt">Click Check Defense to verify success.</span></li><li><span class="num">10</span><span class="txt">Complete Cyber Test, download certificate and report.</span></li></ul></div><div class="col col2"><div class="col-head"><i class="fa-solid fa-diagram-project"></i>Load Cyber Flowchart</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 2 – Load Flowchart Tool.</span></li><li><span class="num">2</span><span class="txt">Select a Week card from flip menu.</span></li><li><span class="num">3</span><span class="txt">Read the algorithm introduction shown carefully.</span></li><li><span class="num">4</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">5</span><span class="txt">Check instruction bar for next required step.</span></li><li><span class="num">6</span><span class="txt">Drag required tool onto the canvas.</span></li><li><span class="num">7</span><span class="txt">Select correct connecting line for shapes.</span></li><li><span class="num">8</span><span class="txt">Add text labels when instructed to.</span></li><li><span class="num">9</span><span class="txt">Repeat steps until flowchart is complete.</span></li><li><span class="num">10</span><span class="txt">Review summary, download Lab Report PDF.</span></li></ul></div><div class="col col3"><div class="col-head"><i class="fa-solid fa-clipboard-check"></i>Load Cyber Practice</div><ul class="steps"><li><span class="num">1</span><span class="txt">Click button 3 – Load Practice Test.</span></li><li><span class="num">2</span><span class="txt">Enter your name, student ID, and grade.</span></li><li><span class="num">3</span><span class="txt">Select a week card from sidebar directory.</span></li><li><span class="num">4</span><span class="txt">Wait for the test to load fully.</span></li><li><span class="num">5</span><span class="txt">Read questions, select the correct option.</span></li><li><span class="num">6</span><span class="txt">Answer Yes/No questions using given buttons.</span></li><li><span class="num">7</span><span class="txt">Drag matching pairs, click Check Answers.</span></li><li><span class="num">8</span><span class="txt">Type short answers into the text box.</span></li><li><span class="num">9</span><span class="txt">Click Submit to lock in answers.</span></li><li><span class="num">10</span><span class="txt">Watch countdown timer while completing test.</span></li></ul></div></div></div></body></html>' style="width:100%;height:100%;border:none;border-radius:0 0 10px 10px;background:white;"  sandbox="allow-same-origin allow-scripts allow-forms allow-popups allow-modals allow-downloads"
+></iframe>
+
+
+</div>
+
+</div>
+
+<div class="pro-btn-bar">
+
+<div class="btn-cell">
+<button class="bookmarkBtn lab" onclick="loadLabWk1('MASTER LABS/Master Labs All Weeks.html')">
+  <span class="IconContainer"><i class="fa-solid fa-display"></i></span>
+  <p class="text">Load Cyber Lab</p>
+</button>
+</div>
+
+<div class="btn-cell">
+<button class="bookmarkBtn flow" onclick="loadLabWk1('MASTER LABS/Flowchart Tool.html')">
+  <span class="IconContainer"><i class="fa-solid fa-diagram-project"></i></span>
+  <p class="text">Load Flowchart Tool</p>
+</button>
+</div>
+
+<div class="btn-cell">
+<button class="bookmarkBtn test" onclick="loadLabWk1('MASTER LABS/quiz-app/weekspractice.html')">
+  <span class="IconContainer"><i class="fa-solid fa-clipboard-check"></i></span>
+  <p class="text">Load Practice Test</p>
+</button>
+</div>
+
+</div>
+
+</div>
+
+</div>
+
+
+<!-- ===================== START WEEK 4 ===================== -->
+
+
+
+
+
+<!-- ===================== START WEEK 5 ===================== -->
+
+
+
+
+
+
+
+<!-- ===================== START WEEK 6 ===================== -->
+
+
+
+
+
+
+
+
+
+
+<!-- ===================== START PAGE ===================== -->
+
+<!-- ===================== END PAGE ===================== -->
+
+       
+</div>
+
+</div></div>
+
+<script type="text/javascript">
+function loadApp() {
+    const flipbook = $('.flipbook');
+    const viewport = $('.flipbook-viewport');
+
+    flipbook.turn({
+        width: viewport.width(),
+        height: viewport.height(),
+        elevation: 50,
+        gradients: true,
+        when: {
+            turned: function () {
+                // Optional: Add any page turn logic here
+            }
+        }
+    });
+
+    // Keyboard navigation
+    $(document).on('keydown', function (e) {
+        if (e.key === 'ArrowRight') {
+            flipbook.turn('next');
+        } else if (e.key === 'ArrowLeft') {
+            flipbook.turn('previous');
+        }
+    });
+
+    // turn.js hard-codes its pixel width/height at init and never checks the
+    // window again on its own. F11 fullscreen changes the window's actual
+    // size, so without this the flipbook keeps its old (smaller) dimensions
+    // and everything inside it looks squashed. Resync on resize/fullscreen.
+    //
+    // F11 is browser chrome behavior, not the Fullscreen API: it removes the
+    // tab strip/toolbar, which grows window.innerHeight, while the width
+    // usually doesn't change at all. That height change can lag slightly
+    // behind the 'resize' event in some browsers, so measuring immediately
+    // when 'resize' fires can still return the old (pre-fullscreen) height.
+    // To catch the settled value, we re-measure a few times after resize.
+    //
+    // NOTE: the inner .week-grid / .week-item content now uses fr columns,
+    // aspect-ratio, and clamp() font sizing (see CSS above), so once
+    // turn.js resizes the page container to the new viewport, the grid and
+    // cards flow to fill it automatically — no extra JS is needed to
+    // resize them manually.
+    let resizeTimer;
+    function resyncFlipbookNow() {
+        if (!flipbook.data('turn')) return;
+        const w = viewport.width();
+        const h = viewport.height();
+        flipbook.turn('size', w, h);
+    }
+    function scheduleResync() {
+        // Immediate try, then a couple of delayed re-checks to catch
+        // layout that settles late (this is what fixes F11 height lag).
+        resyncFlipbookNow();
+        clearTimeout(resizeTimer);
+        resizeTimer = setTimeout(function () {
+            resyncFlipbookNow();
+            setTimeout(resyncFlipbookNow, 250);
+            setTimeout(resyncFlipbookNow, 600);
+        }, 100);
+    }
+    $(window).on('resize', scheduleResync);
+    document.addEventListener('fullscreenchange', scheduleResync);
+    document.addEventListener('webkitfullscreenchange', scheduleResync);
+    document.addEventListener('msfullscreenchange', scheduleResync);
+}
+
+// Function to go to a specific week
+function goToWeek(weekNumber) {
+    const flipbook = $('.flipbook');
+    const targetPage = weekNumber * 2;
+    const totalPages = flipbook.turn('pages');
+    if (targetPage <= totalPages) {
+        flipbook.turn('page', targetPage);
+    }
+}
+
+// Function to go back to the week selection page (page 1)
+function goToWeekPage() {
+    const flipbook = $('.flipbook');
+    flipbook.turn('page', 1);
+}
+
+// Load selected lab file into the Week 1 lab iframe
+function loadLabWk1(path) {
+
+    if (!path) return;
+
+    for (let i = 1; i <= 30; i++) {
+
+        const iframe = document.getElementById('lab-iframeWk' + i);
+
+        if (!iframe) continue;
+
+        const rect = iframe.getBoundingClientRect();
+        const style = window.getComputedStyle(iframe);
+
+        // Check whether this iframe is currently visible
+        if (
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            rect.width > 0 &&
+            rect.height > 0
+        ) {
+            // The iframe starts with a srcdoc instructions guide. Per spec, srcdoc
+            // always takes priority over src when present — so it must be removed
+            // first, otherwise setting .src below would be silently ignored and the
+            // guide would just keep re-rendering instead of navigating.
+            if (iframe.hasAttribute('srcdoc')) {
+                iframe.removeAttribute('srcdoc');
+            }
+
+            iframe.src = path;
+
+            // Also go fullscreen on this iframe
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            }
+            else if (iframe.webkitRequestFullscreen) {
+                iframe.webkitRequestFullscreen();
+            }
+            else if (iframe.msRequestFullscreen) {
+                iframe.msRequestFullscreen();
+            }
+
+            return;
+        }
+    }
+}
+
+function openFullscreenWk1() {
+
+    for (let i = 1; i <= 30; i++) {
+
+        const iframe = document.getElementById('lab-iframeWk' + i);
+
+        if (!iframe) continue;
+
+        const rect = iframe.getBoundingClientRect();
+        const style = window.getComputedStyle(iframe);
+
+        // Check if this iframe is currently visible
+        if (
+            style.display !== 'none' &&
+            style.visibility !== 'hidden' &&
+            rect.width > 0 &&
+            rect.height > 0
+        ) {
+
+            if (iframe.requestFullscreen) {
+                iframe.requestFullscreen();
+            } 
+            else if (iframe.webkitRequestFullscreen) {
+                iframe.webkitRequestFullscreen();
+            } 
+            else if (iframe.msRequestFullscreen) {
+                iframe.msRequestFullscreen();
+            }
+
+            return;
+        }
+    }
+}
+
+// JavaScript functions for the lab page
+function goToLabPage() {
+  const flipbook = $('.flipbook');
+  flipbook.turn('page', 3);
+}
+
+function goToWeekContent() {
+  const flipbook = $('.flipbook');
+  flipbook.turn('page', 2);
+}
+
+function refreshLab() {
+  document.getElementById('lab-iframe').src = document.getElementById('lab-iframe').src;
+}
+
+function openFullscreen() {
+  const iframe = document.getElementById('lab-iframe');
+  if (iframe.requestFullscreen) {
+    iframe.requestFullscreen();
+  } else if (iframe.webkitRequestFullscreen) {
+    iframe.webkitRequestFullscreen();
+  } else if (iframe.msRequestFullscreen) {
+    iframe.msRequestFullscreen();
+  }
+}
+
+function printLab() {
+  const iframe = document.getElementById('lab-iframe');
+  iframe.contentWindow.print();
+}
+
+// Placeholder functions for other buttons
+function openLab2() {
+  alert('Lab 2 content would load here.');
+}
+
+function openLessonVideo() {
+  alert('Lesson Video would play here.');
+}
+
+function openWorksheet() {
+  alert('Worksheet would open here.');
+}
+
+function openTest() {
+  alert('Test interface would open here.');
+}
+
+// Keyboard shortcuts
+document.addEventListener('keydown', function(e) {
+  if (e.key === 'F5') {
+    e.preventDefault();
+    refreshLab();
+  }
+  if (e.key === 'Escape') {
+    goToWeekContent();
+  }
+  
+  // Number keys for quick navigation
+  if (e.key === '1') refreshLab();
+  if (e.key === '2') openFullscreen();
+  if (e.key === '3') printLab();
+  if (e.key === '4') goToWeekContent();
+  if (e.key === '5') goToWeekPage();
+});
+
+// Load turn.js when the document is ready
+$(document).ready(function() {
+    loadApp();
+});
+</script>
+<script>
+// JavaScript functions for PDF/Web Book toggle
+function showWebBook() {
+  document.getElementById('webBookContent').style.display = 'block';
+  document.getElementById('pdfContent').style.display = 'none';
+  document.getElementById('webBookBtn').style.background = '#3498db';
+  document.getElementById('pdfBtn').style.background = '#7f8c8d';
+}
+
+function showPDF() {
+  document.getElementById('webBookContent').style.display = 'none';
+  document.getElementById('pdfContent').style.display = 'block';
+  document.getElementById('webBookBtn').style.background = '#7f8c8d';
+  document.getElementById('pdfBtn').style.background = '#3498db';
+  
+  // Reload PDF to ensure it displays properly
+  const pdfViewer = document.getElementById('pdfViewer');
+  pdfViewer.src = pdfViewer.src;
+}
+
+function showPDFError() {
+  const pdfContainer = document.getElementById('pdfContent');
+  pdfContainer.innerHTML = `
+    <div style="text-align: center; margin-top: 50px;">
+      <h2 style="color: #e74c3c; font-family: 'Roboto', sans-serif;">⚠️ PDF Load Error</h2>
+      <p style="color: #666; margin: 20px 0;">Unable to load the PDF file. Please check:</p>
+      <div style="background: #f8f9fa; padding: 20px; border-radius: 10px; margin: 20px auto; max-width: 500px;">
+        <p>1. File path: <code>PDF WEEKS/APCSP Study Guide 4 WEEKS.pdf</code></p>
+        <p>2. File exists in the directory</p>
+        <p>3. File is accessible</p>
+      </div>
+      <button onclick="showWebBook()" style="padding: 10px 20px; background: #3498db; color: white; border: none; border-radius: 20px; font-family: 'Roboto', sans-serif; font-weight: 600; cursor: pointer; margin-top: 20px;">
+        ↩️ Back to Web Book
+      </button>
+    </div>
+  `;
+}
+
+// Navigation functions
+function goToLabPage() {
+  const flipbook = $('.flipbook');
+  flipbook.turn('page', 3);
+}
+
+function goToWeekPage() {
+  const flipbook = $('.flipbook');
+  flipbook.turn('page', 1);
+}
+
+// Initialize with Web Book view
+showWebBook();
+</script>
+<script>
+function SaveLab() {
+  const iframe = document.getElementById("lab-iframe");
+
+  if (!iframe) {
+    alert("Lab iframe not found");
+    return;
+  }
+
+  const iframeWindow = iframe.contentWindow;
+
+  iframeWindow.focus();
+  iframeWindow.print();
+}
+</script>
+ 
+<script>
+function disableIframeActions(iframe) {
+
+    try {
+        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+
+        // Disable right-click inside iframe
+        iframeDoc.addEventListener('contextmenu', function (e) {
+            e.preventDefault();
+            e.stopPropagation();
+            return false;
+        });
+
+        // Prevent Ctrl+S inside iframe
+        iframeDoc.addEventListener('keydown', function (e) {
+
+            if (e.ctrlKey && e.key.toLowerCase() === 's') {
+                e.preventDefault();
+                e.stopPropagation();
+                return false;
+            }
+
+        });
+
+    } catch (error) {
+        console.log("Cannot access iframe:", error);
+    }
+}
+
+
+// Main page
+document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+});
+
+document.addEventListener('keydown', function (e) {
+
+    if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+
+});
+
+
+// Apply protection to all iframes
+function protectAllIframes() {
+
+    document.querySelectorAll('iframe').forEach(function (iframe) {
+
+        iframe.addEventListener('load', function () {
+            disableIframeActions(iframe);
+        });
+
+        // In case iframe is already loaded
+        try {
+            disableIframeActions(iframe);
+        } catch (e) {}
+
+    });
+}
+
+protectAllIframes();
+</script>
+<!-- ===== AUTO-FULLSCREEN (on first user interaction, since browsers
+     block programmatic fullscreen on page load) ===== -->
+<style>
+@keyframes slowFlash {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.25; }
+}
+
+#fsPrompt .flash-text {
+  font-family: 'Roboto', 'Segoe UI', sans-serif;
+  font-weight: 400;
+  font-size: clamp(10px, 5vw, 20px);
+  letter-spacing: 2px;
+  color: green;
+  
+  animation: slowFlash 2.2s ease-in-out infinite;
+}
+</style>
+
+<div id="fsPrompt" style="
+    position:fixed; inset:0; z-index:999999;
+    background:rgba(0,0,0,0.9);
+    display:flex; align-items:center; justify-content:center;
+    text-align:center; cursor:pointer;
+">
+  <div class="flash-text">
+🌐 How Can I Make the Digital World Safer? 🌐
+  </div>
+</div>
+
+<script>
+(function () {
+    function enterFullscreen() {
+        const el = document.documentElement;
+        const req = el.requestFullscreen
+            || el.webkitRequestFullscreen
+            || el.mozRequestFullScreen
+            || el.msRequestFullscreen;
+        if (req) {
+            req.call(el).catch(function (err) {
+                console.log('Fullscreen request failed:', err);
+            });
+        }
+    }
+
+    function handleFirstInteraction() {
+        enterFullscreen();
+        removeListeners();
+        const prompt = document.getElementById('fsPrompt');
+        if (prompt) prompt.style.display = 'none';
+    }
+
+    function removeListeners() {
+        document.removeEventListener('click', handleFirstInteraction);
+        document.removeEventListener('keydown', handleFirstInteraction);
+        document.removeEventListener('touchstart', handleFirstInteraction);
+    }
+
+    document.addEventListener('click', handleFirstInteraction, { once: true });
+    document.addEventListener('keydown', handleFirstInteraction, { once: true });
+    document.addEventListener('touchstart', handleFirstInteraction, { once: true });
+})();
+</script>
+</body>
+</html>

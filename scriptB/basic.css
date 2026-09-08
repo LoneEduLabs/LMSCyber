@@ -1,0 +1,33 @@
+/* Basic sample */
+
+body {
+    display: flex;               /* Enables Flexbox */
+    justify-content: center;     /* Centers items horizontally */
+    align-items: center;         /* Centers items vertically */
+    overflow: hidden;
+    background-color: #fcfcfc;
+    margin: 0;
+    background: black;
+    height: 100vh;               /* Full viewport height to enable vertical centering */
+}
+
+.flipbook-viewport {
+    display: flex; /* Use Flexbox for centering */
+    justify-content: center; /* Center horizontally */
+    align-items: center; /* Center vertically */
+    overflow: hidden;
+    width: 100%;
+    height: 100vh; /* Full height of the viewport */
+    border-radius: 10px;
+}
+
+.flipbook-viewport .container {
+    /* Ensuring the container takes full size of the viewport */
+    width: 100%;
+    height: 100%;
+}
+
+.flipbook-viewport .flipbook {
+    width: 100%;
+    height: 100%; /* Set height to 100% of the parent container */
+}
