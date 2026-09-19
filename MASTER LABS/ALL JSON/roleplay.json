@@ -1,0 +1,649 @@
+{
+  "simulation": {
+    "id": "CYBER-ROLEPLAY-01",
+    "title": "CYBERSECURITY CONTROL ROOM",
+    "description": "Students perform cybersecurity tasks according to their assigned role.",
+    "roles": [
+      {
+        "role_id": "JST-01",
+        "role_name": "Junior Security Technician",
+        "level": "Entry Level",
+        "week_label": "WEEK 1",
+        "org_theme": "hospital",
+        "org_label": "HOSPITAL",
+        "organization": "Riverside General Hospital",
+        "main_responsibility": "Perform basic security checks, device checks, and security maintenance across hospital workstations.",
+        "devices_objects_components": [
+          "Security Alerts",
+          "Hospital Computers",
+          "Medical Device Network",
+          "Network Map",
+          "IAM Panel",
+          "Security Tools",
+          "Incident Notification",
+          "Incident Report"
+        ],
+        "steps": [
+          {
+            "step": 1,
+            "station_id": "ST-01",
+            "Station Name": "Reception PC",
+            "Task": "INCIDENT NOTIFICATION ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - File Access Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 2,
+            "station_id": "ST-02",
+            "Station Name": "Registration Workstation",
+            "Task": "SECURITY ALERT STATUS CHECK",
+            "problem": "Yes: Security incident reported on the computer - Active Security Alert.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 3,
+            "station_id": "ST-03",
+            "Station Name": "Nurse Station PC",
+            "Task": "NETWORK CONNECTION VERIFICATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 4,
+            "station_id": "ST-04",
+            "Station Name": "Doctor Workstation",
+            "Task": "COMPUTER SECURITY PROTECTION CHECK",
+            "problem": "Yes: Security incident reported on the computer - Security Protection Disabled.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 5,
+            "station_id": "ST-05",
+            "Station Name": "Emergency Room PC",
+            "Task": "SECURITY THREAT SCAN",
+            "problem": "Yes: Security incident reported on the computer - Suspicious File Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 6,
+            "station_id": "ST-06",
+            "Station Name": "Pharmacy Workstation",
+            "Task": "SECURITY SCAN RESULTS ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Malware Warning Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 7,
+            "station_id": "ST-07",
+            "Station Name": "Laboratory PC",
+            "Task": "SERVER AVAILABILITY CHECK",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 8,
+            "station_id": "ST-08",
+            "Station Name": "Radiology Workstation",
+            "Task": "USER ACCESS PERMISSION CHECK",
+            "problem": "Yes: Security incident reported on the computer - Unnecessary User Access.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 9,
+            "station_id": "ST-09",
+            "Station Name": "ICU Workstation",
+            "Task": "SECURITY CONFIGURATION REVIEW",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          },
+          {
+            "step": 10,
+            "station_id": "ST-10",
+            "Station Name": "OPD Workstation",
+            "Task": "INCIDENT REPORT DOCUMENTATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-001 I"
+          }
+        ],
+        "test": {
+          "role_prompt": "You have just performed a Cybersecurity Job Role at RIVERSIDE GENERAL HOSPITAL. Name the Cybersecurity Role.",
+          "min_stations": 6,
+          "station_prompt": "Enter at least 6 Workstation Names you checked as Junior Security Technician.",
+          "match_pairs": [
+            {
+              "workstation": "Reception PC",
+              "incident": "File Access Detected"
+            },
+            {
+              "workstation": "Registration Workstation",
+              "incident": "Active Security Alert"
+            },
+            {
+              "workstation": "Nurse Station PC",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "Doctor Workstation",
+              "incident": "Security Protection Disabled"
+            },
+            {
+              "workstation": "Emergency Room PC",
+              "incident": "Suspicious File Detected"
+            },
+            {
+              "workstation": "Pharmacy Workstation",
+              "incident": "Malware Warning Detected"
+            },
+            {
+              "workstation": "Laboratory PC",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "Radiology Workstation",
+              "incident": "Unnecessary User Access"
+            },
+            {
+              "workstation": "ICU Workstation",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "OPD Workstation",
+              "incident": "No Issue Found"
+            }
+          ],
+          "short_answer_prompt": "Explain in brief your Cybersecurity role at Riverside General Hospital."
+        }
+      },
+      {
+        "role_id": "JCA-01",
+        "role_name": "Junior Cybersecurity Analyst",
+        "level": "Junior Analyst",
+        "week_label": "WEEK 2",
+        "org_theme": "sales",
+        "org_label": "SALES OFFICE",
+        "organization": "Brightline Sales Office",
+        "main_responsibility": "Monitor security alerts, investigate suspicious activity, and report security findings across the sales office network.",
+        "devices_objects_components": [
+          "Security Alerts",
+          "SIEM Dashboard",
+          "Email Inbox",
+          "IAM Panel",
+          "Employee Directory",
+          "Network Map",
+          "Office Computers",
+          "Incident Report"
+        ],
+        "steps": [
+          {
+            "step": 1,
+            "station_id": "ST-01",
+            "Station Name": "Front Desk PC",
+            "Task": "SECURITY ALERT ACTIVITY ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Unusual Login Activity.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 2,
+            "station_id": "ST-02",
+            "Station Name": "HR Office PC",
+            "Task": "SIEM SECURITY EVENT ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Multiple Failed Login Attempts.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 3,
+            "station_id": "ST-03",
+            "Station Name": "Accounts PC",
+            "Task": "USER LOGIN ACTIVITY ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Login from an Unusual Location.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 4,
+            "station_id": "ST-04",
+            "Station Name": "Sales Rep Workstation",
+            "Task": "EMPLOYEE ACCOUNT VERIFICATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 5,
+            "station_id": "ST-05",
+            "Station Name": "Sales Manager PC",
+            "Task": "PHISHING EMAIL ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Phishing Email Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 6,
+            "station_id": "ST-06",
+            "Station Name": "IT Support Workstation",
+            "Task": "NETWORK CONNECTION ACTIVITY ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Unexpected Network Connection.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 7,
+            "station_id": "ST-07",
+            "Station Name": "Customer Support PC",
+            "Task": "COMPUTER ACTIVITY INVESTIGATION",
+            "problem": "Yes: Security incident reported on the computer - Suspicious Computer Activity.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 8,
+            "station_id": "ST-08",
+            "Station Name": "Security Desk Workstation",
+            "Task": "RELATED SECURITY EVENT CORRELATION",
+            "problem": "Yes: Security incident reported on the computer - Related Suspicious Events Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 9,
+            "station_id": "ST-09",
+            "Station Name": "Marketing Analyst Workstation",
+            "Task": "SECURITY INCIDENT EVIDENCE REPORTING",
+            "problem": "Yes: Security incident reported on the computer - Confirmed Security Incident.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          },
+          {
+            "step": 10,
+            "station_id": "ST-10",
+            "Station Name": "Employee Workstation",
+            "Task": "SECURITY INCIDENT ESCALATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-001 I"
+          }
+        ],
+        "test": {
+          "role_prompt": "You have just performed a Cybersecurity Job Role at BRIGHTLINE SALES OFFICE. Name the Cybersecurity Role.",
+          "min_stations": 6,
+          "station_prompt": "Enter at least 6 Workstation Names you checked as Junior Cybersecurity Analyst.",
+          "match_pairs": [
+            {
+              "workstation": "Front Desk PC",
+              "incident": "Unusual Login Activity"
+            },
+            {
+              "workstation": "HR Office PC",
+              "incident": "Multiple Failed Login Attempts"
+            },
+            {
+              "workstation": "Accounts PC",
+              "incident": "Login from an Unusual Location"
+            },
+            {
+              "workstation": "Sales Rep Workstation",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "Sales Manager PC",
+              "incident": "Phishing Email Detected"
+            },
+            {
+              "workstation": "IT Support Workstation",
+              "incident": "Unexpected Network Connection"
+            },
+            {
+              "workstation": "Customer Support PC",
+              "incident": "Suspicious Computer Activity"
+            },
+            {
+              "workstation": "Security Desk Workstation",
+              "incident": "Related Suspicious Events Detected"
+            },
+            {
+              "workstation": "Marketing Analyst Workstation",
+              "incident": "Confirmed Security Incident"
+            },
+            {
+              "workstation": "Employee Workstation",
+              "incident": "No Issue Found"
+            }
+          ],
+          "short_answer_prompt": "Explain in brief your Cybersecurity role at Brightline Sales Office."
+        }
+      },
+      {
+        "role_id": "JST-02",
+        "role_name": "Junior Security Technician",
+        "level": "Entry Level",
+        "week_label": "WEEK 3",
+        "org_theme": "bank",
+        "org_label": "BANK",
+        "organization": "Metro Trust Bank",
+        "main_responsibility": "Perform basic security checks, device checks, and security maintenance across bank branch workstations.",
+        "devices_objects_components": [
+          "Security Alerts",
+          "Bank Computers",
+          "ATM & Network Devices",
+          "Network Map",
+          "IAM Panel",
+          "Security Tools",
+          "Incident Notification",
+          "Incident Report"
+        ],
+        "steps": [
+          {
+            "step": 1,
+            "station_id": "ST-01",
+            "Station Name": "Teller PC",
+            "Task": "INCIDENT NOTIFICATION ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - File Access Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 2,
+            "station_id": "ST-02",
+            "Station Name": "Customer Service Desk PC",
+            "Task": "SECURITY ALERT STATUS CHECK",
+            "problem": "Yes: Security incident reported on the computer - Active Security Alert.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 3,
+            "station_id": "ST-03",
+            "Station Name": "Loan Officer Workstation",
+            "Task": "NETWORK CONNECTION VERIFICATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 4,
+            "station_id": "ST-04",
+            "Station Name": "Bank Manager PC",
+            "Task": "COMPUTER SECURITY PROTECTION CHECK",
+            "problem": "Yes: Security incident reported on the computer - Security Protection Disabled.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 5,
+            "station_id": "ST-05",
+            "Station Name": "Vault Security PC",
+            "Task": "SECURITY THREAT SCAN",
+            "problem": "Yes: Security incident reported on the computer - Suspicious File Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 6,
+            "station_id": "ST-06",
+            "Station Name": "IT Support Workstation",
+            "Task": "SECURITY SCAN RESULTS ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Malware Warning Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 7,
+            "station_id": "ST-07",
+            "Station Name": "ATM Monitoring PC",
+            "Task": "SERVER AVAILABILITY CHECK",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 8,
+            "station_id": "ST-08",
+            "Station Name": "Compliance Officer PC",
+            "Task": "USER ACCESS PERMISSION CHECK",
+            "problem": "Yes: Security incident reported on the computer - Unnecessary User Access.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 9,
+            "station_id": "ST-09",
+            "Station Name": "Fraud Investigation PC",
+            "Task": "SECURITY CONFIGURATION REVIEW",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          },
+          {
+            "step": 10,
+            "station_id": "ST-10",
+            "Station Name": "Accounts Department PC",
+            "Task": "INCIDENT REPORT DOCUMENTATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Security Technician I  E-ID: JST-002 I"
+          }
+        ],
+        "test": {
+          "role_prompt": "You have just performed a Cybersecurity Job Role at METRO TRUST BANK. Name the Cybersecurity Role.",
+          "min_stations": 6,
+          "station_prompt": "Enter at least 6 Workstation Names you checked as Junior Security Technician.",
+          "match_pairs": [
+            {
+              "workstation": "Teller PC",
+              "incident": "File Access Detected"
+            },
+            {
+              "workstation": "Customer Service Desk PC",
+              "incident": "Active Security Alert"
+            },
+            {
+              "workstation": "Loan Officer Workstation",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "Bank Manager PC",
+              "incident": "Security Protection Disabled"
+            },
+            {
+              "workstation": "Vault Security PC",
+              "incident": "Suspicious File Detected"
+            },
+            {
+              "workstation": "IT Support Workstation",
+              "incident": "Malware Warning Detected"
+            },
+            {
+              "workstation": "ATM Monitoring PC",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "Compliance Officer PC",
+              "incident": "Unnecessary User Access"
+            },
+            {
+              "workstation": "Fraud Investigation PC",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "Accounts Department PC",
+              "incident": "No Issue Found"
+            }
+          ],
+          "short_answer_prompt": "Explain in brief your Cybersecurity role at Metro Trust Bank."
+        }
+      },
+      {
+        "role_id": "JCA-02",
+        "role_name": "Junior Cybersecurity Analyst",
+        "level": "Junior Analyst",
+        "week_label": "WEEK 4",
+        "org_theme": "school",
+        "org_label": "SCHOOL",
+        "organization": "Lincoln Heights School",
+        "main_responsibility": "Monitor security alerts, investigate suspicious activity, and report security findings across the school network.",
+        "devices_objects_components": [
+          "Security Alerts",
+          "SIEM Dashboard",
+          "Email Inbox",
+          "IAM Panel",
+          "Student & Staff Directory",
+          "Network Map",
+          "School Computers",
+          "Incident Report"
+        ],
+        "steps": [
+          {
+            "step": 1,
+            "station_id": "ST-01",
+            "Station Name": "Front Office PC",
+            "Task": "SECURITY ALERT ACTIVITY ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Unusual Login Activity.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 2,
+            "station_id": "ST-02",
+            "Station Name": "Admissions Desk PC",
+            "Task": "SIEM SECURITY EVENT ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Multiple Failed Login Attempts.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 3,
+            "station_id": "ST-03",
+            "Station Name": "Accounts Office PC",
+            "Task": "USER LOGIN ACTIVITY ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Login from an Unusual Location.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 4,
+            "station_id": "ST-04",
+            "Station Name": "Teacher Workstation",
+            "Task": "EMPLOYEE ACCOUNT VERIFICATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 5,
+            "station_id": "ST-05",
+            "Station Name": "Principal's Office PC",
+            "Task": "PHISHING EMAIL ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Phishing Email Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 6,
+            "station_id": "ST-06",
+            "Station Name": "IT Support Workstation",
+            "Task": "NETWORK CONNECTION ACTIVITY ANALYSIS",
+            "problem": "Yes: Security incident reported on the computer - Unexpected Network Connection.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 7,
+            "station_id": "ST-07",
+            "Station Name": "Counselor PC",
+            "Task": "COMPUTER ACTIVITY INVESTIGATION",
+            "problem": "Yes: Security incident reported on the computer - Suspicious Computer Activity.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 8,
+            "station_id": "ST-08",
+            "Station Name": "Security Desk PC",
+            "Task": "RELATED SECURITY EVENT CORRELATION",
+            "problem": "Yes: Security incident reported on the computer - Related Suspicious Events Detected.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 9,
+            "station_id": "ST-09",
+            "Station Name": "Exam Cell PC",
+            "Task": "SECURITY INCIDENT EVIDENCE REPORTING",
+            "problem": "Yes: Security incident reported on the computer - Confirmed Security Incident.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          },
+          {
+            "step": 10,
+            "station_id": "ST-10",
+            "Station Name": "Student Records PC",
+            "Task": "SECURITY INCIDENT ESCALATION",
+            "problem": "No Issue Found.",
+            "action": "Update Register and Send the details to Cybersecurity Team.",
+            "Checked By": "I Junior Cybersecurity Analyst I  E-ID: JCA-002 I"
+          }
+        ],
+        "test": {
+          "role_prompt": "You have just performed a Cybersecurity Job Role at LINCOLN HEIGHTS SCHOOL. Name the Cybersecurity Role.",
+          "min_stations": 6,
+          "station_prompt": "Enter at least 6 Workstation Names you checked as Junior Cybersecurity Analyst.",
+          "match_pairs": [
+            {
+              "workstation": "Front Office PC",
+              "incident": "Unusual Login Activity"
+            },
+            {
+              "workstation": "Admissions Desk PC",
+              "incident": "Multiple Failed Login Attempts"
+            },
+            {
+              "workstation": "Accounts Office PC",
+              "incident": "Login from an Unusual Location"
+            },
+            {
+              "workstation": "Teacher Workstation",
+              "incident": "No Issue Found"
+            },
+            {
+              "workstation": "Principal's Office PC",
+              "incident": "Phishing Email Detected"
+            },
+            {
+              "workstation": "IT Support Workstation",
+              "incident": "Unexpected Network Connection"
+            },
+            {
+              "workstation": "Counselor PC",
+              "incident": "Suspicious Computer Activity"
+            },
+            {
+              "workstation": "Security Desk PC",
+              "incident": "Related Suspicious Events Detected"
+            },
+            {
+              "workstation": "Exam Cell PC",
+              "incident": "Confirmed Security Incident"
+            },
+            {
+              "workstation": "Student Records PC",
+              "incident": "No Issue Found"
+            }
+          ],
+          "short_answer_prompt": "Explain in brief your Cybersecurity role at Lincoln Heights School."
+        }
+      }
+    ]
+  }
+}

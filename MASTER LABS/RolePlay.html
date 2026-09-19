@@ -1,0 +1,2769 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Cybersecurity Control Room — Roleplay Simulation</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #0a0f1c; --panel: #121a2b; --panel-2: #0e1526;
+    --border: #223050; --border-soft: #1a2540; --text: #e7ecf5; --muted: #7c8aa5; --muted-2: #56637d;
+    --danger: #ff3b5c; --danger-glow: rgba(255,59,92,0.45);
+    --amber: #ffb020; --amber-glow: rgba(255,176,32,0.45);
+    --ok: #22d3a6; --ok-glow: rgba(34,211,166,0.4);
+    --gold: #ffd54a;
+    --mono: 'IBM Plex Mono', monospace; --sans: 'Inter', sans-serif;
+  }
+  html, body { height: 100%; background: var(--bg); color: var(--text); font-family: var(--sans); overflow: hidden; }
+
+  /* ---- App shell ---- */
+  #appShell { display: flex; flex-direction: column; height: 100vh; }
+  header.top-bar {
+    display: flex; align-items: center; gap: 14px; padding: 0px 10px;
+    background: var(--panel); border-bottom: 1px solid var(--border-soft); flex-shrink: 0; z-index: 20;
+  }
+  .brand { font-family: var(--mono); font-size: 16px; letter-spacing: .08em; color: var(--ok); font-weight: 700; display:flex; align-items:center; gap:8px; }
+  .brand i { font-size: 14px; }
+  .role-pill {
+    display: none; align-items: center; gap: 8px; font-family: var(--mono); font-size: 12px;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 20px; padding: 5px 12px 5px 6px; color: var(--text);
+  }
+  .role-pill.show { display: flex; }
+  .role-pill .role-id-chip { background: var(--ok); color: #04231b; font-weight: 800; border-radius: 14px; padding: 2px 9px; font-size: 11px; }
+  .top-bar-spacer { flex: 1; }
+  .progress-wrap { display:none; align-items:center; gap:8px; font-family: var(--mono); font-size: 12px; color: var(--muted); }
+  .progress-wrap.show { display:flex; }
+  .progress-track { width: 130px; height: 6px; border-radius: 4px; background: var(--panel-2); border: 1px solid var(--border); overflow:hidden; }
+  .progress-fill { height: 100%; background: linear-gradient(90deg,#22c55e,#8de8c9); width:0%; transition: width .5s ease; }
+  .btn {
+    font-family: var(--sans); font-size: 12.5px; font-weight: 700; letter-spacing: .02em; color: var(--text);
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; padding: 8px 14px; cursor: pointer;
+    display: inline-flex; align-items: center; gap: 7px; transition: border-color .15s, background .15s;
+  }
+  .btn:hover { border-color: var(--ok); }
+  .btn.danger:hover { border-color: var(--danger); }
+
+  /* ---- Main layout ---- */
+  main.layout { flex: 1; display: flex; min-height: 0; }
+  #stage3d { position: relative; flex: 1; min-height: 0; background: var(--panel-2); }
+  #stage3d canvas { display: block; width: 100%; height: 100%; touch-action: none; cursor: pointer; }
+
+  .labels-layer { position: absolute; inset: 0; pointer-events: none; z-index: 4; overflow: hidden; }
+  .station-label {
+    position: absolute; transform: translate(-50%, 0); pointer-events: none;
+    font-family: var(--mono); font-size: 11.5px; font-weight: 700; letter-spacing: .03em; color: #cfe3ff;
+    background: rgba(6,12,20,.88); border: 1px solid rgba(120,170,255,.35); border-radius: 6px; padding: 3px 9px;
+    text-shadow: 0 1px 3px rgba(0,0,0,.9);
+    white-space: nowrap; text-align: center;
+    opacity: 0; transition: opacity .12s ease;
+  }
+  .station-label.current { color: var(--gold); border-color: rgba(255,213,74,.5); }
+  .station-label.done { color: var(--ok); }
+  .station-label.show { opacity: 1 !important; }
+  .station-label.problem { background: #ff3b5c; color: #ffffff; border: none; }
+  .station-label.clear { background: rgba(6,12,20,.88); color: var(--ok); border-color: rgba(34,211,166,.5); }
+
+  .scene-heading {
+    position: absolute; left: 50%; top: 16px; transform: translateX(-50%);
+    font-family: var(--mono); font-weight: 800; letter-spacing: .16em; font-size: clamp(13px, 1.6vw, 19px);
+    color: rgba(210,225,245,.55); text-shadow: 0 0 14px rgba(120,170,255,.35); pointer-events: none; z-index: 3;
+    text-transform: uppercase; white-space: nowrap;
+  }
+
+  /* ---- Control Room monitor panel ---- */
+  /* Transparent by design: the dark 3D monitor screen behind it is the
+     visual "background" — the panel itself contributes no border/box/fill,
+     just the text and controls, positioned/tracked to sit on the glass. */
+.monitor-panel {
+  position: absolute; z-index: 10;
+  pointer-events: auto; border: 3px solid #2a4a6a;
+  background: radial-gradient(ellipse at 50% 40%, #0d2740 0%, #081018 70%);
+  border-radius: 10px;
+  overflow: hidden;
+}
+  /* Fixed-grid layout: every row is a reserved fr-based slot, so the rows
+     always add up to exactly the panel's height (fr shares out whatever
+     space is available, so unlike percentages they can never overflow it).
+     Hiding/showing any element (via the .hidden -> display:none toggle the
+     JS already uses) never shifts the position of anything else — the
+     heading and the station-id row always occupy rows 1 and 2 no matter
+     what is shown below them. */
+  .monitor-screen {
+    background: transparent; border: none; border-radius: 0; box-shadow: none;
+    position: relative; overflow: hidden;
+    width: 100%; height: 100%;
+    display: grid;
+    grid-template-rows: 0.55fr 1.2fr 0.65fr 0.85fr 0.65fr 0.85fr 1fr 1.2fr 1fr;
+    grid-template-columns: 100%;
+    row-gap: 10px; padding: 2% 3%;
+    box-sizing: border-box;
+    font-family: 'Times New Roman', Times, serif;
+  }
+  .monitor-screen > * { min-height: 0; overflow: hidden; }
+  .monitor-screen, .monitor-screen * {
+    font-family: 'Times New Roman', Times, serif; font-weight: 700;
+  }
+
+  .monitor-heading {
+    grid-row: 1; align-self: end; justify-self: center;
+    font-weight: 700; letter-spacing: .1em;
+    font-size: clamp(14px, 2.4vw, 20px);
+    color: #8fd8ff; text-transform: uppercase; text-align: center;
+    z-index: 1;
+    margin: 0; padding: 0;
+    height: 28px;
+  }
+
+  .monitor-row {
+    grid-row: 2; align-self: center;
+    display: flex; align-items: center; justify-content: center; gap: 8px; flex-wrap: nowrap; position: relative; z-index: 1; height: 32px; margin: -10px 0 10px 0;
+  }
+  .monitor-label { font-size: 15px; font-weight: 800; color: #8fd8ff; letter-spacing: .02em; white-space: nowrap; }
+  .monitor-input {
+    flex: 0 0 auto; width: 108px; font-size: 15px; font-weight: 800;
+    background: #05141f; border: 1px solid #2a5470; border-radius: 4px; color: #eafcff; padding: 5px 7px;
+    letter-spacing: .03em; text-transform: uppercase;
+  }
+  .monitor-input:focus { outline: none; border-color: #5ac8ff; box-shadow: 0 0 0 2px rgba(90,200,255,.2); }
+  .monitor-btn {
+    font-size: 13px; font-weight: 700; letter-spacing: .02em; color: #fff;
+    background: linear-gradient(90deg,#ff3b5c,#c9223f); border: none; border-radius: 4px; padding: 5px 11px; cursor: pointer;
+    transition: filter .15s; flex: 0 0 auto; white-space: nowrap;text-transform: uppercase;
+  }
+  .monitor-btn:hover { filter: brightness(1.15); }
+
+  .monitor-error {
+    grid-row: 3; align-self: start;
+    font-size: clamp(6.5px, 1vw, 9px); color: var(--danger); text-align: center;
+    background: rgba(255,59,92,.12); border: 1px solid rgba(255,59,92,.35); border-radius: 4px; padding: 3px 3px; position: relative; z-index: 1;height:20px;
+  }
+
+  /* The result wrapper no longer establishes its own box — display:contents
+     lets its children sit directly in the parent grid, each pinned to its
+     own row, so every one of them keeps a fixed position regardless of
+     which siblings are currently visible. */
+  .monitor-result { display: contents;height:20px; }
+
+  .monitor-station-name {
+     align-self: center; text-align: center;
+    font-size:16px; font-weight: 700; color: #eafcff;text-transform: uppercase;height:20px;border-top:1px dashed blue;
+  }
+  .monitor-task {
+     align-self: start; text-align: center;
+    font-size:14px;color: #8fd8ff; text-transform: uppercase;height:20px;
+  }
+  .monitor-checking {
+    align-self: center; text-align: center;
+    font-size: 12px; font-weight: 700;  color:yellow;
+    animation: monitorBlink 0.9s steps(1) infinite;height:20px;
+  }
+  @keyframes monitorBlink { 0%, 49% { opacity: 1; } 50%, 100% { opacity: .15; } }
+  .monitor-problem {
+    align-self: center; text-align: center;
+    font-size:14px; font-weight: 700; color:yellow; line-height: 1.25;
+    animation: monitorSlowFlash 1.8s ease-in-out infinite;
+  }
+  @keyframes monitorSlowFlash { 0%, 100% { opacity: 1; } 50% { opacity: .35; } }
+  .monitor-issue-row {
+    align-self: center;
+    display: flex; flex-direction: column; align-items: center; gap: 3px; text-align: center;
+  }
+  .monitor-issue-row .monitor-label { text-align: center; }
+  .monitor-issue-input {
+    width: 50%; min-width: 60px; text-align: center;
+    background: transparent; border: 1px solid rgba(255,213,74,.55);
+    color: var(--gold); font-weight: 700; font-size: clamp(9px, 1.4vw, 12.5px);
+  }
+  .monitor-issue-input::placeholder { color: rgba(255,213,74,.55); font-weight: 700; }
+  .monitor-send {
+    grid-row: 9; align-self: center; justify-self: center;
+    font-size: clamp(9px, 1.4vw, 12px); padding: 6px 15px;
+  }
+
+  /* ---- Side panel ---- */
+  #sidePanel {
+    width: 290px; flex-shrink: 0; background: var(--panel); border-right: 1px solid var(--border-soft);
+    display: flex; flex-direction: column; min-height: 0;
+  }
+  .side-empty { flex:1; display:flex; align-items:center; justify-content:center; text-align:center; color: var(--muted); font-size: 13px; padding:10px; line-height:1.0; }
+
+  .step-card { padding: 0px 18px 0px; border-bottom: 1px solid var(--border-soft); flex-shrink: 0; }
+  .role-header { margin-bottom: 0px; padding-bottom: 2px; }
+  .role-header-name {
+    font-size: 14.5px; font-weight: 800; color: var(--text); line-height: 1.3;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .role-header-sub { font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); margin-top: 3px; }
+  .role-header-id { font-family: var(--mono); font-size: 11px; font-weight: 800; color: var(--ok); margin-top: 2px; }
+  .step-id-row { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 12px; }
+  .step-id-chip {
+    display: inline-flex; align-items: center; gap: 5px; font-family: var(--mono); font-size: 11px; font-weight: 700;
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 7px; padding: 4px 8px; color: var(--muted);
+  }
+  .step-id-chip i { font-size: 9.5px; opacity: .8; }
+  .step-id-chip b { color: var(--text); font-weight: 800; }
+  .step-id-chip-num { background: linear-gradient(90deg,#22d3a6,#8de8c9); color: #04231b; font-weight: 800; border: none; }
+  .step-id-chip-name { flex: 1 1 auto; min-width: 0; }
+  .step-id-chip-name b { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .step-topline { display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; }
+  .step-badge {
+    font-family: var(--mono); font-weight: 800; font-size: 12px; letter-spacing: .08em; color: #04231b;
+    background: linear-gradient(90deg,#22d3a6,#8de8c9); padding: 4px 11px; border-radius: 20px;
+  }
+  .step-badge.final { background: linear-gradient(90deg,var(--gold),#ffb020); }
+  .step-count { font-family: var(--mono); font-size: 11.5px; color: var(--muted); }
+  .step-station { display:flex; align-items:center; gap:8px; font-size: 17px; font-weight: 800; color: var(--text); margin-bottom: 12px; }
+  .step-station i { color: var(--gold); font-size: 15px; }
+  .step-block { margin-bottom: 12px; }
+  .step-label { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; color: var(--muted-2); margin-bottom: 4px; text-transform: uppercase; }
+  .step-text { font-size: 13.5px; line-height: 1.55; color: #dbe6f5; }
+  .step-hint {
+    margin-top: 4px; font-size: 11.5px; color: var(--gold); background: rgba(255,213,74,.08);
+    border: 1px dashed rgba(255,213,74,.4); border-radius: 8px; padding: 8px 10px; line-height: 1.5;
+    display: flex; align-items: flex-start; gap: 7px;
+  }
+  .step-hint i { margin-top: 1px; }
+
+  .step-overview-wrap { flex: 1; min-height: 0; overflow-y: auto; padding: 0px 4px 4px; scrollbar-width: none; }
+  .step-overview-wrap::-webkit-scrollbar { width: 0px; }
+  .step-overview-wrap::-webkit-scrollbar-thumb { background: var(--border); border-radius: 4px; }
+  .overview-title { font-family: var(--mono); font-size: 10.5px; letter-spacing: .12em; color: var(--muted-2); text-transform: uppercase; padding: 6px 8px 8px; }
+  .overview-item {
+    display: flex; align-items: center; gap: 10px; padding: 8px 8px; border-radius: 8px; margin-bottom: 2px;
+    font-size: 12.5px; color: var(--muted); transition: background .15s;
+  }
+  .overview-item .ov-num {
+    flex-shrink:0; width: 22px; height: 22px; border-radius: 50%; display:flex; align-items:center; justify-content:center;
+    font-family: var(--mono); font-size: 11px; font-weight: 800; background: var(--panel-2); border: 1px solid var(--border); color: var(--muted);
+  }
+  .overview-item .ov-station { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .overview-item.done { color: var(--ok); }
+  .overview-item.done .ov-num { background: rgba(34,211,166,.14); border-color: var(--ok); color: var(--ok); }
+  .overview-item.current { background: rgba(255,213,74,.08); color: var(--gold); }
+  .overview-item.current .ov-num { background: rgba(255,213,74,.18); border-color: var(--gold); color: var(--gold); }
+
+  .current-station-box {
+    background: var(--panel-2); border: 1px solid var(--border); border-radius: 10px;
+    padding: 8px 10px 8px 0; margin: 6px 0 12px 0;
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  }
+  .current-station-box .cs-id { font-family: var(--mono); font-weight: 800; font-size: 12px; color: var(--gold); letter-spacing: .05em; padding-left: 10px; white-space: nowrap; }
+  .current-station-box .cs-name { font-size: 13px; font-weight: 800; color: var(--text); text-align: right; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .current-station-box .cs-empty { font-size: 12.5px; color: var(--muted); padding-left: 10px; }
+  .log-mini-entry {
+    background: transparent; border: 1px solid var(--border-soft); border-radius: 8px;
+    padding: 8px 10px; margin-bottom: 8px; font-size: 11.5px; line-height: 1.55; color: #dbe6f5;
+  }
+  .log-mini-entry .lm-line b { color: var(--ok); font-weight: 800; }
+  .log-mini-entry .lm-line.lm-issue-red,
+  .log-mini-entry .lm-line.lm-issue-red b { color: var(--danger); }
+  .log-mini-empty { color: var(--muted); font-size: 12px; padding: 8px 4px; text-align: center; }
+
+  /* ---- Role select modal ---- */
+  .modal-overlay {
+    position: fixed; inset: 0; background: rgba(3,6,14,0.86); display: flex; align-items: center; justify-content: center;
+    z-index: 1000; backdrop-filter: blur(6px);
+  }
+  .modal-box {
+    background: linear-gradient(160deg, #0e1526, #0a0f1c 60%);
+    border: 1px solid var(--border-soft); border-radius: 18px; padding: 30px 34px; width: 92vw; max-width: 980px;
+    max-height: 88vh; overflow-y: auto; scrollbar-width: none; box-shadow: 0 30px 80px rgba(0,0,0,.7);
+  }
+  .modal-box::-webkit-scrollbar { display:none; }
+  .modal-eyebrow { font-family: var(--mono); font-size: 11.5px; letter-spacing: .18em; color: var(--ok); text-transform: uppercase; text-align:center; margin-bottom: 6px; }
+  .modal-title { font-size: 24px; font-weight: 800; text-align: center; margin-bottom: 6px; }
+  .modal-sub { font-size: 13px; color: var(--muted); text-align: center; margin-bottom: 26px; max-width: 640px; margin-left:auto; margin-right:auto; line-height:1.55; }
+
+  .role-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
+  .role-card {
+    background: var(--panel); border: 1px solid var(--border); border-radius: 14px; padding: 18px 18px 16px; cursor: pointer;
+    transition: border-color .15s, transform .15s, box-shadow .15s; position: relative; overflow: hidden;
+  }
+  .role-card:hover { border-color: var(--ok); transform: translateY(-2px); box-shadow: 0 10px 26px rgba(34,211,166,.12); }
+  .role-card::before {
+    content:""; position:absolute; top:0; left:0; right:0; height:3px;
+    background: linear-gradient(90deg,#22d3a6,#4d9fff);
+  }
+  .role-week-heading {
+    font-family: var(--mono); font-weight: 800; font-size: 13px; letter-spacing: .12em;
+    color: var(--gold); text-transform: uppercase; margin-bottom: 8px;
+  }
+  .role-card-top { display:flex; align-items:center; justify-content:space-between; margin-bottom: 10px; }
+  .role-id-badge { font-family: var(--mono); font-weight: 800; font-size: 11.5px; letter-spacing:.05em; color: #04231b; background: var(--ok); padding: 3px 9px; border-radius: 12px; }
+  .role-level-badge { font-family: var(--mono); font-size: 10.5px; color: var(--muted); border: 1px solid var(--border); padding: 3px 8px; border-radius: 12px; }
+  .role-name { font-size: 16.5px; font-weight: 800; margin-bottom: 8px; color: var(--text); }
+  .role-resp { font-size: 12.5px; color: var(--muted); line-height: 1.5; margin-bottom: 12px; }
+  .role-meta { display:flex; gap: 14px; font-family: var(--mono); font-size: 11px; color: var(--muted-2); }
+  .role-meta span i { margin-right: 5px; }
+  .role-start { margin-top: 14px; display:flex; align-items:center; gap:6px; font-family: var(--mono); font-size: 11.5px; font-weight: 800; color: var(--ok); letter-spacing:.05em; }
+
+  /* ---- Role briefing modal (student info + start) ---- */
+  .brief-role-name { font-size: 16px; font-weight: 800; color: var(--ok); text-align: center; margin-bottom: 14px; }
+  .brief-explain { font-size: 13px; color: #dbe6f5; line-height: 1.6; text-align: center; max-width: 620px; margin: 0 auto 22px; }
+  .brief-input-row { display: flex; gap: 12px; margin-bottom: 8px; }
+  .brief-input-row > div { flex: 1; text-align: left; }
+  .brief-input-row label { display: block; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-2); margin-bottom: 5px; }
+  .brief-input-row input {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-size: 13px; padding: 9px 10px;
+  }
+  .brief-input-row input:focus { outline: none; border-color: var(--ok); }
+  .brief-error { color: var(--danger); font-size: 12px; text-align: center; margin-top: 4px; }
+
+  /* ---- Completion modal ---- */
+  .complete-icon { width: 74px; height: 74px; border-radius: 50%; background: linear-gradient(135deg,#22d3a6,#4d9fff); display:flex; align-items:center; justify-content:center; font-size: 34px; margin: 0 auto 16px; box-shadow: 0 0 40px rgba(34,211,166,.4); }
+  .complete-stats { display:flex; justify-content:center; gap: 26px; margin: 18px 0 26px; }
+  .complete-stat { text-align:center; }
+  .complete-stat .num { font-family: var(--mono); font-size: 26px; font-weight: 800; color: var(--ok); }
+  .complete-stat .lbl { font-family: var(--mono); font-size: 10.5px; color: var(--muted); letter-spacing:.08em; text-transform: uppercase; margin-top: 2px; }
+  .modal-actions { display:flex; gap: 12px; justify-content:center; margin-top: 6px; }
+
+  .log-textarea {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px;
+    color: var(--text); font-family: var(--sans); font-size: 13px; padding: 10px; resize: vertical;
+    margin-bottom: 12px;
+  }
+  .log-textarea:focus { outline: none; border-color: var(--ok); }
+  .report-row { margin-bottom: 14px; text-align: left; }
+  .report-label {
+    display: flex; align-items: center; gap: 7px; font-family: var(--mono); font-size: 10.5px; letter-spacing: .1em;
+    text-transform: uppercase; color: var(--muted-2); margin-bottom: 5px;
+  }
+  .report-label i { color: var(--gold); font-size: 11px; }
+  .report-value {
+    font-size: 13.5px; line-height: 1.55; color: #dbe6f5; background: var(--panel-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 10px 12px;
+  }
+  .report-value.report-checkedby { font-family: var(--mono); font-size: 12px; color: var(--ok); }
+  .step-label-row { display: flex; align-items: center; justify-content: space-between; gap: 8px; margin-bottom: 4px; }
+  .step-label-row .step-label { margin-bottom: 0; }
+  .autofill-btn {
+    font-family: var(--sans); font-size: 10.5px; font-weight: 700; color: var(--gold);
+    background: rgba(255,213,74,.1); border: 1px solid rgba(255,213,74,.35); border-radius: 12px;
+    padding: 3px 9px; cursor: pointer; white-space: nowrap; display: inline-flex; align-items: center; gap: 5px;
+    transition: background .15s, border-color .15s;
+  }
+  .autofill-btn:hover { background: rgba(255,213,74,.2); border-color: var(--gold); }
+  .autofill-btn i { font-size: 10px; }
+  #logEntryModal .modal-box, #viewLogModal .modal-box { text-align: left; }
+  #logEntryModal .modal-eyebrow, #viewLogModal .modal-eyebrow { text-align: left; }
+  .log-entry-row { border-bottom: 1px solid var(--border-soft); padding: 12px 4px; }
+  .log-entry-row .le-head { font-family: var(--mono); font-size: 11px; color: var(--ok); margin-bottom: 5px; letter-spacing: .04em; }
+  .log-entry-row .le-line { font-size: 12.5px; line-height: 1.5; margin-bottom: 3px; color: #dbe6f5; }
+  .log-entry-row .le-line b { color: var(--text); }
+
+  /* ---- Toasts ---- */
+  #toastLayer { position: fixed; top: 18px; left: 50%; transform: translateX(-50%); z-index: 1500; display:flex; flex-direction:column; gap:8px; align-items:center; pointer-events:none; }
+  .toast {
+    font-family: var(--sans); font-size: 13px; font-weight: 600; color: var(--text); background: var(--panel);
+    border: 1px solid var(--border); border-left: 4px solid var(--ok); border-radius: 10px; padding: 10px 18px;
+    box-shadow: 0 12px 30px rgba(0,0,0,.5); opacity: 0; transform: translateY(-10px); transition: opacity .3s, transform .3s;
+    max-width: 420px; display:flex; align-items:center; gap:9px;
+  }
+  .toast.show { opacity: 1; transform: translateY(0); }
+  .toast.warn { border-left-color: var(--amber); }
+  .toast.danger { border-left-color: var(--danger); }
+  .toast i { font-size: 14px; }
+  .toast.success i { color: var(--ok); }
+  .toast.warn i { color: var(--amber); }
+  .toast.danger i { color: var(--danger); }
+
+  .hidden { display: none !important; }
+
+  @media (max-width: 900px) {
+    #sidePanel { width: 290px; }
+  }
+  @media (max-width: 720px) {
+    main.layout { flex-direction: column; }
+    #sidePanel { width: 100%; height: 46vh; border-right:none; border-bottom: 1px solid var(--border-soft); order: 2; }
+    #stage3d { height: 54vh; order: 1; }
+  }
+
+  /* ---- Virtual desktop overlay (rendered on the Control Room monitor
+     after a station Check completes) ---- */
+  #monitorDesktop {
+    position: absolute; inset: 0; z-index: 20; display: flex; flex-direction: column;
+    background: radial-gradient(circle at 25% 15%, #3f7fce 0%, #285fa8 30%, #163d72 55%, #0a1f42 78%, #050d1e 100%);
+    font-family: var(--sans); color: #eafcff;
+  }
+  .desktop-watermark {
+    position: absolute; top: 6px; left: 8px; z-index: 1; font-size: 13px; font-weight: 800; letter-spacing: .04em;
+    color: var(--gold); text-transform: uppercase; pointer-events: none;
+  }
+  .desktop-icons-area {
+    flex: 1; display: grid; grid-template-columns: repeat(2, 1fr); grid-template-rows: repeat(4, 1fr);
+    grid-auto-flow: column; gap: 2px 8px; align-content: stretch; justify-content: stretch; padding: 24px 6px 6px; overflow: hidden;
+  }
+  .desktop-icon {
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 1px; cursor: pointer;
+    padding: 2px 2px; border-radius: 6px; border: 1px solid rgba(255,255,255,.28); transition: background .1s, border-color .1s;
+    min-height: 0; overflow: hidden;
+  }
+  .desktop-icon:hover { background: rgba(255,255,255,.12); border-color: rgba(255,255,255,.5); }
+  .desktop-icon .di-emoji { font-size: 17px; line-height: 1; }
+  .desktop-icon .di-name {
+    font-size: 8px; font-weight: 700; text-align: center; line-height: 1.1; word-break: break-word;
+    max-width: 68px; color: #f2f6fb;
+  }
+  .desktop-icon.visited .di-name { color: #b9c8d8; }
+  .desktop-taskbar {
+    height: 24px; flex-shrink: 0; background: rgba(8,16,28,.82); backdrop-filter: blur(4px);
+    border-top: 1px solid rgba(255,255,255,.08); display: flex; align-items: center; gap: 7px; padding: 0 6px;
+  }
+  .win-start-btn { width: 18px; height: 18px; flex-shrink: 0; display: flex; align-items: center; justify-content: center; border-radius: 3px; cursor: pointer; }
+  .win-start-btn:hover { background: rgba(255,255,255,.14); }
+  .win-logo { display: grid; grid-template-columns: repeat(2, 4.5px); grid-template-rows: repeat(2, 4.5px); gap: 1.5px; }
+  .win-logo i { display: block; }
+  .win-logo i:nth-child(1) { background: #5ac8ff; }
+  .win-logo i:nth-child(2) { background: #22d3a6; }
+  .win-logo i:nth-child(3) { background: #ffb020; }
+  .win-logo i:nth-child(4) { background: #ff3b5c; }
+  .win-search {
+    flex: 1 1 auto; max-width: 130px; background: rgba(255,255,255,.09); border-radius: 10px;
+    font-size: 7.5px; color: rgba(255,255,255,.65); padding: 3px 8px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .win-tray { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: 8.5px; color: #cfe3ff; flex-shrink: 0; }
+  .wt-icon { opacity: .85; }
+  .dt-clock { font-family: var(--mono); color: #eafcff; white-space: nowrap; }
+  .desktop-hint { font-size: 8px; color: rgba(255,255,255,.55); padding: 1px 10px 3px; text-align: center; flex-shrink: 0; }
+  .desktop-window {
+    position: absolute; left: 10%; top: 8%; width: 80%; height: 66%; z-index: 25;
+    background: #0d1c2c; border: 1px solid #2a5470; border-radius: 6px; display: flex; flex-direction: column;
+    box-shadow: 0 10px 30px rgba(0,0,0,.5); overflow: hidden;
+  }
+  .desktop-window-header {
+    background: #14263a; padding: 4px 8px; font-size: 9.5px; font-weight: 700; color: #8fd8ff;
+    display: flex; align-items: center; justify-content: space-between; flex-shrink: 0;
+  }
+  .desktop-window-close { cursor: pointer; color: #ff6b81; font-weight: 800; padding: 0 4px; }
+  .desktop-window-body { flex: 1; overflow-y: auto; padding: 4px; }
+  .desktop-window-item {
+    display: flex; align-items: center; gap: 7px; padding: 5px 7px; border-radius: 5px; cursor: pointer;
+    font-size: 9.5px; color: #dbe6f5; margin-bottom: 2px; transition: background .12s;
+  }
+  .desktop-window-item:hover { background: rgba(255,213,74,.12); }
+  .desktop-window-item.visited { opacity: .45; }
+  .desktop-overlay {
+    position: absolute; inset: 0; z-index: 40; background: rgba(4,2,2,.92);
+    display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 10px; padding: 4% 6%; text-align: center;
+  }
+  .threat-name-display {
+    color: #ff3b5c; font-weight: 800; font-size: clamp(11px, 1.8vw, 15px); text-transform: uppercase;
+    text-shadow: 0 0 14px rgba(255,59,92,.6); animation: monitorSlowFlash 1.6s ease-in-out infinite;
+  }
+  .threat-clean-display {
+    color: var(--ok); font-weight: 800; font-size: clamp(11px, 1.8vw, 15px); text-transform: uppercase;
+  }
+  .completion-title {
+    color: var(--gold); font-weight: 800; font-size: clamp(16px, 2.6vw, 22px); text-transform: uppercase; letter-spacing: .04em;
+  }
+  .completion-line { color: #eafcff; font-size: clamp(10.5px, 1.6vw, 13px); line-height: 1.6; }
+  .completion-name { font-weight: 800; color: var(--ok); font-size: clamp(12px, 1.9vw, 15px); }
+  .completion-count { color: #ff3b5c; font-weight: 800; margin-top: 4px; }
+  .dt-report-btn {
+    font-size: 11px; font-weight: 800; color: #fff; background: linear-gradient(90deg,#ff3b5c,#c9223f);
+    border: none; border-radius: 6px; padding: 8px 18px; cursor: pointer; text-transform: uppercase; letter-spacing: .03em;
+  }
+  .report-form-fields { width: 100%; max-width: 320px; display: flex; flex-direction: column; gap: 8px; text-align: left; }
+  .report-form-fields label { font-size: 9px; letter-spacing: .08em; text-transform: uppercase; color: #7c8aa5; display:block; margin-bottom:2px; }
+  .report-form-row { display: flex; gap: 8px; }
+  .report-form-row > div { flex: 1; min-width: 0; }
+  .report-form-error { font-size: 9.5px; color: var(--danger); font-weight: 700; }
+  .report-form-fields input, .report-form-fields textarea {
+    width: 100%; background: #05141f; border: 1px solid #2a5470; border-radius: 5px; color: #eafcff;
+    padding: 5px 7px; font-size: 10.5px; font-family: var(--sans); resize: vertical;
+  }
+  .report-form-fields input[readonly] { color: #7c8aa5; }
+  .dt-send-btn {
+    font-size: 11px; font-weight: 800; color: #04231b; background: linear-gradient(90deg,#22d3a6,#8de8c9);
+    border: none; border-radius: 6px; padding: 8px 18px; cursor: pointer; margin-top: 4px;
+  }
+
+  /* ---- Slide-in assessment/test panel ---- */
+  #testPanel {
+    position: fixed; left: 0; top: 0; width: 290px; height: 100vh; z-index: 900;
+    background: var(--panel); border-right: 1px solid var(--border-soft);
+    display: flex; flex-direction: column;
+    transform: translateX(-100%); transition: transform .3s ease;
+    box-shadow: 12px 0 40px rgba(0,0,0,.5);
+  }
+  #testPanel.show { transform: translateX(0); }
+  .test-panel-header {
+    flex-shrink: 0; display: flex; align-items: center; justify-content: space-between;
+    padding: 12px 16px; background: var(--panel-2); border-bottom: 1px solid var(--border-soft);
+    font-family: var(--mono); font-weight: 800; font-size: 13px; letter-spacing: .06em; color: var(--gold); text-transform: uppercase;
+  }
+  .test-panel-close { cursor: pointer; color: var(--muted); font-weight: 800; }
+  .test-panel-close:hover { color: var(--danger); }
+  .test-panel-body { flex: 1; min-height: 0; overflow-y: auto; padding: 16px; }
+  .test-q-title { font-size: 14px; font-weight: 800; color: var(--text); line-height: 1.4; margin-bottom: 10px; }
+  .test-q-sub { font-size: 12px; color: var(--muted); line-height: 1.5; margin-bottom: 8px; }
+  .test-input {
+    width: 100%; background: var(--panel-2); border: 1px solid var(--border); border-radius: 8px; color: var(--text);
+    font-size: 12.5px; padding: 8px 10px; margin-bottom: 8px;
+  }
+  .test-input:focus { outline: none; border-color: var(--ok); }
+  .test-textarea { resize: vertical; }
+  .test-station-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 4px; }
+  .test-station-grid input { margin-bottom: 0; }
+  .test-error { color: var(--danger); font-size: 11.5px; font-weight: 700; margin: 6px 0; }
+  .test-next-btn {
+    width: 100%; justify-content: center; margin-top: 12px; padding: 10px; font-size: 13px; font-weight: 800;
+  }
+  .test-next-btn:disabled { opacity: .4; cursor: not-allowed; }
+  .test-match-columns { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  .test-col-heading {
+    font-family: var(--mono); font-size: 10px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted-2);
+    margin-bottom: 8px; text-align: center;
+  }
+  .test-drop-list, .test-pool-list { display: flex; flex-direction: column; gap: 8px; }
+  .test-drop-slot {
+    background: var(--panel-2); border: 1px dashed var(--border); border-radius: 8px; padding: 8px;
+    min-height: 40px; display: flex; flex-direction: column; justify-content: center; transition: background .15s, border-color .15s;
+  }
+  .test-drop-slot.solved { background: rgba(34,211,166,.14); border: 1px solid var(--ok); }
+  .test-drop-slot .tds-name { font-size: 11px; font-weight: 700; color: var(--text); }
+  .test-drop-slot .tds-fill { font-size: 10.5px; color: var(--ok); font-weight: 700; margin-top: 3px; }
+  .test-drag-tile {
+    background: rgba(255,213,74,.1); border: 1px solid rgba(255,213,74,.4); border-radius: 8px;
+    padding: 8px 9px; font-size: 11px; font-weight: 700; color: var(--gold); cursor: grab; text-align: center;
+    transition: background .15s, transform .1s;
+  }
+  .test-drag-tile:hover { background: rgba(255,213,74,.22); }
+  .test-drag-tile.selected { outline: 2px solid var(--gold); transform: scale(1.03); }
+  .test-final-icon { font-size: 34px; text-align: center; margin-bottom: 10px; color: var(--ok); }
+</style>
+</head>
+<body>
+
+<div id="appShell">
+  <header class="top-bar">
+    <div class="brand"><i class="fas fa-shield-halved"></i> <span id="simTitle">CYBERSECURITY CONTROL ROOM</span></div>
+    <div class="top-bar-spacer"></div>
+    <div class="progress-wrap" id="progressWrap">
+      <span id="progressText">0 / 0</span>
+      <div class="progress-track"><div class="progress-fill" id="progressFill"></div></div>
+    </div>
+    <button class="btn" id="viewLogBtn"><i class="fas fa-clipboard-list"></i> Incident Log <span id="logCountBadge">(0)</span></button>
+    <button class="btn" id="changeRoleBtn"><i class="fas fa-user-group"></i> Change Role</button>
+  </header>
+
+  <main class="layout">
+    <aside id="sidePanel">
+      <div class="side-empty" id="sideEmpty">
+        <div>
+          <i class="fas fa-arrow-right" style="font-size:20px; color:var(--muted-2); margin-bottom:10px; display:block;"></i>
+          Select a role to begin the simulation.
+        </div>
+      </div>
+
+      <div id="sideActive" class="hidden" style="display:flex; flex-direction:column; height:100%; min-height:0;">
+        <div class="step-card">
+          <div class="role-header">
+            <div class="role-header-name" id="sideRoleName">—</div>
+            <div class="role-header-sub" id="sideRoleSub">Security Team</div>
+            <div class="role-header-id" id="sideRoleId">—</div>
+          </div>
+          <div class="overview-title" style="padding:8px 0 0;">STATION DETAILS</div>
+          <div class="current-station-box" id="currentStationBox"><span class="cs-empty">—</span></div>
+        </div>
+        <div class="step-overview-wrap">
+          <div class="overview-title">INCIDENT LOG</div>
+          <div id="sidebarLogList"></div>
+        </div>
+        <button class="btn hidden" id="loadTestBtn" style="margin:10px; justify-content:center; border-color:var(--gold); color:var(--gold); font-weight:800;">
+          <i class="fas fa-file-pen"></i> LOAD TEST
+        </button>
+      </div>
+    </aside>
+
+    <div id="stage3d">
+      <div class="labels-layer" id="labelsLayer"></div>
+
+      <!-- Control Room monitor panel: manual station-id lookup workflow -->
+      <div class="monitor-panel" id="monitorPanel">
+        <div class="monitor-screen" id="monitorScreenGrid">
+          <div class="monitor-heading">Control Room</div>
+          <div class="monitor-row">
+            <label class="monitor-label" for="monitorStationInput">Enter Station Id:</label>
+            <input type="text" id="monitorStationInput" class="monitor-input" placeholder="e.g. ST-01" autocomplete="off">
+            <button class="monitor-btn" id="monitorCheckBtn">Connect</button>
+          </div>
+          <div class="monitor-error hidden" id="monitorError">Station ID not recognized for the current step. Try again.</div>
+          <div class="monitor-result hidden" id="monitorResult">
+            <div class="monitor-station-name" id="monitorStationName">—</div>
+            <div class="monitor-task" id="monitorTask">—</div>
+            <div class="monitor-checking hidden" id="monitorChecking">CHECKING STATION</div>
+            <div class="monitor-problem hidden" id="monitorProblem">—</div>
+            <div class="monitor-issue-row hidden" id="monitorIssueBlock">
+              <input type="text" id="monitorIssueInput" class="monitor-input monitor-issue-input" placeholder="Type the issue" autocomplete="off">
+            </div>
+            <button class="monitor-btn monitor-send hidden" id="monitorSendBtn">Send To Cyber Team</button>
+          </div>
+        </div>
+        <div id="monitorDesktop" class="hidden">
+          <div class="desktop-watermark" id="desktopStationLabel">—</div>
+          <div class="desktop-icons-area" id="desktopIconsArea"></div>
+          <div class="desktop-hint" id="desktopHint">Click through icons to investigate this workstation.</div>
+          <div class="desktop-taskbar">
+            <div class="win-start-btn"><span class="win-logo"><i></i><i></i><i></i><i></i></span></div>
+            <div class="win-search">🔍 Type here to search</div>
+            <div class="win-tray">
+              <span class="wt-icon">📶</span><span class="wt-icon">🔊</span><span class="wt-icon">🔋</span>
+              <span class="dt-clock" id="desktopClock">--:--:--</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </main>
+
+  <!-- Slide-in assessment panel: same footprint as the sidebar -->
+  <div id="testPanel" class="hidden">
+    <div class="test-panel-header">
+      <span><i class="fas fa-file-pen"></i> Assessment</span>
+      <span class="test-panel-close" id="testPanelClose">✕</span>
+    </div>
+    <div class="test-panel-body" id="testPanelBody"></div>
+  </div>
+</div>
+
+<!-- Role select modal -->
+<div class="modal-overlay hidden" id="roleModal">
+  <div class="modal-box">
+    <div class="modal-eyebrow" id="modalEyebrow">CYBER ROLEPLAY SIMULATION</div>
+    <div class="modal-title" id="modalTitle">Choose Your Role</div>
+    <div class="modal-sub" id="modalSub">Pick a role below. The 3D control room will be built with the exact stations you need, in the order you'll use them — then work through each step directly on the stage.</div>
+    <div class="role-grid" id="roleGrid"></div>
+  </div>
+</div>
+
+<!-- Role briefing modal: organization/scenario intro + student info gate -->
+<div class="modal-overlay hidden" id="roleBriefModal">
+  <div class="modal-box" style="max-width:640px;">
+    <div class="modal-title" id="briefTitle" style="font-size:20px;">CYBERSECURITY ANALYSIS AT ORGANIZATION</div>
+    <div class="brief-role-name" id="briefRoleName">Role Name</div>
+    <div class="brief-explain" id="briefExplain">Scenario explanation goes here.</div>
+    <div class="brief-input-row">
+      <div><label>Student Name</label><input type="text" id="briefStudentName" placeholder="Full name" autocomplete="off"></div>
+      <div><label>S Number</label><input type="text" id="briefSNumber" placeholder="e.g. S123456" autocomplete="off"></div>
+      <div><label>Grade</label><input type="text" id="briefGrade" placeholder="e.g. 10th" autocomplete="off"></div>
+    </div>
+    <div class="brief-error hidden" id="briefError">Please fill in all three fields before starting.</div>
+    <div class="modal-actions">
+      <button class="btn" id="briefStartBtn" style="border-color:var(--ok); color:var(--ok); font-weight:800;"><i class="fas fa-play"></i> START</button>
+    </div>
+  </div>
+</div>
+
+<!-- Completion modal -->
+<div class="modal-overlay hidden" id="completeModal">
+  <div class="modal-box" style="max-width:480px; text-align:center;">
+    <div class="complete-icon"><i class="fas fa-check"></i></div>
+    <div class="modal-title">Role Complete</div>
+    <div class="modal-sub" id="completeSub">You worked through every station in order and completed the assignment.</div>
+    <div class="complete-stats">
+      <div class="complete-stat"><div class="num" id="completeStepCount">10</div><div class="lbl">Steps Done</div></div>
+      <div class="complete-stat"><div class="num" id="completeStationCount">7</div><div class="lbl">Stations Used</div></div>
+      <div class="complete-stat"><div class="num" id="completeLogCount">10</div><div class="lbl">Entries Logged</div></div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn" id="viewLogFromCompleteBtn"><i class="fas fa-clipboard-list"></i> View Log</button>
+      <button class="btn" id="retryRoleBtn"><i class="fas fa-rotate-left"></i> Redo This Role</button>
+      <button class="btn" id="pickAnotherBtn" style="border-color:var(--ok); color:var(--ok);"><i class="fas fa-user-group"></i> Choose Another Role</button>
+    </div>
+  </div>
+</div>
+
+<!-- Incident log viewer modal -->
+<div class="modal-overlay hidden" id="viewLogModal">
+  <div class="modal-box" style="max-width:640px; text-align:left;">
+    <div class="modal-eyebrow">INCIDENT LOG</div>
+    <div class="modal-title" style="font-size:19px; text-align:left;">Recorded Station Checks</div>
+    <div id="viewLogList" style="max-height:52vh; overflow-y:auto; margin-top:10px;"></div>
+    <div class="modal-actions" style="justify-content:flex-end;"><button class="btn" id="closeViewLogBtn">Close</button></div>
+  </div>
+</div>
+
+<div id="toastLayer"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script src="https://unpkg.com/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+(function () {
+  // ============================================================
+  // Config
+  // ============================================================
+  const JSON_PATH = 'ALL JSON/roleplay.json';
+  const BOUNDARY = { xMin: -30, xMax: 30, zMin: -45, zMax: 30 };
+  const STAGE_MARGIN = 10;
+  const DEVICE_WALL_CLEARANCE = 6;
+  const FRONT_INSET = 6;
+
+  const wallX0 = BOUNDARY.xMin - STAGE_MARGIN;
+  const wallX1 = BOUNDARY.xMax + STAGE_MARGIN;
+  const wallZ0 = BOUNDARY.zMin - STAGE_MARGIN;
+  const deviceLeftX = wallX0 + DEVICE_WALL_CLEARANCE;
+  const deviceRightX = wallX1 - DEVICE_WALL_CLEARANCE;
+  const zBack = wallZ0 + DEVICE_WALL_CLEARANCE;
+  const zFront = BOUNDARY.zMax - FRONT_INSET;
+  // The Control Room console now stands outside the walled/gridded stage
+  // area entirely, further along +z (the open front side, past every
+  // workstation and past the front wall boundary), acting like a
+  // free-standing console the "player" faces from the front.
+  const CONTROL_ROOM_POS = { x: 0, z: BOUNDARY.zMax + 14 };
+
+  // ============================================================
+  // DOM refs
+  // ============================================================
+  const stageEl = document.getElementById('stage3d');
+  const labelsLayer = document.getElementById('labelsLayer');
+  const roleModal = document.getElementById('roleModal');
+  const roleGrid = document.getElementById('roleGrid');
+  const modalEyebrow = document.getElementById('modalEyebrow');
+  const modalTitle = document.getElementById('modalTitle');
+  const completeModal = document.getElementById('completeModal');
+  const roleBriefModal = document.getElementById('roleBriefModal');
+  const briefTitle = document.getElementById('briefTitle');
+  const briefRoleName = document.getElementById('briefRoleName');
+  const briefExplain = document.getElementById('briefExplain');
+  const briefStudentName = document.getElementById('briefStudentName');
+  const briefSNumber = document.getElementById('briefSNumber');
+  const briefGrade = document.getElementById('briefGrade');
+  const briefError = document.getElementById('briefError');
+  const briefStartBtn = document.getElementById('briefStartBtn');
+  const progressWrap = document.getElementById('progressWrap');
+  const progressText = document.getElementById('progressText');
+  const progressFill = document.getElementById('progressFill');
+  const sideEmpty = document.getElementById('sideEmpty');
+  const sideActive = document.getElementById('sideActive');
+  const currentStationBox = document.getElementById('currentStationBox');
+  const sidebarLogList = document.getElementById('sidebarLogList');
+  const loadTestBtn = document.getElementById('loadTestBtn');
+  const testPanel = document.getElementById('testPanel');
+  const testPanelBody = document.getElementById('testPanelBody');
+  const testPanelClose = document.getElementById('testPanelClose');
+  const changeRoleBtn = document.getElementById('changeRoleBtn');
+  const retryRoleBtn = document.getElementById('retryRoleBtn');
+  const pickAnotherBtn = document.getElementById('pickAnotherBtn');
+  const toastLayer = document.getElementById('toastLayer');
+  const monitorPanel = document.getElementById('monitorPanel');
+  const monitorStationInput = document.getElementById('monitorStationInput');
+  const monitorCheckBtn = document.getElementById('monitorCheckBtn');
+  const monitorError = document.getElementById('monitorError');
+  const monitorResult = document.getElementById('monitorResult');
+  const monitorStationName = document.getElementById('monitorStationName');
+  const monitorTask = document.getElementById('monitorTask');
+  const monitorChecking = document.getElementById('monitorChecking');
+  const monitorProblem = document.getElementById('monitorProblem');
+  const monitorIssueBlock = document.getElementById('monitorIssueBlock');
+  const monitorIssueInput = document.getElementById('monitorIssueInput');
+  const monitorSendBtn = document.getElementById('monitorSendBtn');
+  const monitorScreenGrid = document.getElementById('monitorScreenGrid');
+  const monitorDesktop = document.getElementById('monitorDesktop');
+  const desktopIconsArea = document.getElementById('desktopIconsArea');
+  const desktopStationLabel = document.getElementById('desktopStationLabel');
+  const desktopClock = document.getElementById('desktopClock');
+  let openWindowEl = null;
+  setInterval(() => {
+    const now = new Date();
+    if (desktopClock) desktopClock.textContent = now.toLocaleDateString() + ' ' + now.toLocaleTimeString();
+  }, 1000);
+
+  // ============================================================
+  // Three.js state
+  // ============================================================
+  let scene, camera, renderer, controls, raycaster, pointerNdc, clock;
+  let stationGroup;
+  const stationEntries = {}; // key -> entry
+  let simData = null;
+  let currentRole = null;
+  let currentStepIndex = 0;
+  let activeStep = null;         // the step data for whichever station the monitor is currently showing/checking
+  let suggestedStep = null;      // the single station currently highlighted in the sidebar (priority + random)
+  let activeExpectedIssue = '';  // the short issue tag (after the dash) the typed Issue text must match
+  let stationOrder = []; // ordered unique keys for the active role
+  let hoveredStationKey = null;
+  let incidentLog = [];
+  let pendingLogKey = null;
+  let controlRoomWorldPos = null;
+  let controlRoomEntry = null;
+  let connectorLine = null;   // { line: THREE.Line, dot: THREE.Mesh, from, to, startTime, duration, dir: 1|-1 }
+  let checkTimers = [];       // setTimeout handles for the current check sequence, cleared on Send/reset
+  let lastCheckedEntry = null; // the station whose label should stay visible until the next Check
+
+  function slugify(s) {
+    return String(s).toLowerCase().trim().replace(/[^a-z0-9]+/g, '_').replace(/^_+|_+$/g, '');
+  }
+
+  // ============================================================
+  // Wall placement (back/left/right, front stays open)
+  // ============================================================
+  function buildWallPlacementSequence(totalNeeded) {
+    const seq = [];
+    function add(wall, t) { if (seq.length < totalNeeded) seq.push({ wall, t }); }
+    add('back', 0.5); add('left', 0.5); add('right', 0.5);
+    add('left', 0); add('right', 0);
+    add('left', 1); add('right', 1);
+    let depth = 4;
+    while (seq.length < totalNeeded) {
+      for (let i = 1; i < depth && seq.length < totalNeeded; i += 2) {
+        const t = i / depth;
+        add('back', t); add('left', t); add('right', t);
+      }
+      depth *= 2;
+    }
+    return seq;
+  }
+
+  // The back wall is reserved for the big Control Room monitor, so every
+  // workstation instead splits evenly across just the left and right walls,
+  // each with perfectly uniform spacing (no corner-hugging, no bunching).
+  function buildLeftRightPlacementSequence(totalNeeded) {
+    const seq = [];
+    const leftCount = Math.ceil(totalNeeded / 2);
+    const rightCount = totalNeeded - leftCount;
+    for (let i = 0; i < leftCount; i++) seq.push({ wall: 'left', t: (i + 0.5) / leftCount });
+    for (let i = 0; i < rightCount; i++) seq.push({ wall: 'right', t: (i + 0.5) / rightCount });
+    return seq;
+  }
+
+  function entryToPos(entry) {
+    if (entry.wall === 'back') return new THREE.Vector3(deviceLeftX + entry.t * (deviceRightX - deviceLeftX), 0, zBack);
+    if (entry.wall === 'left') return new THREE.Vector3(deviceLeftX, 0, zBack + entry.t * (zFront - zBack));
+    return new THREE.Vector3(deviceRightX, 0, zBack + entry.t * (zFront - zBack));
+  }
+
+  // ============================================================
+  // Three.js scene setup (visually matches the main cyber lab)
+  // ============================================================
+  function initThree() {
+    const w = stageEl.clientWidth, h = stageEl.clientHeight;
+    scene = new THREE.Scene();
+    scene.background = new THREE.Color(0x0a0f1c);
+
+    camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 290);
+camera.position.set(0, 20, 70);
+    renderer = new THREE.WebGLRenderer({ antialias: true });
+    renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+    renderer.setSize(w, h);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    stageEl.insertBefore(renderer.domElement, labelsLayer);
+
+    controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.target.set(0, 0, 0);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.85;
+    controls.minDistance = 20;
+    controls.maxDistance = 140;
+    controls.maxPolarAngle = Math.PI / 2 - 0.03;
+    controls.update();
+
+    scene.add(new THREE.AmbientLight(0x446688, 0.75));
+    const dir = new THREE.DirectionalLight(0xffffff, 1.0);
+    dir.position.set(10, 20, 10);
+    dir.castShadow = true;
+    dir.shadow.mapSize.width = 1024;
+    dir.shadow.mapSize.height = 1024;
+    const shadowD = 40;
+    dir.shadow.camera.left = -shadowD; dir.shadow.camera.right = shadowD;
+    dir.shadow.camera.top = shadowD; dir.shadow.camera.bottom = -shadowD;
+    dir.shadow.camera.near = 1; dir.shadow.camera.far = 120;
+    scene.add(dir);
+    const fill = new THREE.DirectionalLight(0x4488cc, 0.4);
+    fill.position.set(-10, 5, -10);
+    scene.add(fill);
+
+    const fillLight1 = new THREE.PointLight(0x4466aa, 0.8, 90);
+    fillLight1.position.set(-18, 10, 18);
+    scene.add(fillLight1);
+    const fillLight2 = new THREE.PointLight(0xaa88cc, 0.5, 90);
+    fillLight2.position.set(18, 8, -18);
+    scene.add(fillLight2);
+    const cyberLight1 = new THREE.PointLight(0x2266ff, 0.6, 100);
+    cyberLight1.position.set(-24, 8, -24);
+    scene.add(cyberLight1);
+    const cyberLight2 = new THREE.PointLight(0xff44aa, 0.4, 100);
+    cyberLight2.position.set(24, 6, 24);
+    scene.add(cyberLight2);
+
+    const gridHelper = new THREE.GridHelper(100, 80, 0x2a4a6a, 0x1a2a44);
+    gridHelper.position.y = -0.01;
+    scene.add(gridHelper);
+
+    const floorSize = (BOUNDARY.xMax - BOUNDARY.xMin) + STAGE_MARGIN * 2;
+    const groundGeo = new THREE.PlaneGeometry(floorSize, floorSize);
+    const groundMat = new THREE.MeshStandardMaterial({ color: 0x0a0f1c, roughness: 0.9, metalness: 0.1, transparent: true, opacity: 0.6 });
+    const ground = new THREE.Mesh(groundGeo, groundMat);
+    ground.rotation.x = -Math.PI / 2;
+    ground.position.y = -0.02;
+    ground.receiveShadow = true;
+    scene.add(ground);
+
+    buildOfficeWalls();
+
+    stationGroup = new THREE.Group();
+    scene.add(stationGroup);
+
+    raycaster = new THREE.Raycaster();
+    pointerNdc = new THREE.Vector2();
+    clock = new THREE.Clock();
+
+    window.addEventListener('resize', onResize);
+    renderer.domElement.addEventListener('mousemove', onStageHover);
+    renderer.domElement.addEventListener('mouseleave', () => { hoveredStationKey = null; renderer.domElement.style.cursor = ''; });
+
+    animate();
+  }
+
+  function buildOfficeWalls() {
+    const wallHeight = 30;
+    const wallThickness = 0.5;
+    const roomWidth = wallX1 - wallX0;
+    const roomDepth = BOUNDARY.zMax - wallZ0;
+    const sideCenterZ = (BOUNDARY.zMax + wallZ0) / 2;
+
+    const wallMaterial = new THREE.MeshStandardMaterial({
+      color: 0x131c28, roughness: 0.45, metalness: 0.25,
+      emissive: new THREE.Color(0x03060c), emissiveIntensity: 0.3, side: THREE.DoubleSide
+    });
+    function createWall(width, height, depth, position) {
+      const wall = new THREE.Mesh(new THREE.BoxGeometry(width, height, depth), wallMaterial);
+      wall.position.set(position.x, position.y, position.z);
+      wall.castShadow = true; wall.receiveShadow = true;
+      return wall;
+    }
+    scene.add(createWall(wallThickness, wallHeight, roomDepth, new THREE.Vector3(wallX0, wallHeight / 2, sideCenterZ)));
+    scene.add(createWall(wallThickness, wallHeight, roomDepth, new THREE.Vector3(wallX1, wallHeight / 2, sideCenterZ)));
+    scene.add(createWall(roomWidth, wallHeight, wallThickness, new THREE.Vector3(0, wallHeight / 2, wallZ0)));
+
+    const glowStripMaterial = new THREE.MeshStandardMaterial({
+      color: 0x2266ff, emissive: new THREE.Color(0x2266ff), emissiveIntensity: 1.2, transparent: true, opacity: 0.9
+    });
+    const leftStrip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, roomDepth - 1), glowStripMaterial);
+    leftStrip.position.set(wallX0 + 0.25, 0.25, sideCenterZ);
+    scene.add(leftStrip);
+    const rightStrip = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, roomDepth - 1), glowStripMaterial);
+    rightStrip.position.set(wallX1 - 0.25, 0.25, sideCenterZ);
+    scene.add(rightStrip);
+    const backStrip = new THREE.Mesh(new THREE.BoxGeometry(roomWidth - 1, 0.12, 0.12), glowStripMaterial);
+    backStrip.position.set(0, 0.25, wallZ0 + 0.25);
+    scene.add(backStrip);
+
+    const accentMaterial = new THREE.MeshStandardMaterial({ color: 0x1a2738, emissive: new THREE.Color(0x0a1420), emissiveIntensity: 0.5 });
+    for (let z = wallZ0 + 3; z <= BOUNDARY.zMax - 3; z += 9) {
+      const pL = new THREE.Mesh(new THREE.BoxGeometry(0.25, wallHeight - 1.5, 0.25), accentMaterial);
+      pL.position.set(wallX0 + 0.3, wallHeight / 2, z);
+      pL.castShadow = true; pL.receiveShadow = true;
+      scene.add(pL);
+      const pR = new THREE.Mesh(new THREE.BoxGeometry(0.25, wallHeight - 1.5, 0.25), accentMaterial);
+      pR.position.set(wallX1 - 0.3, wallHeight / 2, z);
+      pR.castShadow = true; pR.receiveShadow = true;
+      scene.add(pR);
+    }
+    for (let x = wallX0 + 4; x <= wallX1 - 4; x += 10) {
+      const pB = new THREE.Mesh(new THREE.BoxGeometry(0.25, wallHeight - 1.5, 0.25), accentMaterial);
+      pB.position.set(x, wallHeight / 2, wallZ0 + 0.3);
+      pB.castShadow = true; pB.receiveShadow = true;
+      scene.add(pB);
+    }
+
+    const rackMaterial = new THREE.MeshStandardMaterial({ color: 0x1a2538, emissive: new THREE.Color(0x112233), emissiveIntensity: 1.0, roughness: 0.4, metalness: 0.7 });
+    const ledMaterial = new THREE.MeshStandardMaterial({ color: 0x44ff88, emissive: new THREE.Color(0x44ff88), emissiveIntensity: 2.0 });
+    for (let z = wallZ0 + 5; z <= BOUNDARY.zMax - 5; z += 9) {
+      const rackL = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.6, 1.3), rackMaterial);
+      rackL.position.set(wallX0 + 1.0, 1.0, z);
+      rackL.castShadow = true; rackL.receiveShadow = true;
+      scene.add(rackL);
+      const ledL = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.0), ledMaterial);
+      ledL.position.set(wallX0 + 1.6, 1.3, z);
+      scene.add(ledL);
+      const rackR = new THREE.Mesh(new THREE.BoxGeometry(1.0, 1.6, 1.3), rackMaterial);
+      rackR.position.set(wallX1 - 1.0, 1.0, z);
+      rackR.castShadow = true; rackR.receiveShadow = true;
+      scene.add(rackR);
+      const ledR = new THREE.Mesh(new THREE.BoxGeometry(0.12, 0.12, 1.0), ledMaterial);
+      ledR.position.set(wallX1 - 1.6, 1.3, z);
+      scene.add(ledR);
+    }
+
+    const roomParticleCount = 220;
+    const roomParticleGeo = new THREE.BufferGeometry();
+    const roomPositions = new Float32Array(roomParticleCount * 3);
+    for (let i = 0; i < roomParticleCount; i++) {
+      roomPositions[i * 3] = wallX0 + Math.random() * roomWidth;
+      roomPositions[i * 3 + 1] = Math.random() * wallHeight * 0.8 + 0.5;
+      roomPositions[i * 3 + 2] = wallZ0 + Math.random() * roomDepth;
+    }
+    roomParticleGeo.setAttribute('position', new THREE.BufferAttribute(roomPositions, 3));
+    const roomParticleMat = new THREE.PointsMaterial({ color: 0x88aaff, size: 0.1, transparent: true, blending: THREE.AdditiveBlending, opacity: 0.5 });
+    scene.add(new THREE.Points(roomParticleGeo, roomParticleMat));
+  }
+
+  function onResize() {
+    const w = stageEl.clientWidth, h = stageEl.clientHeight;
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+    renderer.setSize(w, h);
+  }
+
+  // Hover-only station labels: raycast on mousemove and remember which
+  // station (if any) the pointer is over. The animate loop uses this to
+  // decide which single label to reveal (name + station id).
+  function onStageHover(e) {
+    if (!currentRole) return;
+    const rect = renderer.domElement.getBoundingClientRect();
+    pointerNdc.x = ((e.clientX - rect.left) / rect.width) * 2 - 1;
+    pointerNdc.y = -((e.clientY - rect.top) / rect.height) * 2 + 1;
+    raycaster.setFromCamera(pointerNdc, camera);
+    const allMeshes = [];
+    Object.values(stationEntries).forEach(s => allMeshes.push.apply(allMeshes, s.clickMeshes));
+    const hits = raycaster.intersectObjects(allMeshes);
+    hoveredStationKey = hits.length ? hits[0].object.userData.stationKey : null;
+    renderer.domElement.style.cursor = hoveredStationKey ? 'pointer' : '';
+  }
+
+  function worldToScreen(vec3) {
+    const v = vec3.clone().project(camera);
+    const rect = renderer.domElement.getBoundingClientRect();
+    return { x: (v.x * 0.5 + 0.5) * rect.width, y: (-v.y * 0.5 + 0.5) * rect.height, behind: v.z > 1 };
+  }
+
+  // ============================================================
+  // Station icons
+  // ============================================================
+  function pickStationEmoji(name) {
+    const l = name.toLowerCase();
+    if (l.includes('control room')) return '🎛️';
+    if (l.includes('incident notification')) return '🔔';
+    if (l.includes('incident report')) return '📝';
+    if (l.includes('security alert')) return '🚨';
+    if (l.includes('siem')) return '📊';
+    if (l.includes('email')) return '📧';
+    if (l.includes('iam')) return '🪪';
+    if (l.includes('employee directory')) return '📇';
+    if (l.includes('network map')) return '🗺️';
+    if (l.includes('security tool')) return '🛠️';
+    if (l.includes('server')) return '🖧';
+    if (l.includes('computer') || l.endsWith('pc') || l.includes(' pc ') || l.includes('workstation')) return '🖥️';
+    return '💻';
+  }
+
+  function pickStationKind(name) {
+    const l = name.toLowerCase();
+    if (l.includes('control room')) return 'control_room';
+    if (l.includes('incident notification')) return 'notification';
+    if (l.includes('incident report')) return 'report';
+    if (l.includes('security alert')) return 'alerts';
+    if (l.includes('siem')) return 'siem';
+    if (l.includes('email')) return 'email';
+    if (l.includes('iam')) return 'iam';
+    if (l.includes('employee directory')) return 'directory';
+    if (l.includes('network map')) return 'network_map';
+    if (l.includes('security tool')) return 'tools';
+    if (l.includes('server')) return 'server';
+    // New data model: every station is a named department PC/workstation
+    // (e.g. "Reception PC", "HR Workstation") — all render as a full
+    // workstation model (desk + monitor + keyboard + chair).
+    if (l.includes('computer') || l.endsWith('pc') || l.includes(' pc ') || l.includes('workstation')) return 'computer';
+    return 'computer';
+  }
+
+  // ============================================================
+  // Real 3D workstation models (built from primitives — no flat emoji
+  // badges) so each station reads as an actual piece of office/security
+  // equipment rather than an icon floating in space.
+  // ============================================================
+  function makeScreenTexture(emoji, accentHex) {
+    const c = document.createElement('canvas'); c.width = 128; c.height = 96;
+    const ctx = c.getContext('2d');
+    const grad = ctx.createLinearGradient(0, 0, 0, 96);
+    grad.addColorStop(0, '#16283c'); grad.addColorStop(1, '#0a1622');
+    ctx.fillStyle = grad; ctx.fillRect(0, 0, 128, 96);
+    ctx.strokeStyle = 'rgba(255,255,255,0.05)'; ctx.lineWidth = 1;
+    for (let y = 6; y < 96; y += 9) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(128, y); ctx.stroke(); }
+    ctx.font = '52px sans-serif'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(emoji, 64, 50);
+    return new THREE.CanvasTexture(c);
+  }
+
+  function makeNetworkMapTexture() {
+    const c = document.createElement('canvas'); c.width = 160; c.height = 110;
+    const ctx = c.getContext('2d');
+    ctx.fillStyle = '#0a1622'; ctx.fillRect(0, 0, 160, 110);
+    const nodes = [[24, 26], [80, 18], [136, 30], [40, 82], [96, 88], [130, 66], [62, 54]];
+    const links = [[0, 6], [6, 1], [1, 2], [6, 3], [6, 4], [4, 5], [2, 5]];
+    ctx.strokeStyle = 'rgba(90,200,255,0.6)'; ctx.lineWidth = 1.4;
+    links.forEach(([a, b]) => { ctx.beginPath(); ctx.moveTo(nodes[a][0], nodes[a][1]); ctx.lineTo(nodes[b][0], nodes[b][1]); ctx.stroke(); });
+    nodes.forEach(([x, y], i) => {
+      ctx.fillStyle = i === 6 ? '#ffd54a' : '#5ac8ff';
+      ctx.beginPath(); ctx.arc(x, y, i === 6 ? 5 : 3.5, 0, Math.PI * 2); ctx.fill();
+    });
+    return new THREE.CanvasTexture(c);
+  }
+
+  function tagMesh(mesh, key) {
+    mesh.userData.stationKey = key;
+    mesh.castShadow = true; mesh.receiveShadow = true;
+    return mesh;
+  }
+
+  function buildMonitor(emoji, accentHex, key) {
+    const g = new THREE.Group();
+    const standMat = new THREE.MeshStandardMaterial({ color: 0x1c2534, roughness: 0.55, metalness: 0.35 });
+    const base = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.28, 0.34, 0.08, 16), standMat), key);
+    base.position.y = 0.04; g.add(base);
+    const neck = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.07, 0.07, 0.55, 10), standMat), key);
+    neck.position.y = 0.34; g.add(neck);
+    const bezel = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(1.5, 1.0, 0.09), new THREE.MeshStandardMaterial({ color: 0x0b1220, roughness: 0.5 })), key);
+    bezel.position.y = 0.98; g.add(bezel);
+    const screenTex = makeScreenTexture(emoji, accentHex);
+    const screenMat = new THREE.MeshStandardMaterial({ map: screenTex, emissive: new THREE.Color(accentHex), emissiveMap: screenTex, emissiveIntensity: 0.6, roughness: 0.3 });
+    const screen = tagMesh(new THREE.Mesh(new THREE.PlaneGeometry(1.36, 0.88), screenMat), key);
+    screen.position.set(0, 0.98, 0.051); g.add(screen);
+    return g;
+  }
+
+  function buildDeskBase(w, d, h, color, key) {
+    const g = new THREE.Group();
+    const topMat = new THREE.MeshStandardMaterial({ color: color || 0x3a2c1e, roughness: 0.8 });
+    const top = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(w, 0.12, d), topMat), key);
+    top.position.y = h; g.add(top);
+    const legMat = new THREE.MeshStandardMaterial({ color: 0x201812, roughness: 0.85 });
+    const lx = w / 2 - 0.12, lz = d / 2 - 0.12;
+    [[-lx, -lz], [lx, -lz], [-lx, lz], [lx, lz]].forEach(([x, z]) => {
+      const leg = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.1, h, 0.1), legMat), key);
+      leg.position.set(x, h / 2, z); g.add(leg);
+    });
+    return g;
+  }
+
+  function buildComputerModel(emoji, accent, key) {
+    const g = new THREE.Group();
+    g.add(buildDeskBase(2.6, 1.3, 0.85, 0x3a2c1e, key));
+    const monitor = buildMonitor(emoji, accent, key);
+    monitor.position.set(0, 0.85, -0.25);
+    monitor.scale.set(1.25, 1.25, 1.25);
+    g.add(monitor);
+    const kb = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(1.0, 0.05, 0.38), new THREE.MeshStandardMaterial({ color: 0x14181f })), key);
+    kb.position.set(0, 0.93, 0.35); g.add(kb);
+    const chairMat = new THREE.MeshStandardMaterial({ color: 0x22303f, roughness: 0.6 });
+    const chairSeat = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.42, 0.42, 0.1, 16), chairMat), key);
+    chairSeat.position.set(0, 0.52, 1.15); g.add(chairSeat);
+    const chairBack = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.65, 0.08), chairMat), key);
+    chairBack.position.set(0, 0.92, 1.45); g.add(chairBack);
+    const chairPole = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x333333 })), key);
+    chairPole.position.set(0, 0.26, 1.15); g.add(chairPole);
+    return g;
+  }
+
+  function buildServerModel(accent, key) {
+    const g = new THREE.Group();
+    const bodyMat = new THREE.MeshStandardMaterial({ color: 0x1a2538, roughness: 0.4, metalness: 0.7 });
+    const tower = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(1.1, 2.2, 1.0), bodyMat), key);
+    tower.position.y = 1.1; g.add(tower);
+    const okLed = new THREE.MeshStandardMaterial({ color: 0x44ff88, emissive: new THREE.Color(0x44ff88), emissiveIntensity: 2.0 });
+    const warnLed = new THREE.MeshStandardMaterial({ color: 0xff6644, emissive: new THREE.Color(0xff6644), emissiveIntensity: 1.6 });
+    for (let i = 0; i < 5; i++) {
+      const led = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.06, 0.02), i % 2 === 0 ? okLed : warnLed), key);
+      led.position.set(0, 0.4 + i * 0.35, 0.51); g.add(led);
+    }
+    const grill = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.9, 0.03), new THREE.MeshStandardMaterial({ color: 0x0c1420, roughness: 0.9 })), key);
+    grill.position.set(0, 1.1, -0.51); g.add(grill);
+    return g;
+  }
+
+  function buildNetworkMapModel(key) {
+    const g = new THREE.Group();
+    const poleMat = new THREE.MeshStandardMaterial({ color: 0x1c2534, roughness: 0.6, metalness: 0.4 });
+    const pole = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.08, 0.08, 1.3, 10), poleMat), key);
+    pole.position.y = 0.65; g.add(pole);
+    const baseD = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.5, 0.5, 0.08, 16), poleMat), key);
+    baseD.position.y = 0.04; g.add(baseD);
+    const boardMat = new THREE.MeshStandardMaterial({ color: 0x0b1220, map: makeNetworkMapTexture(), emissive: new THREE.Color(0x2266ff), emissiveIntensity: 0.3, roughness: 0.4 });
+    const board = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(2.0, 1.35, 0.08), boardMat), key);
+    board.position.y = 1.75; g.add(board);
+    return g;
+  }
+
+  function buildIamModel(emoji, accent, key) {
+    const g = new THREE.Group();
+    const podium = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.9, 1.05, 0.7), new THREE.MeshStandardMaterial({ color: 0x223047, roughness: 0.5, metalness: 0.4 })), key);
+    podium.position.y = 0.52; g.add(podium);
+    const screenTex = makeScreenTexture(emoji, accent);
+    const screenMat = new THREE.MeshStandardMaterial({ map: screenTex, emissive: new THREE.Color(accent), emissiveMap: screenTex, emissiveIntensity: 0.6 });
+    const screen = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.7, 0.5, 0.05), screenMat), key);
+    screen.position.set(0, 1.15, 0.25); screen.rotation.x = -0.35; g.add(screen);
+    const card = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.3, 0.02, 0.45), new THREE.MeshStandardMaterial({ color: 0xffd54a, emissive: new THREE.Color(0xffd54a), emissiveIntensity: 0.5 })), key);
+    card.position.set(0, 1.02, 0.55); g.add(card);
+    return g;
+  }
+
+  function buildToolsModel(emoji, accent, key) {
+    const g = new THREE.Group();
+    g.add(buildDeskBase(1.9, 1.1, 0.8, 0x3a2c1e, key));
+    const toolbox = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.75, 0.4, 0.45), new THREE.MeshStandardMaterial({ color: 0xd23b3b, roughness: 0.5, metalness: 0.3 })), key);
+    toolbox.position.set(-0.35, 1.0, 0); g.add(toolbox);
+    const handle = tagMesh(new THREE.Mesh(new THREE.TorusGeometry(0.16, 0.03, 8, 16, Math.PI), new THREE.MeshStandardMaterial({ color: 0x222222 })), key);
+    handle.rotation.z = Math.PI; handle.position.set(-0.35, 1.24, 0); g.add(handle);
+    const monitor = buildMonitor(emoji, accent, key);
+    monitor.position.set(0.5, 0.8, -0.2); monitor.scale.set(0.9, 0.9, 0.9);
+    g.add(monitor);
+    return g;
+  }
+
+  function buildAlertsModel(accent, key) {
+    const g = new THREE.Group();
+    const consoleBox = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(1.4, 0.9, 0.9), new THREE.MeshStandardMaterial({ color: 0x22303f, roughness: 0.5, metalness: 0.4 })), key);
+    consoleBox.position.y = 0.45; g.add(consoleBox);
+    const screenTex = makeScreenTexture('🚨', accent);
+    const screenMat = new THREE.MeshStandardMaterial({ map: screenTex, emissive: new THREE.Color(accent), emissiveMap: screenTex, emissiveIntensity: 0.7 });
+    const screen = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(1.1, 0.5, 0.05), screenMat), key);
+    screen.position.set(0, 0.65, 0.46); screen.rotation.x = -0.25; g.add(screen);
+    const pole = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.05, 0.05, 0.5, 8), new THREE.MeshStandardMaterial({ color: 0x1c2534 })), key);
+    pole.position.set(0, 1.15, 0); g.add(pole);
+    const beacon = tagMesh(new THREE.Mesh(new THREE.SphereGeometry(0.22, 14, 14), new THREE.MeshStandardMaterial({ color: 0xff3b5c, emissive: new THREE.Color(0xff3b5c), emissiveIntensity: 1.8 })), key);
+    beacon.position.set(0, 1.45, 0); g.add(beacon);
+    g.userData.beacon = beacon;
+    return g;
+  }
+
+  function buildSiemModel(accent, key, isControlRoom) {
+    const g = new THREE.Group();
+    g.add(buildDeskBase(isControlRoom ? 3.2 : 2.6, 1.2, 0.85, isControlRoom ? 0x2a2210 : 0x3a2c1e, key));
+    const emojis = ['📈', '📊', '🛰️'];
+    for (let i = 0; i < 3; i++) {
+      const m = buildMonitor(emojis[i % emojis.length], accent, key);
+      const spread = isControlRoom ? 1.1 : 0.85;
+      m.position.set((i - 1) * spread, 0.85, -0.2);
+      m.rotation.y = (i - 1) * -0.28;
+      m.scale.set(0.95, 0.95, 0.95);
+      g.add(m);
+    }
+    return g;
+  }
+
+  function buildEmailModel(emoji, accent, key) {
+    const g = new THREE.Group();
+    g.add(buildDeskBase(2.0, 1.1, 0.8, 0x3a2c1e, key));
+    const monitor = buildMonitor(emoji, accent, key);
+    monitor.position.set(0, 0.8, -0.2); g.add(monitor);
+    const tray = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.5, 0.08, 0.35), new THREE.MeshStandardMaterial({ color: 0x8a6a3a, roughness: 0.7 })), key);
+    tray.position.set(0.65, 0.85, 0.15); g.add(tray);
+    const paperMat = new THREE.MeshStandardMaterial({ color: 0xf5f0e0 });
+    for (let i = 0; i < 3; i++) {
+      const p = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.42, 0.015, 0.3), paperMat), key);
+      p.position.set(0.65, 0.895 + i * 0.02, 0.15); g.add(p);
+    }
+    return g;
+  }
+
+  function buildDirectoryModel(emoji, accent, key) {
+    const g = new THREE.Group();
+    const cabinet = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(1.1, 1.6, 0.85), new THREE.MeshStandardMaterial({ color: 0x2c3648, roughness: 0.5, metalness: 0.35 })), key);
+    cabinet.position.y = 0.8; g.add(cabinet);
+    const handleMat = new THREE.MeshStandardMaterial({ color: 0xffd54a, metalness: 0.6 });
+    for (let i = 0; i < 3; i++) {
+      const h = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.4, 0.04, 0.04), handleMat), key);
+      h.position.set(0, 0.35 + i * 0.5, 0.44); g.add(h);
+      const seam = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(1.06, 0.02, 0.86), new THREE.MeshStandardMaterial({ color: 0x18202c })), key);
+      seam.position.set(0, 0.15 + i * 0.5, 0); g.add(seam);
+    }
+    const screenTex = makeScreenTexture(emoji, accent);
+    const screenMat = new THREE.MeshStandardMaterial({ map: screenTex, emissive: new THREE.Color(accent), emissiveMap: screenTex, emissiveIntensity: 0.6 });
+    const screen = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.4, 0.05), screenMat), key);
+    screen.position.set(0, 1.75, 0.2); screen.rotation.x = -0.3; g.add(screen);
+    return g;
+  }
+
+  function buildReportModel(accent, key) {
+    const g = new THREE.Group();
+    g.add(buildDeskBase(1.6, 1.0, 0.8, 0x3a2c1e, key));
+    const board = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.55, 0.03, 0.75), new THREE.MeshStandardMaterial({ color: 0xdedad0, roughness: 0.7 })), key);
+    board.position.set(0, 0.87, 0); board.rotation.x = -0.15; g.add(board);
+    const clip = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(0.18, 0.04, 0.05), new THREE.MeshStandardMaterial({ color: 0x333333, metalness: 0.6 })), key);
+    clip.position.set(0, 0.905, -0.36); g.add(clip);
+    const pen = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.02, 0.02, 0.4, 8), new THREE.MeshStandardMaterial({ color: 0x2266ff, metalness: 0.3 })), key);
+    pen.rotation.z = Math.PI / 2 - 0.3; pen.position.set(0.15, 0.9, 0.15); g.add(pen);
+    return g;
+  }
+
+  function buildNotificationModel(emoji, accent, key) {
+    const g = new THREE.Group();
+    g.add(buildDeskBase(1.8, 1.0, 0.8, 0x3a2c1e, key));
+    const monitor = buildMonitor(emoji, accent, key);
+    monitor.position.set(0, 0.8, -0.15); g.add(monitor);
+    const bell = tagMesh(new THREE.Mesh(new THREE.SphereGeometry(0.14, 12, 12), new THREE.MeshStandardMaterial({ color: 0xffd54a, emissive: new THREE.Color(0xffd54a), emissiveIntensity: 1.6 })), key);
+    bell.position.set(0.55, 1.55, -0.15); g.add(bell);
+    g.userData.beacon = bell;
+    return g;
+  }
+
+  // Control Room console: just a single large monitor (no desk, no extra
+  // props) so the HTML monitor-panel overlay can visually sit "on" its
+  // screen. Dimensions are stored in userData so the overlay can be sized
+  // and positioned to match the screen's actual world-space footprint.
+  // Takes explicit final world-space width/height directly (no group-level
+  // scaling), so a very wide, short screen doesn't stretch/distort the stand.
+  function buildControlRoomMonitorOnly(key, screenW, screenH) {
+    const g = new THREE.Group();
+    const standMat = new THREE.MeshStandardMaterial({ color: 0x1c2534, roughness: 0.5, metalness: 0.4 });
+    const base = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(1.3, 1.7, 0.3, 24), standMat), key);
+    base.position.y = 0.15; g.add(base);
+    const neck = tagMesh(new THREE.Mesh(new THREE.CylinderGeometry(0.32, 0.32, 2.0, 14), standMat), key);
+    neck.position.y = 1.3; g.add(neck);
+const bezelMat = new THREE.MeshStandardMaterial({
+  color: 0x05080d,
+  roughness: 0.4,
+  metalness: 0.5,
+  transparent: true,
+  opacity: 0
+});    const centerY = 2.3 + screenH / 2;
+    const bezel = tagMesh(new THREE.Mesh(new THREE.BoxGeometry(screenW, screenH, 0.3), bezelMat), key);
+    bezel.position.y = centerY; g.add(bezel);
+    const screenMat = new THREE.MeshStandardMaterial({ color: 0x081018, emissive: new THREE.Color(0x0d2740), emissiveIntensity: 0.55, roughness: 0.25 });
+    const screen = tagMesh(new THREE.Mesh(new THREE.PlaneGeometry(screenW - 0.5, screenH - 0.5), screenMat), key);
+    screen.position.set(0, centerY, 0.0); g.add(screen);
+    g.userData.screenLocal = { width: screenW - 0.5, height: screenH - 0.5, centerY };
+    g.userData.baseY = 0.15;
+    return g;
+  }
+
+  function buildGenericModel(emoji, accent, key) {
+    const g = new THREE.Group();
+    g.add(buildDeskBase(2.0, 1.1, 0.8, 0x3a2c1e, key));
+    const monitor = buildMonitor(emoji, accent, key);
+    monitor.position.set(0, 0.8, -0.2); g.add(monitor);
+    return g;
+  }
+
+  function buildStationModel(kind, emoji, accent, key) {
+    switch (kind) {
+      case 'computer': return buildComputerModel(emoji, accent, key);
+      case 'server': return buildServerModel(accent, key);
+      case 'network_map': return buildNetworkMapModel(key);
+      case 'iam': return buildIamModel(emoji, accent, key);
+      case 'tools': return buildToolsModel(emoji, accent, key);
+      case 'alerts': return buildAlertsModel(accent, key);
+      case 'siem': return buildSiemModel(accent, key, false);
+      case 'email': return buildEmailModel(emoji, accent, key);
+      case 'directory': return buildDirectoryModel(emoji, accent, key);
+      case 'report': return buildReportModel(accent, key);
+      case 'notification': return buildNotificationModel(emoji, accent, key);
+      case 'control_room': return buildControlRoomMonitorOnly(key);
+      default: return buildGenericModel(emoji, accent, key);
+    }
+  }
+
+  // ============================================================
+  // Station spawning
+  // ============================================================
+  function buildStationList(role) {
+    const seen = new Set(); const order = [];
+    role.steps.forEach(s => {
+      const key = s.station_id || slugify(s['Station Name']);
+      if (!seen.has(key)) { seen.add(key); order.push({ key: key, name: s['Station Name'] }); }
+    });
+    return order;
+  }
+
+  function clearStations() {
+    Object.keys(stationEntries).forEach(k => {
+      const e = stationEntries[k];
+      if (e.labelEl && e.labelEl.parentNode) e.labelEl.parentNode.removeChild(e.labelEl);
+      delete stationEntries[k];
+    });
+    if (controlRoomEntry) {
+      if (controlRoomEntry.labelEl && controlRoomEntry.labelEl.parentNode) controlRoomEntry.labelEl.parentNode.removeChild(controlRoomEntry.labelEl);
+      controlRoomEntry = null;
+      controlRoomWorldPos = null;
+    }
+    clearConnector();
+    if (stationGroup) {
+      while (stationGroup.children.length) stationGroup.remove(stationGroup.children[0]);
+    }
+  }
+
+  function createStationObject(key, name, pos, isControlRoom) {
+    const kind = pickStationKind(name);
+    const emoji = pickStationEmoji(name);
+    const accent = isControlRoom ? 0xffb020 : 0x2aa9e0;
+    const model = buildStationModel(kind, emoji, accent, key);
+    // Workstations are large and clearly visible; the Control Room console
+    // (if one exists in the data) is bigger still.
+    const scale = 3.2;
+    model.scale.set(scale, scale, scale);
+    model.position.set(pos.x, 0, pos.z);
+    // Face toward the open front of the room so screens/props read correctly.
+    model.lookAt(new THREE.Vector3(0, 0, BOUNDARY.zMax + 20));
+    stationGroup.add(model);
+
+    const footprint = (isControlRoom ? 2.3 : 1.7) * (scale / 3.2);
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(footprint * 0.85, footprint, 32),
+      new THREE.MeshBasicMaterial({ color: isControlRoom ? 0xffb020 : 0x2aa9e0, transparent: true, opacity: 0.45, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(pos.x, 0.02, pos.z);
+    stationGroup.add(ring);
+
+    const halo = new THREE.Mesh(
+      new THREE.RingGeometry(footprint * 1.15, footprint * 1.35, 40),
+      new THREE.MeshBasicMaterial({ color: 0xffd54a, transparent: true, opacity: 0, side: THREE.DoubleSide })
+    );
+    halo.rotation.x = -Math.PI / 2;
+    halo.position.set(pos.x, 0.03, pos.z);
+    stationGroup.add(halo);
+
+    const beam = new THREE.Mesh(
+      new THREE.CylinderGeometry(0.35, 0.35, 16, 12, 1, true),
+      new THREE.MeshBasicMaterial({ color: 0xffd54a, transparent: true, opacity: 0, blending: THREE.AdditiveBlending, side: THREE.DoubleSide })
+    );
+    beam.position.set(pos.x, 8, pos.z);
+    stationGroup.add(beam);
+
+    const labelEl = document.createElement('div');
+    labelEl.className = 'station-label';
+    labelEl.textContent = isControlRoom ? name : (key + ' · ' + name);
+    labelsLayer.appendChild(labelEl);
+
+    const clickMeshes = [];
+    model.traverse(obj => { if (obj.isMesh) clickMeshes.push(obj); });
+
+    const entry = {
+      key, name, model, ring, halo, beam, labelEl, clickMeshes,
+      baseScale: scale,
+      worldPos: new THREE.Vector3(pos.x, 2.6 * scale, pos.z),
+      done: false, isControlRoom: !!isControlRoom, isTarget: false
+    };
+    stationEntries[key] = entry;
+    return entry;
+  }
+
+  // A permanent Control Room monitor standing outside the walled stage, at
+  // the open front of the room (facing back toward the workstations/camera
+  // origin) — just the monitor itself (no desk, no extra screens), sized so
+  // the HTML monitor-panel overlay can visually sit right on its screen
+  // surface.
+  function spawnControlRoomConsole() {
+    // Width spans a generous span (independent of the room's own width,
+    // since the console no longer sits against the back wall); height is
+    // capped comfortably so it reads as a big freestanding display.
+    const screenW = (wallX1 - wallX0) - 96;
+    const screenH = 10; // kept identical to the previous back-wall size
+
+    const model = buildControlRoomMonitorOnly('__control_room__', screenW, screenH);
+    model.position.set(CONTROL_ROOM_POS.x, 0, CONTROL_ROOM_POS.z);
+    // The console now stands past the front edge of the stage facing back
+    // toward the room/camera-origin, so it needs to be turned 180° from its
+    // default (+z-facing) orientation to present its screen toward the
+    // camera, which sits even further out along +z.
+    model.rotation.y = Math.PI;
+    stationGroup.add(model);
+
+    const footprint = 5.0;
+    const ring = new THREE.Mesh(
+      new THREE.RingGeometry(footprint * 0.85, footprint, 32),
+      new THREE.MeshBasicMaterial({ color: 0xffb020, transparent: true, opacity: 0.5, side: THREE.DoubleSide })
+    );
+    ring.rotation.x = -Math.PI / 2;
+    ring.position.set(CONTROL_ROOM_POS.x, 0.02, CONTROL_ROOM_POS.z);
+    stationGroup.add(ring);
+
+    const halo = new THREE.Mesh(
+      new THREE.RingGeometry(footprint * 1.1, footprint * 1.25, 40),
+      new THREE.MeshBasicMaterial({ color: 0xffd54a, transparent: true, opacity: 0, side: THREE.DoubleSide })
+    );
+    halo.rotation.x = -Math.PI / 2;
+    halo.position.set(CONTROL_ROOM_POS.x, 0.03, CONTROL_ROOM_POS.z);
+    stationGroup.add(halo);
+
+    const labelEl = document.createElement('div');
+   
+    labelsLayer.appendChild(labelEl);
+
+    // The monitor's own screen center/corners, in world space — these are
+    // what the HTML monitor-panel tracks every frame so it sits exactly on
+    // the glass, matching both position and projected pixel size. Because
+    // the console is rotated 180°, the local +x edge now points toward
+    // world -x, so left/right are swapped when computing world corners.
+    const screenLocal = model.userData.screenLocal;
+    const halfW = screenLocal.width / 2, halfH = screenLocal.height / 2;
+    const screenZ = CONTROL_ROOM_POS.z - 0.16; // local +0.16 becomes -0.16 after the 180° yaw
+    const screenWorldPos = new THREE.Vector3(CONTROL_ROOM_POS.x, screenLocal.centerY, screenZ);
+    const cornerTL = new THREE.Vector3(CONTROL_ROOM_POS.x + halfW, screenLocal.centerY + halfH, screenZ);
+    const cornerTR = new THREE.Vector3(CONTROL_ROOM_POS.x - halfW, screenLocal.centerY + halfH, screenZ);
+    const cornerBL = new THREE.Vector3(CONTROL_ROOM_POS.x + halfW, screenLocal.centerY - halfH, screenZ);
+    const cornerBR = new THREE.Vector3(CONTROL_ROOM_POS.x - halfW, screenLocal.centerY - halfH, screenZ);
+    // Floor-level point right at the monitor's base — the connector beam to
+    // a checked station starts from here, not from the screen itself.
+    const baseWorldPos = new THREE.Vector3(CONTROL_ROOM_POS.x, model.userData.baseY, CONTROL_ROOM_POS.z);
+
+    controlRoomWorldPos = baseWorldPos;
+    controlRoomEntry = {
+      model, ring, halo, labelEl, baseScale: 1,
+      worldPos: new THREE.Vector3(CONTROL_ROOM_POS.x, screenLocal.centerY + 2.2, CONTROL_ROOM_POS.z),
+      screenWorldPos, baseWorldPos, cornerTL, cornerTR, cornerBL, cornerBR, isTarget: false
+    };
+  }
+
+  function spawnStationsForRole(role) {
+    clearStations();
+    const list = buildStationList(role);
+    // "Control Room" (if a future dataset includes one) still gets a special
+    // front-and-center placement; this current dataset has none, so every
+    // station simply goes through the normal perimeter wall placement.
+    const perimeter = list.filter(s => !s.name.toLowerCase().includes('control room'));
+    const controlRoomStations = list.filter(s => s.name.toLowerCase().includes('control room'));
+    const seq = buildLeftRightPlacementSequence(perimeter.length);
+    perimeter.forEach((st, i) => {
+      const pos = entryToPos(seq[i]);
+      createStationObject(st.key, st.name, pos, false);
+    });
+    controlRoomStations.forEach((cr, i) => {
+      createStationObject(cr.key, cr.name, new THREE.Vector3(CONTROL_ROOM_POS.x, 0, CONTROL_ROOM_POS.z + i * 4), true);
+    });
+    stationOrder = list.map(s => s.key);
+    spawnControlRoomConsole();
+  }
+
+  // ============================================================
+  // Step engine
+  // ============================================================
+  // Stations no longer have to be checked in a fixed sequence — the person
+  // can type any valid Station Id at any time. Progress is therefore
+  // tracked by how many of the role's stations have been completed, not by
+  // an index into an ordered list.
+  function currentStep() { return currentRole ? currentRole.steps[currentStepIndex] : null; }
+  function currentStepKey() { const s = currentStep(); return s ? (s.station_id || slugify(s['Station Name'])) : null; }
+
+  function completedStationCount() {
+    return stationOrder.filter(k => stationEntries[k] && stationEntries[k].done).length;
+  }
+
+  function renderStepPanel() {
+    if (!currentRole) return;
+    const total = currentRole.steps.length;
+    const done = completedStationCount();
+
+    progressWrap.classList.add('show');
+    const pct = total ? Math.round((done / total) * 100) : 0;
+    progressText.textContent = done + ' / ' + total;
+    progressFill.style.width = pct + '%';
+
+    suggestedStep = pickSuggestedStation();
+    renderCurrentStationBox();
+    renderSidebarLog();
+    resetMonitorForm();
+    if (loadTestBtn) loadTestBtn.classList.toggle('hidden', done < total);
+    // Note: the camera/stage deliberately does not move between checks, and
+    // there is no glowing "next station" cue — the monitor panel's Station
+    // Id lookup (any station, in any order) is the only way to progress.
+  }
+
+  // A short list of role-relevant keywords, in priority order. The sidebar
+  // shows only ONE station at a time — whichever undone station matches
+  // the highest-priority keyword still available, chosen at random among
+  // any ties — rather than a static list of every workstation.
+  const STATION_PRIORITY_KEYWORDS = [
+    'manager', 'hr', 'security', 'doctor', 'it ', 'nurse', 'front desk', 'reception', 'pharmacy', 'accounts', 'billing'
+  ];
+  function stationPriorityRank(name) {
+    const l = (name || '').toLowerCase();
+    for (let i = 0; i < STATION_PRIORITY_KEYWORDS.length; i++) {
+      if (l.indexOf(STATION_PRIORITY_KEYWORDS[i]) !== -1) return i;
+    }
+    return STATION_PRIORITY_KEYWORDS.length;
+  }
+  function pickSuggestedStation() {
+    if (!currentRole) return null;
+    const undone = currentRole.steps.filter(s => {
+      const key = s.station_id || slugify(s['Station Name']);
+      const e = stationEntries[key];
+      return !(e && e.done);
+    });
+    if (!undone.length) return null;
+    let minRank = Infinity;
+    undone.forEach(s => { const r = stationPriorityRank(s['Station Name']); if (r < minRank) minRank = r; });
+    const topTier = undone.filter(s => stationPriorityRank(s['Station Name']) === minRank);
+    return topTier[Math.floor(Math.random() * topTier.length)];
+  }
+
+  function renderCurrentStationBox() {
+    if (!currentStationBox) return;
+    if (!suggestedStep) {
+      currentStationBox.innerHTML = '<span class="cs-empty">All stations checked for this role.</span>';
+      return;
+    }
+    currentStationBox.innerHTML =
+      '<span class="cs-id">' + escapeHtml(suggestedStep.station_id || '') + '</span>' +
+      '<span class="cs-name">' + escapeHtml(suggestedStep['Station Name'] || '') + '</span>';
+  }
+
+  // Persistent, always-visible Incident Log rendered directly in the
+  // sidebar (in addition to the full modal opened via the header button).
+  // Newest entry always appears first.
+  function renderSidebarLog() {
+    if (!sidebarLogList) return;
+    if (!incidentLog.length) {
+      sidebarLogList.innerHTML = '<div class="log-mini-empty">No stations logged yet.</div>';
+      return;
+    }
+    sidebarLogList.innerHTML = incidentLog.slice().reverse().map(entry => {
+      const isClean = (entry.problem || '').toLowerCase().indexOf('no issue') !== -1;
+      const issueFound = isClean ? 'No Issue Found' : 'Yes: Security incident found';
+      const issueFoundLine = '<div class="lm-line' + (isClean ? '' : ' lm-issue-red') + '"><b>Issue Found:</b> ' + escapeHtml(issueFound) + '</div>';
+      return '<div class="log-mini-entry">' +
+        '<div class="lm-line"><b>Workstation</b> — ' + escapeHtml(entry.stationId) + ' — ' + escapeHtml(entry.stationName) + '</div>' +
+        issueFoundLine +
+        '<div class="lm-line"><b>Issue Details:</b> ' + escapeHtml(entry.issueEntered || '—') + '</div>' +
+        '<div class="lm-line"><b>Action:</b> Reported To Cyber Team</div>' +
+        '<div class="lm-line"><b>Checked By:</b> ' + escapeHtml(entry.checkedBy) + '</div>' +
+      '</div>';
+    }).join('');
+  }
+
+  function escapeHtml(str) {
+    return String(str).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  }
+
+  function updateLogCountBadge() {
+    document.getElementById('logCountBadge').textContent = '(' + incidentLog.length + ')';
+  }
+
+  function renderViewLogModal() {
+    const list = document.getElementById('viewLogList');
+    if (!incidentLog.length) {
+      list.innerHTML = '<div style="color:var(--muted); font-size:13px; padding:20px 0; text-align:center;">No stations checked yet.</div>';
+    } else {
+      list.innerHTML = incidentLog.map(entry =>
+        '<div class="log-entry-row">' +
+          '<div class="le-head">STEP ' + entry.step + ' — ' + escapeHtml(entry.stationId) + ' — ' + escapeHtml(entry.stationName) + '</div>' +
+          '<div class="le-line"><b>Problem:</b> ' + escapeHtml(entry.problem) + '</div>' +
+          '<div class="le-line"><b>Issue Entered:</b> ' + escapeHtml(entry.issueEntered || '—') + '</div>' +
+          '<div class="le-line"><b>Action:</b> ' + escapeHtml(entry.action) + '</div>' +
+          '<div class="le-line"><b>Checked By:</b> ' + escapeHtml(entry.checkedBy) + '</div>' +
+        '</div>'
+      ).join('');
+    }
+    document.getElementById('viewLogModal').classList.remove('hidden');
+  }
+
+  function pulseStation(entry, hexColor) {
+    entry._pulseColor = hexColor;
+    entry._pulseStart = clock.getElapsedTime();
+  }
+
+  // ============================================================
+  // Control Room monitor panel — the entire interaction flow
+  // ============================================================
+  // Builds the glowing beam + travelling dot between the Control Room
+  // console and a target station. Progress is driven entirely from the
+  // render loop's clock (see animate()), so it can't drift even if the
+  // tab loses focus mid-animation. onForwardDone/onBackwardDone fire
+  // exactly once each, at the 5s and 10s marks respectively.
+  // Builds an L-shaped glowing path from the Control Room console to a
+  // target station: first a straight run out from the console's base
+  // along the center line (x stays at the console's x, i.e. 0), then a
+  // 90-degree turn sideways to reach the station's x position. The
+  // travelling dot follows this same two-segment path (not a direct
+  // diagonal), turning the corner exactly like a real cable run down the
+  // center aisle and then across to the station. Progress is driven
+  // entirely from the render loop's clock (see animate()), so it can't
+  // drift even if the tab loses focus mid-animation. onForwardDone/
+  // onBackwardDone fire exactly once each, at the 5s and 10s marks
+  // respectively.
+  function buildConnectorSegment(a, b) {
+    const dir = new THREE.Vector3().subVectors(b, a);
+    const length = Math.max(0.01, dir.length());
+    const lineMat = new THREE.MeshBasicMaterial({ color: 0xffd54a, transparent: true, opacity: 0.8 });
+    const mesh = new THREE.Mesh(new THREE.CylinderGeometry(0.14, 0.14, length, 8, 1, true), lineMat);
+    const mid = new THREE.Vector3().addVectors(a, b).multiplyScalar(0.5);
+    mesh.position.copy(mid);
+    if (length > 0.0001) {
+      mesh.quaternion.setFromUnitVectors(new THREE.Vector3(0, 1, 0), dir.clone().normalize());
+    }
+    scene.add(mesh);
+    return { mesh, from: a.clone(), to: b.clone(), length };
+  }
+
+  function buildConnector(fromPos, toPos, onForwardDone, onBackwardDone) {
+    // Bend point: straight ahead from the console (same x as fromPos, i.e.
+    // the center line) until reaching the station's depth (z), then the
+    // path turns 90 degrees to slide sideways into the station's x.
+    const bendPos = new THREE.Vector3(fromPos.x, fromPos.y, toPos.z);
+    const seg1 = buildConnectorSegment(fromPos, bendPos);
+    const seg2 = buildConnectorSegment(bendPos, toPos);
+    const totalLength = seg1.length + seg2.length;
+
+    const dotMat = new THREE.MeshStandardMaterial({ color: 0xffd54a, emissive: new THREE.Color(0xffd54a), emissiveIntensity: 2.2 });
+    const dot = new THREE.Mesh(new THREE.SphereGeometry(0.55, 16, 16), dotMat);
+    dot.position.copy(fromPos);
+    scene.add(dot);
+
+    return {
+      segments: [seg1, seg2], dot, totalLength,
+      from: fromPos.clone(), to: toPos.clone(), bend: bendPos.clone(),
+      phase: 'forward', phaseStart: clock.getElapsedTime(),
+      firedForward: false, firedBackward: false, onForwardDone, onBackwardDone
+    };
+  }
+
+  // Returns the point that is `dist` units along the two-segment path,
+  // measured from the "from" end (the console) toward the "to" end (the
+  // station) — used to place the travelling dot on either leg of the bend.
+  function connectorPointAtDistance(connector, dist) {
+    dist = Math.max(0, Math.min(connector.totalLength, dist));
+    const seg1 = connector.segments[0], seg2 = connector.segments[1];
+    if (dist <= seg1.length) {
+      const t = seg1.length > 0 ? dist / seg1.length : 0;
+      return new THREE.Vector3().lerpVectors(seg1.from, seg1.to, t);
+    }
+    const t2 = seg2.length > 0 ? (dist - seg1.length) / seg2.length : 0;
+    return new THREE.Vector3().lerpVectors(seg2.from, seg2.to, t2);
+  }
+
+  function clearConnector() {
+    if (connectorLine) {
+      if (connectorLine.segments) connectorLine.segments.forEach(seg => scene.remove(seg.mesh));
+      if (connectorLine.dot) scene.remove(connectorLine.dot);
+      connectorLine = null;
+    }
+    if (controlRoomEntry) controlRoomEntry.isTarget = false;
+    Object.values(stationEntries).forEach(e => { e.isTarget = false; });
+  }
+
+  function resetMonitorForm() {
+    monitorStationInput.value = '';
+    monitorStationInput.disabled = false;
+    monitorCheckBtn.disabled = false;
+    monitorError.classList.add('hidden');
+    monitorResult.classList.add('hidden');
+    monitorChecking.classList.add('hidden');
+    monitorProblem.classList.add('hidden');
+    monitorIssueBlock.classList.add('hidden');
+    monitorIssueInput.value = '';
+    monitorSendBtn.classList.add('hidden');
+    monitorStationName.textContent = '—';
+    monitorTask.textContent = '—';
+    if (monitorDesktop) {
+      monitorDesktop.querySelectorAll('.desktop-window, .desktop-overlay').forEach(n => n.remove());
+      monitorDesktop.classList.add('hidden');
+    }
+    if (monitorScreenGrid) monitorScreenGrid.classList.remove('hidden');
+  }
+
+  // "Yes: <description> - <ShortLabel>" -> { first: "Yes: <description>",
+  // second: "<ShortLabel>" }. The monitor only ever shows `first`; the
+  // checked workstation's label only ever shows `second`.
+  function splitProblemAtDash(problemText) {
+    if (!problemText) return { first: '', second: '' };
+    const idx = problemText.indexOf('-');
+    if (idx === -1) return { first: problemText.trim(), second: '' };
+    return { first: problemText.slice(0, idx).trim(), second: problemText.slice(idx + 1).trim() };
+  }
+
+  // Ignore case and all punctuation/whitespace when comparing the typed
+  // Issue text against the detected issue tag — periods, spaces, dashes,
+  // commas, etc. are all stripped out first, so "Active Security Alert.",
+  // "active-security alert", and "ACTIVE SECURITY ALERT" all match, while
+  // a version with a missing or extra word/letter still won't.
+  function normalizeIssueText(s) {
+    return String(s || '').toLowerCase().replace(/[^a-z0-9]/g, '');
+  }
+
+  function findStepByStationId(typedId) {
+    if (!currentRole) return null;
+    return currentRole.steps.find(s => (s.station_id || '').toUpperCase() === typedId) || null;
+  }
+
+  function checkStationId() {
+    if (!currentRole || !controlRoomWorldPos) return;
+    monitorError.classList.add('hidden');
+    const typed = monitorStationInput.value.trim().toUpperCase();
+    if (!typed) return;
+    const step = findStepByStationId(typed);
+    if (!step) {
+      monitorError.textContent = 'Station ID "' + typed + '" not recognized. Try again.';
+      monitorError.classList.remove('hidden');
+      return;
+    }
+    const entry = stationEntries[step.station_id];
+    if (!entry) return;
+    if (entry.done) {
+      monitorError.textContent = 'Station "' + typed + '" has already been checked. Enter a different Station Id.';
+      monitorError.classList.remove('hidden');
+      return;
+    }
+    activeStep = step;
+    activeExpectedIssue = '';
+
+    monitorCheckBtn.disabled = true;
+    monitorStationInput.disabled = true;
+    monitorStationName.textContent = step['Station Name'];
+    monitorTask.textContent = step['Task'] || '';
+    monitorResult.classList.remove('hidden');
+    monitorChecking.classList.remove('hidden');
+    monitorProblem.classList.add('hidden');
+    monitorIssueBlock.classList.add('hidden');
+    monitorIssueInput.value = '';
+    monitorSendBtn.classList.add('hidden');
+
+    clearConnector();
+    if (lastCheckedEntry && lastCheckedEntry !== entry) {
+      lastCheckedEntry.persistentLabel = false;
+      lastCheckedEntry.labelEl.classList.remove('problem');
+    }
+    entry.isTarget = true;
+    if (controlRoomEntry) controlRoomEntry.isTarget = true;
+    pulseStation(entry, 0xffd54a);
+
+    // Both ends of the connector sit at floor level — a cable running from
+    // beneath the Control Room monitor's base to the station being checked.
+    const stationFloorPos = new THREE.Vector3(entry.model.position.x, controlRoomWorldPos.y, entry.model.position.z);
+    connectorLine = buildConnector(controlRoomWorldPos, stationFloorPos, null, () => {
+      monitorChecking.classList.add('hidden');
+      entry.isTarget = false;
+      if (controlRoomEntry) controlRoomEntry.isTarget = false;
+      pulseStation(entry, 0xff3b5c);
+      // The workstation's label is NOT set here — it only appears once the
+      // person actually clicks the suspicious item (or runs a clean scan)
+      // while browsing the virtual desktop below, see showThreatAlert /
+      // showCleanResult.
+      showDesktopHideInput(step);
+    });
+  }
+
+  // ============================================================
+  // Virtual desktop simulation (Control Room monitor) — the person
+  // browses realistic icons/files/records on the checked workstation
+  // until they find the planted suspicious item (or confirm the machine
+  // is clean), then files a report to the Cyber Team. Icon sets are
+  // organization-specific (per role.org_theme) and the icon that hides
+  // the suspicious item varies from station to station.
+  // ============================================================
+  const ORG_ICON_SETS = {
+    hospital: [
+      { name: 'Patient Records', emoji: '🗂️', categories: ['access', 'file'],
+        pool: ['Patient Chart - J. Alvarez', 'Patient Chart - R. Cole', 'Patient Chart - M. Chen', 'Patient Chart - T. Brooks', 'Patient Chart - S. Malik', 'Patient Chart - A. Kim'] },
+      { name: 'Doctors Directory', emoji: '🩺', categories: ['access', 'file'],
+        pool: ['Dr. Patel - Cardiology', 'Dr. Nguyen - Pediatrics', 'Dr. Ahmed - Radiology', 'Dr. Costa - Surgery', 'Dr. Levin - Oncology'] },
+      { name: 'Nurses Station', emoji: '👩‍⚕️', categories: ['alert', 'file'],
+        pool: ['Shift Handover Log', 'Medication Round Notes', 'Ward B Occupancy Log', 'Nurse Call Log', 'Vitals Monitoring Sheet'] },
+      { name: 'Pharmacy Inventory', emoji: '💊', categories: ['file', 'network'],
+        pool: ['Prescription Batch #221', 'Prescription Batch #222', 'Controlled Substance Log', 'Supplier Order - MedSupply Co', 'Stock Reconciliation Sheet'] },
+      { name: 'Lab Results', emoji: '🧪', categories: ['file', 'alert'],
+        pool: ['Blood Test - Batch 114', 'Blood Test - Batch 115', 'Imaging Report - MRI-2291', 'Pathology Report #58', 'Culture Test Result'] },
+      { name: 'Admin & HR Files', emoji: '🗃️', categories: ['access', 'file'],
+        pool: ['Staff Roster - Ward A', 'Payroll Summary', 'Employee Onboarding Form', 'Shift Schedule Q3', 'Leave Request Log'] },
+      { name: 'Appointments & Messages', emoji: '📅', categories: ['email', 'alert'],
+        pool: ['Appointment Reminder - Rm 204', 'Follow-up Message - Dr. Patel', 'New Patient Intake Form', 'Insurance Verification Email', 'Referral Confirmation'] },
+      { name: 'IT Security Scan', emoji: '🛡️', categories: ['network', 'alert'], isScanCapable: true,
+        pool: ['Wi-Fi Access Point - Ward C', 'Medical Device Gateway 12', 'Nurse Tablet - NT-08', 'Imaging Server Connection', 'Guest Network Bridge'] }
+    ],
+    sales: [
+      { name: 'Customer Records', emoji: '📇', categories: ['access', 'file'],
+        pool: ['Customer Profile - Acme Corp', 'Customer Profile - Globex Inc', 'Customer Profile - Initech', 'Customer Profile - Umbrella LLC', 'Customer Profile - Wayne Ent.'] },
+      { name: 'Sales Reps Directory', emoji: '🧑‍💼', categories: ['access', 'file'],
+        pool: ['Rep Profile - J. Turner', 'Rep Profile - K. Diaz', 'Rep Profile - M. Osei', 'Rep Profile - L. Fischer', 'Rep Profile - P. Novak'] },
+      { name: 'Invoices & Billing', emoji: '🧾', categories: ['file', 'network'],
+        pool: ['Invoice #10432', 'Invoice #10433', 'Payment Reconciliation', 'Overdue Balance Report', 'Refund Request Log'] },
+      { name: 'Contracts Archive', emoji: '📜', categories: ['file', 'access'],
+        pool: ['Contract - Acme Renewal', 'Contract - Globex NDA', 'Vendor Agreement #88', 'Service Level Agreement', 'Contract Amendment Log'] },
+      { name: 'Marketing Campaigns', emoji: '📣', categories: ['file', 'email'],
+        pool: ['Q3 Campaign Brief', 'Email Blast Draft', 'Social Media Calendar', 'Lead List Export', 'Newsletter Draft'] },
+      { name: 'Inventory System', emoji: '📦', categories: ['network', 'file'],
+        pool: ['Warehouse Stock Report', 'Shipment Tracking #552', 'Supplier Order Log', 'Reorder Alert List', 'Inventory Audit Sheet'] },
+      { name: 'Support Tickets & Mail', emoji: '📨', categories: ['email', 'alert'],
+        pool: ['Ticket #4471 - Login Issue', 'Ticket #4472 - Billing Question', 'Customer Complaint Email', 'Escalation Notice', 'Follow-up Survey'] },
+      { name: 'IT & Devices Scan', emoji: '🛡️', categories: ['network', 'alert'], isScanCapable: true,
+        pool: ['Office Wi-Fi Access Point', 'VPN Gateway Connection', 'Sales Tablet - ST-04', 'Printer Network Node', 'Guest Network Bridge'] }
+    ],
+    bank: [
+      { name: 'Customer Accounts', emoji: '💳', categories: ['access', 'file'],
+        pool: ['Account Profile - J. Rivera', 'Account Profile - M. Chow', 'Account Profile - S. Ahmed', 'Account Profile - K. Novak', 'Account Profile - D. Silva'] },
+      { name: 'Loan Applications', emoji: '📑', categories: ['file', 'access'],
+        pool: ['Loan App #5521', 'Loan App #5522', 'Mortgage Review - Case 118', 'Credit Assessment Report', 'Loan Approval Log'] },
+      { name: 'Teller Transactions', emoji: '🏧', categories: ['file', 'network'],
+        pool: ['Transaction Batch #881', 'Cash Deposit Log', 'Wire Transfer Record', 'ATM Reconciliation Sheet', 'Currency Exchange Log'] },
+      { name: 'Vault & Security Logs', emoji: '🔐', categories: ['alert', 'file'],
+        pool: ['Vault Access Log', 'Safe Deposit Box Registry', 'Security Camera Log', 'Alarm System Report', 'Keycard Access Log'] },
+      { name: 'Compliance Records', emoji: '🗃️', categories: ['access', 'file'],
+        pool: ['AML Compliance Report', 'KYC Verification Log', 'Audit Trail - Q3', 'Regulatory Filing Draft', 'Risk Assessment Sheet'] },
+      { name: 'Fraud Investigation Files', emoji: '🕵️', categories: ['file', 'alert'],
+        pool: ['Suspicious Transaction Report', 'Chargeback Case #229', 'Fraud Alert Log', 'Disputed Transaction File', 'Case Review Notes'] },
+      { name: 'Customer Messages & Mail', emoji: '📨', categories: ['email', 'alert'],
+        pool: ['Statement Request - J. Rivera', 'Card Replacement Request', 'Overdraft Notice Email', 'Branch Feedback Message', 'Appointment Confirmation'] },
+      { name: 'IT & Network Scan', emoji: '🛡️', categories: ['network', 'alert'], isScanCapable: true,
+        pool: ['Branch Wi-Fi Access Point', 'ATM Network Gateway', 'POS Terminal Connection', 'VPN Gateway Link', 'Core Banking Server Link'] }
+    ],
+    school: [
+      { name: 'Student Records', emoji: '🗂️', categories: ['access', 'file'],
+        pool: ['Student File - A. Green', 'Student File - B. Kim', 'Student File - C. Rossi', 'Student File - D. Patel', 'Student File - E. Turner'] },
+      { name: 'Teacher Directory', emoji: '🍎', categories: ['access', 'file'],
+        pool: ['Teacher Profile - Mr. Adams', 'Teacher Profile - Ms. Bell', 'Teacher Profile - Mr. Cruz', 'Teacher Profile - Ms. Diaz', 'Teacher Profile - Mr. Evans'] },
+      { name: 'Exam Records', emoji: '📝', categories: ['file', 'alert'],
+        pool: ['Midterm Results - Grade 10', 'Final Exam Schedule', 'Answer Sheet Scan Batch', 'Grade Correction Request', 'Exam Hall Seating Plan'] },
+      { name: 'Library Catalog', emoji: '📚', categories: ['file', 'network'],
+        pool: ['Book Checkout Log', 'Overdue Returns List', 'New Arrivals Catalog', 'Digital Archive Index', 'Library Fine Report'] },
+      { name: 'Admissions Files', emoji: '🗃️', categories: ['access', 'file'],
+        pool: ['Admission Application #201', 'Admission Application #202', 'Enrollment Verification', 'Scholarship Application', 'Transfer Request Form'] },
+      { name: 'Accounts & Fees', emoji: '💵', categories: ['file', 'network'],
+        pool: ['Fee Payment Record', 'Tuition Invoice #77', 'Scholarship Disbursement Log', 'Fee Waiver Request', 'Late Payment Notice'] },
+      { name: 'Counseling & Messages', emoji: '📨', categories: ['email', 'alert'],
+        pool: ['Parent Meeting Request', 'Counseling Session Notes', 'Student Wellbeing Report', 'Absence Notification Email', 'Behavior Incident Report'] },
+      { name: 'IT Lab Scan', emoji: '🛡️', categories: ['network', 'alert'], isScanCapable: true,
+        pool: ['Computer Lab Network Node', 'Campus Wi-Fi Access Point', 'Smartboard Connection', 'Library Server Link', 'Guest Network Bridge'] }
+    ]
+  };
+
+  function seedFromString(str) { let h = 0; for (let i = 0; i < str.length; i++) h = (h * 31 + str.charCodeAt(i)) >>> 0; return h; }
+  function seededShuffle(arr, seed) {
+    const a = arr.slice(); let s = seed || 1;
+    for (let i = a.length - 1; i > 0; i--) { s = (s * 9301 + 49297) % 233280; const j = Math.floor((s / 233280) * (i + 1)); const tmp = a[i]; a[i] = a[j]; a[j] = tmp; }
+    return a;
+  }
+  function detectScenarioCategory(problemText) {
+    const l = (problemText || '').toLowerCase();
+    if (l.includes('no issue')) return 'clean';
+    if (l.includes('phishing') || l.includes('email')) return 'email';
+    if (l.includes('login') || l.includes('alert')) return 'alert';
+    if (l.includes('network') || l.includes('connection')) return 'network';
+    if (l.includes('access') || l.includes('user')) return 'access';
+    return 'file';
+  }
+  function threatItemName(category, tag) {
+    const map = {
+      file: 'invoice_final_v2.pdf.exe',
+      email: 'URGENT: Verify Your Account Now',
+      alert: tag,
+      network: '203.0.113.44 — Unknown External Host',
+      access: 'temp.admin — Elevated Access'
+    };
+    return map[category] || tag;
+  }
+
+  // Builds 8 fixed org-themed icons (2 columns × 4 rows), each holding
+  // 2–4 realistic records/files. Exactly one icon (chosen by a per-station
+  // seed, so it moves around from workstation to workstation) hosts the
+  // planted suspicious item — unless the step is a clean ("No Issue
+  // Found") station, in which case the dedicated Scan icon runs a scan
+  // instead and nothing is planted.
+  function buildDesktopScenario(step, role) {
+    const orgTheme = (role && role.org_theme) || 'hospital';
+    const orgIcons = ORG_ICON_SETS[orgTheme] || ORG_ICON_SETS.hospital;
+    const category = detectScenarioCategory(step.problem);
+    const seed = seedFromString(step.station_id + ':' + step.step + ':' + orgTheme);
+    const { first, second } = splitProblemAtDash(step.problem);
+    const threatTag = second || first;
+
+    const icons = orgIcons.map((def, idx) => {
+      const iconSeed = seed + idx * 13 + 1;
+      const count = 2 + (iconSeed % 3); // 2, 3, or 4 items
+      const items = seededShuffle(def.pool, iconSeed).slice(0, count).map(name => ({ name: name, sus: false }));
+      return { name: def.name, emoji: def.emoji, categories: def.categories, isScanCapable: !!def.isScanCapable, items: items };
+    });
+
+    const isClean = category === 'clean';
+    if (!isClean) {
+      let candidates = icons.filter(ic => ic.categories.indexOf(category) !== -1);
+      if (!candidates.length) candidates = icons;
+      const hostIcon = seededShuffle(candidates, seed + 5)[0];
+      const slot = seed % hostIcon.items.length;
+      hostIcon.items[slot] = { name: threatItemName(category, threatTag), sus: true, threat: threatTag };
+    }
+    return { category: category, orgTheme: orgTheme, icons: icons, isClean: isClean };
+  }
+
+  function closeDesktopWindow() { if (openWindowEl && openWindowEl.parentNode) openWindowEl.parentNode.removeChild(openWindowEl); openWindowEl = null; }
+
+  function renderDesktop(step, scenario) {
+    desktopIconsArea.innerHTML = '';
+    desktopStationLabel.textContent = step.station_id + ' · ' + step['Station Name'];
+    scenario.icons.forEach(icon => {
+      const el = document.createElement('div');
+      el.className = 'desktop-icon';
+      el.innerHTML = '<div class="di-emoji">' + icon.emoji + '</div><div class="di-name">' + escapeHtml(icon.name) + '</div>';
+      el.addEventListener('click', () => onDesktopIconClick(icon, step, scenario));
+      desktopIconsArea.appendChild(el);
+    });
+  }
+
+  function onDesktopIconClick(icon, step, scenario) {
+    if (scenario.isClean && icon.isScanCapable) { runAntivirusScan(step); return; }
+    openDesktopWindow(icon, step);
+  }
+
+  function openDesktopWindow(icon, step) {
+    closeDesktopWindow();
+    const win = document.createElement('div');
+    win.className = 'desktop-window';
+    win.innerHTML = '<div class="desktop-window-header"><span>' + escapeHtml(icon.name) + '</span><span class="desktop-window-close">✕</span></div><div class="desktop-window-body"></div>';
+    win.querySelector('.desktop-window-close').addEventListener('click', closeDesktopWindow);
+    const body = win.querySelector('.desktop-window-body');
+    icon.items.forEach(item => {
+      const row = document.createElement('div');
+      row.className = 'desktop-window-item';
+      row.textContent = item.name;
+      row.addEventListener('click', () => {
+        if (item.sus) { closeDesktopWindow(); showThreatAlert(item, step); }
+        else { row.classList.add('visited'); showToast('warn', '"' + item.name + '" looks routine — no threat found.'); }
+      });
+      body.appendChild(row);
+    });
+    monitorDesktop.appendChild(win);
+    openWindowEl = win;
+  }
+
+  function runAntivirusScan(step) {
+    showToast('warn', 'Running full antivirus scan…');
+    setTimeout(() => { showCleanResult(step); }, 1200);
+  }
+
+  // Sets the workstation's floating label — this is the ONLY place a
+  // label gets set, and only fires once the person has actually resolved
+  // the station (found the threat, or confirmed it's clean).
+  function markStationLabel(step, text, isThreat) {
+    const entry = stationEntries[step.station_id];
+    if (!entry) return;
+    if (lastCheckedEntry && lastCheckedEntry !== entry) {
+      lastCheckedEntry.persistentLabel = false;
+      lastCheckedEntry.labelEl.classList.remove('problem', 'clear');
+    }
+    entry.labelEl.textContent = text;
+    entry.labelEl.classList.toggle('problem', !!isThreat);
+    entry.labelEl.classList.toggle('clear', !isThreat);
+    entry.persistentLabel = true;
+    lastCheckedEntry = entry;
+  }
+
+  function showCleanResult(step) {
+    markStationLabel(step, 'No Issue Found', false);
+    const overlay = document.createElement('div');
+    overlay.className = 'desktop-overlay';
+    overlay.innerHTML =
+      '<div class="threat-clean-display">No Threats Found</div>' +
+      '<div style="font-size:9.5px;color:var(--muted);max-width:280px;">Full scan complete on ' + escapeHtml(step['Station Name']) + '. No malicious activity detected.</div>' +
+      '<button class="dt-report-btn" id="reportCleanBtn" style="background:linear-gradient(90deg,#22d3a6,#8de8c9); color:#04231b;">LOG AS CLEAR</button>';
+    overlay.querySelector('#reportCleanBtn').addEventListener('click', () => {
+      overlay.remove();
+      finalizeStationReport(step, 'No Issue Found.');
+    });
+    monitorDesktop.appendChild(overlay);
+  }
+
+  function showThreatAlert(item, step) {
+    markStationLabel(step, item.threat, true);
+    const overlay = document.createElement('div');
+    overlay.className = 'desktop-overlay';
+    overlay.innerHTML =
+      '<div style="font-size:9.5px;color:var(--muted);letter-spacing:.1em;">THREAT DETECTED</div>' +
+      '<div class="threat-name-display">' + escapeHtml(item.threat) + '</div>' +
+      '<div style="font-size:9.5px;color:#dbe6f5;max-width:280px;">Found in "' + escapeHtml(item.name) + '" on ' + escapeHtml(step['Station Name']) + '.</div>' +
+      '<button class="dt-report-btn" id="reportThreatBtn">REPORT TO CYBER TEAM</button>';
+    overlay.querySelector('#reportThreatBtn').addEventListener('click', () => {
+      overlay.remove();
+      openReportForm(step, item);
+    });
+    monitorDesktop.appendChild(overlay);
+  }
+
+  // Report form: Station Id + Station Name on one row, then an empty
+  // Threat Details field the person must fill in themselves (typing the
+  // threat name, e.g. "Unnecessary User Access") — validated on Send
+  // against the actual threat, ignoring case/spacing/punctuation.
+  function openReportForm(step, item) {
+    closeDesktopWindow();
+    const overlay = document.createElement('div');
+    overlay.className = 'desktop-overlay';
+    overlay.innerHTML =
+      '<div style="font-size:11px;font-weight:800;color:#8fd8ff;letter-spacing:.05em;text-transform:uppercase;">Report to Cyber Team</div>' +
+      '<div class="report-form-fields">' +
+        '<div class="report-form-row">' +
+          '<div><label>Station Id</label><input type="text" id="rfStationId" readonly></div>' +
+          '<div><label>Station Name</label><input type="text" id="rfStationName" readonly></div>' +
+        '</div>' +
+        '<div><label>Threat Details</label><input type="text" id="rfThreatDetails" placeholder="Enter the threat name" autocomplete="off"></div>' +
+      '</div>' +
+      '<div class="report-form-error hidden" id="rfError">Invalid Details.</div>' +
+      '<button class="dt-send-btn" id="rfSendBtn">Send Details &amp; Log Entry</button>';
+    monitorDesktop.appendChild(overlay);
+    overlay.querySelector('#rfStationId').value = step.station_id;
+    overlay.querySelector('#rfStationName').value = step['Station Name'];
+    const rfError = overlay.querySelector('#rfError');
+    const rfInput = overlay.querySelector('#rfThreatDetails');
+    overlay.querySelector('#rfSendBtn').addEventListener('click', () => {
+      const details = rfInput.value.trim();
+      if (!details || normalizeIssueText(details) !== normalizeIssueText(item.threat)) {
+        rfError.classList.remove('hidden');
+        showToast('warn', 'Invalid Details.');
+        return;
+      }
+      overlay.remove();
+      finalizeStationReport(step, item.threat);
+    });
+  }
+
+  function hideDesktopShowInput() {
+    monitorDesktop.querySelectorAll('.desktop-window, .desktop-overlay').forEach(n => n.remove());
+    monitorDesktop.classList.add('hidden');
+    monitorScreenGrid.classList.remove('hidden');
+  }
+
+  function showDesktopHideInput(step) {
+    monitorScreenGrid.classList.add('hidden');
+    monitorDesktop.classList.remove('hidden');
+    const scenario = buildDesktopScenario(step, currentRole);
+    renderDesktop(step, scenario);
+  }
+
+  function finalizeStationReport(step, threatDetails) {
+    const roleName = (currentRole && currentRole.role_name) || step['Checked By'];
+    const checkedBy = studentInfo && studentInfo.name ? (studentInfo.name + ': ' + roleName) : roleName;
+    incidentLog.push({
+      step: step.step, stationId: step.station_id, stationName: step['Station Name'],
+      task: step['Task'], problem: step.problem, issueEntered: threatDetails,
+      action: step.action, checkedBy: checkedBy
+    });
+    updateLogCountBadge();
+    renderSidebarLog();
+
+    const entry = stationEntries[step.station_id];
+    if (entry) {
+      entry.done = true;
+      // Change the workstation's icon color once it has been checked.
+      if (entry.ring && entry.ring.material) { entry.ring.material.color.set(0x22d3a6); entry.ring.material.opacity = 0.65; }
+    }
+    showToast('success', 'Step ' + step.step + ' logged — Checked and Reported By: ' + checkedBy);
+
+    clearConnector();
+    activeStep = null;
+    hideDesktopShowInput();
+
+    if (completedStationCount() >= currentRole.steps.length) { showCompletion(); return; }
+    renderStepPanel();
+  }
+
+  monitorCheckBtn.addEventListener('click', checkStationId);
+  monitorStationInput.addEventListener('keydown', (e) => { if (e.key === 'Enter') checkStationId(); });
+
+  // ============================================================
+  // Toasts
+  // ============================================================
+  function showToast(type, message) {
+    const el = document.createElement('div');
+    el.className = 'toast ' + type;
+    const icon = type === 'success' ? 'fa-circle-check' : (type === 'danger' ? 'fa-circle-xmark' : 'fa-triangle-exclamation');
+    el.innerHTML = '<i class="fas ' + icon + '"></i><span></span>';
+    el.querySelector('span').textContent = message;
+    toastLayer.appendChild(el);
+    requestAnimationFrame(() => el.classList.add('show'));
+    setTimeout(() => {
+      el.classList.remove('show');
+      setTimeout(() => { if (el.parentNode) el.parentNode.removeChild(el); }, 350);
+    }, 3200);
+  }
+
+  // ============================================================
+  // Role modal / completion modal
+  // ============================================================
+  function renderRoleModal() {
+    roleGrid.innerHTML = '';
+    (simData.roles || []).forEach((role, idx) => {
+      const card = document.createElement('div');
+      card.className = 'role-card';
+      card.innerHTML =
+        '<div class="role-week-heading">' + escapeHtml(role.week_label || ('WEEK ' + (idx + 1))) + '</div>' +
+        '<div class="role-card-top">' +
+          '<span class="role-id-badge">' + escapeHtml(role.role_id) + '</span>' +
+          '<span class="role-level-badge">' + escapeHtml(role.level || '') + '</span>' +
+        '</div>' +
+        '<div class="role-name">' + escapeHtml(role.role_name) + '</div>' +
+        '<div class="role-resp">' + escapeHtml(role.main_responsibility || '') + '</div>' +
+        '<div class="role-meta">' +
+          '<span><i class="fas fa-list-check"></i>' + (role.steps ? role.steps.length : 0) + ' steps</span>' +
+          '<span><i class="fas fa-cube"></i>' + (role.devices_objects_components ? role.devices_objects_components.length : 0) + ' stations</span>' +
+        '</div>' +
+        '<div class="role-start"><i class="fas fa-play"></i> Start Role</div>';
+      card.addEventListener('click', () => openRoleBriefModal(role));
+      roleGrid.appendChild(card);
+    });
+  }
+
+  function openRoleModal() { roleModal.classList.remove('hidden'); }
+  function closeRoleModal() { roleModal.classList.add('hidden'); }
+
+  // ============================================================
+  // Role briefing modal — shown after picking a role card. Explains the
+  // organization/scenario and gates the actual simulation start behind
+  // three required student-info fields.
+  // ============================================================
+  let pendingRole = null;
+  let studentInfo = null;
+
+  function openRoleBriefModal(role) {
+    pendingRole = role;
+    const orgLabel = (role.org_label || role.organization || 'ORGANIZATION').toUpperCase();
+    briefTitle.textContent = 'CYBERSECURITY ANALYSIS AT ' + orgLabel;
+    briefRoleName.textContent = role.role_name;
+    briefExplain.textContent =
+      'As the ' + role.role_name + ' at ' + (role.organization || 'this organization') + ', you will connect to each workstation from the Control Room, look through its files, folders, and messages for anything suspicious, and report what you find to the Cyber Team. ' +
+      (role.main_responsibility || '');
+    briefStudentName.value = '';
+    briefSNumber.value = '';
+    briefGrade.value = '';
+    briefError.classList.add('hidden');
+    closeRoleModal();
+    roleBriefModal.classList.remove('hidden');
+  }
+
+  function closeRoleBriefModal() { roleBriefModal.classList.add('hidden'); }
+
+  briefStartBtn.addEventListener('click', () => {
+    const name = briefStudentName.value.trim();
+    const sNumber = briefSNumber.value.trim();
+    const grade = briefGrade.value.trim();
+    if (!name || !sNumber || !grade) {
+      briefError.classList.remove('hidden');
+      return;
+    }
+    briefError.classList.add('hidden');
+    studentInfo = { name: name, sNumber: sNumber, grade: grade };
+    closeRoleBriefModal();
+    startRole(pendingRole);
+  });
+
+  function startRole(role) {
+    currentRole = role;
+    currentStepIndex = 0;
+    activeStep = null;
+    activeExpectedIssue = '';
+    lastCheckedEntry = null;
+    incidentLog = [];
+    updateLogCountBadge();
+    closeRoleModal();
+    completeModal.classList.add('hidden');
+    sideEmpty.classList.add('hidden');
+    sideActive.classList.remove('hidden');
+    document.getElementById('sideRoleName').textContent = role.role_name;
+    document.getElementById('sideRoleId').textContent = role.role_id;
+    document.getElementById('sideRoleSub').textContent = (studentInfo && studentInfo.name) || 'Security Team';
+    if (loadTestBtn) loadTestBtn.classList.add('hidden');
+    closeTestPanel();
+    stageScreenshotDataUrl = null;
+    spawnStationsForRole(role);
+    renderStepPanel();
+  }
+
+  function showCompletion() {
+    document.getElementById('completeStepCount').textContent = currentRole.steps.length;
+    document.getElementById('completeStationCount').textContent = stationOrder.length;
+    document.getElementById('completeLogCount').textContent = incidentLog.length;
+    document.getElementById('completeSub').textContent =
+      'You completed every step as ' + currentRole.role_name + ', working through all ' + stationOrder.length + ' stations and logging ' + incidentLog.length + ' incident entries.';
+    completeModal.classList.remove('hidden');
+    renderMonitorCompletion();
+  }
+
+  function renderMonitorCompletion() {
+    monitorScreenGrid.classList.add('hidden');
+    monitorDesktop.classList.remove('hidden');
+    monitorDesktop.querySelectorAll('.desktop-window, .desktop-overlay').forEach(n => n.remove());
+    const incidentsFound = incidentLog.filter(e => (e.problem || '').toLowerCase().indexOf('no issue') === -1).length;
+    const studentName = (studentInfo && studentInfo.name) || 'Student';
+    const orgName = (currentRole && currentRole.organization) || '';
+    const roleName = (currentRole && currentRole.role_name) || '';
+    const overlay = document.createElement('div');
+    overlay.className = 'desktop-overlay';
+    overlay.innerHTML =
+      '<div class="completion-title">Congratulations!</div>' +
+      '<div class="completion-line completion-name">' + escapeHtml(studentName) + '</div>' +
+      '<div class="completion-line">Checked All Workstations at ' + escapeHtml(orgName) + '</div>' +
+      '<div class="completion-line">as ' + escapeHtml(roleName) + '.</div>' +
+      '<div class="completion-line completion-count">' + incidentsFound + ' Security Incidents Found.</div>';
+    monitorDesktop.appendChild(overlay);
+  }
+
+  // ============================================================
+  // Slide-in Assessment ("LOAD TEST") — loaded entirely from the role's
+  // `test` block in roleplay.json (role_prompt, min_stations,
+  // station_prompt, match_pairs, short_answer_prompt). No test content
+  // is hard-coded in the page itself.
+  // ============================================================
+  let stageScreenshotDataUrl = null;
+  let testAnswers = { roleGuess: '', stations: [], shortAnswer: '' };
+  let testMatchPairs = [];
+  let testMatchPool = [];
+  let testMatchSolved = {};
+  let testSelectedTile = null;
+
+  function captureStageScreenshot(callback) {
+    if (typeof html2canvas === 'undefined') { callback(null); return; }
+    try {
+      html2canvas(document.getElementById('appShell'), { scale: 1, useCORS: true, logging: false, backgroundColor: '#0a0f1c' })
+        .then(canvas => { try { callback(canvas.toDataURL('image/jpeg', 0.7)); } catch (e) { callback(null); } })
+        .catch(() => callback(null));
+    } catch (e) { callback(null); }
+  }
+
+  function openTestPanel() {
+    if (!currentRole || !currentRole.test) { showToast('warn', 'No assessment is available for this role.'); return; }
+    testAnswers = { roleGuess: '', stations: [], shortAnswer: '' };
+    testPanel.classList.remove('hidden');
+    requestAnimationFrame(() => testPanel.classList.add('show'));
+    renderTestStep1();
+  }
+
+  function closeTestPanel() {
+    if (!testPanel) return;
+    testPanel.classList.remove('show');
+    setTimeout(() => testPanel.classList.add('hidden'), 300);
+  }
+  if (testPanelClose) testPanelClose.addEventListener('click', closeTestPanel);
+
+  if (loadTestBtn) {
+    loadTestBtn.addEventListener('click', () => {
+      showToast('warn', 'Preparing assessment…');
+      captureStageScreenshot((dataUrl) => {
+        stageScreenshotDataUrl = dataUrl;
+        openTestPanel();
+      });
+    });
+  }
+
+  // ---- Step 1: name the role + list at-least-N checked workstations ----
+  function renderTestStep1() {
+    const test = currentRole.test;
+    const minStations = test.min_stations || 6;
+    testPanelBody.innerHTML =
+      '<div class="test-q-title">' + escapeHtml(test.role_prompt || 'Name the Cybersecurity Role.') + '</div>' +
+      '<input type="text" class="test-input" id="testRoleInput" placeholder="Cybersecurity role title">' +
+      '<div class="test-q-sub" style="margin-top:14px;">' + escapeHtml(test.station_prompt || ('Enter at least ' + minStations + ' workstation names you checked.')) + '</div>' +
+      '<div class="test-station-grid" id="testStationGrid"></div>' +
+      '<div class="test-error hidden" id="testStep1Error">Please check your answers — the role name and at least ' + minStations + ' correct workstation names are required.</div>' +
+      '<button class="btn test-next-btn" id="testStep1Next" style="border-color:var(--ok); color:var(--ok);">NEXT</button>';
+    const grid = document.getElementById('testStationGrid');
+    for (let i = 0; i < minStations; i++) {
+      const inp = document.createElement('input');
+      inp.type = 'text'; inp.className = 'test-input test-station-input'; inp.placeholder = 'Workstation ' + (i + 1);
+      grid.appendChild(inp);
+    }
+    document.getElementById('testStep1Next').addEventListener('click', () => {
+      const roleGuess = document.getElementById('testRoleInput').value.trim();
+      const stationInputs = Array.from(grid.querySelectorAll('input')).map(i => i.value.trim()).filter(Boolean);
+      const roleOk = normalizeIssueText(roleGuess) === normalizeIssueText(currentRole.role_name);
+      const validSet = new Set(currentRole.steps.map(s => normalizeIssueText(s['Station Name'])));
+      const correctSet = new Set();
+      stationInputs.forEach(v => { const n = normalizeIssueText(v); if (validSet.has(n)) correctSet.add(n); });
+      const stationsOk = correctSet.size >= minStations;
+      if (!roleOk || !stationsOk) {
+        document.getElementById('testStep1Error').classList.remove('hidden');
+        return;
+      }
+      testAnswers.roleGuess = roleGuess;
+      testAnswers.stations = stationInputs;
+      renderTestStep2();
+    });
+  }
+
+  // ---- Step 2: drag-and-drop match incidents to workstations ----
+  function renderTestStep2() {
+    testMatchPairs = (currentRole.test && currentRole.test.match_pairs) || [];
+    testMatchSolved = {};
+    testSelectedTile = null;
+    testMatchPool = seededShuffle(testMatchPairs.map(p => p.incident), seedFromString(currentRole.role_id + ':' + Date.now()));
+    testPanelBody.innerHTML =
+      '<div class="test-q-title">Match The Security Incident</div>' +
+      '<div class="test-q-sub">Drag (or tap, then tap a workstation) each incident onto the workstation it belongs to.</div>' +
+      '<div class="test-match-columns">' +
+        '<div><div class="test-col-heading">Workstations</div><div id="testDropZone" class="test-drop-list"></div></div>' +
+        '<div><div class="test-col-heading">Incidents</div><div id="testPoolZone" class="test-pool-list"></div></div>' +
+      '</div>' +
+      '<div class="test-error hidden" id="testStep2Error">Match every workstation correctly to continue.</div>' +
+      '<button class="btn test-next-btn" id="testStep2Next" disabled>NEXT</button>';
+    renderTestDropZone();
+    renderTestPoolZone();
+    document.getElementById('testStep2Next').addEventListener('click', () => {
+      if (Object.keys(testMatchSolved).length >= testMatchPairs.length) renderTestStep3();
+    });
+  }
+
+  function renderTestDropZone() {
+    const zone = document.getElementById('testDropZone');
+    if (!zone) return;
+    zone.innerHTML = '';
+    testMatchPairs.forEach(pair => {
+      const solved = testMatchSolved[pair.workstation];
+      const slot = document.createElement('div');
+      slot.className = 'test-drop-slot' + (solved ? ' solved' : '');
+      slot.innerHTML = '<div class="tds-name">' + escapeHtml(pair.workstation) + '</div>' +
+        (solved ? '<div class="tds-fill">' + escapeHtml(pair.incident) + '</div>' : '');
+      if (!solved) {
+        slot.addEventListener('dragover', e => e.preventDefault());
+        slot.addEventListener('drop', e => {
+          e.preventDefault();
+          const val = e.dataTransfer.getData('text/plain');
+          handleTestDrop(pair.workstation, val);
+        });
+        slot.addEventListener('click', () => {
+          if (testSelectedTile != null) handleTestDrop(pair.workstation, testSelectedTile);
+        });
+      }
+      zone.appendChild(slot);
+    });
+  }
+
+  function renderTestPoolZone() {
+    const zone = document.getElementById('testPoolZone');
+    if (!zone) return;
+    zone.innerHTML = '';
+    testMatchPool.forEach(val => {
+      const tile = document.createElement('div');
+      tile.className = 'test-drag-tile';
+      tile.draggable = true;
+      tile.textContent = val;
+      tile.addEventListener('dragstart', e => { e.dataTransfer.setData('text/plain', val); });
+      tile.addEventListener('click', () => {
+        document.querySelectorAll('.test-drag-tile').forEach(t => t.classList.remove('selected'));
+        tile.classList.add('selected');
+        testSelectedTile = val;
+      });
+      zone.appendChild(tile);
+    });
+  }
+
+  function handleTestDrop(workstation, value) {
+    const pair = testMatchPairs.find(p => p.workstation === workstation);
+    if (!pair) return;
+    if (normalizeIssueText(value) === normalizeIssueText(pair.incident)) {
+      testMatchSolved[workstation] = true;
+      const idx = testMatchPool.indexOf(value);
+      if (idx !== -1) testMatchPool.splice(idx, 1);
+      showToast('success', 'Matched — ' + workstation);
+    } else {
+      showToast('warn', 'Not quite — try another workstation.');
+    }
+    testSelectedTile = null;
+    renderTestDropZone();
+    renderTestPoolZone();
+    const next = document.getElementById('testStep2Next');
+    const allDone = Object.keys(testMatchSolved).length >= testMatchPairs.length;
+    if (next) next.disabled = !allDone;
+  }
+
+  // ---- Step 3: short answer ----
+  function looksLikeMeaningfulText(text) {
+    const words = text.split(/\s+/).filter(Boolean);
+    if (words.length < 5) return false;
+    let good = 0;
+    words.forEach(w => {
+      const clean = w.replace(/[^a-zA-Z]/g, '');
+      if (clean.length >= 2 && /[aeiouAEIOU]/.test(clean)) good++;
+    });
+    return (good / words.length) >= 0.6;
+  }
+
+  function renderTestStep3() {
+    const test = currentRole.test;
+    testPanelBody.innerHTML =
+      '<div class="test-q-title">Short Answer</div>' +
+      '<div class="test-q-sub">' + escapeHtml(test.short_answer_prompt || 'Explain in brief your Cybersecurity role.') + '</div>' +
+      '<textarea class="test-input test-textarea" id="testShortAnswer" rows="7" placeholder="Type your answer here..."></textarea>' +
+      '<div class="test-error hidden" id="testStep3Error">Please write a few meaningful sentences (not random letters).</div>' +
+      '<button class="btn test-next-btn" id="testStep3Next" style="border-color:var(--ok); color:var(--ok);">NEXT</button>';
+    document.getElementById('testStep3Next').addEventListener('click', () => {
+      const val = document.getElementById('testShortAnswer').value.trim();
+      if (!looksLikeMeaningfulText(val)) {
+        document.getElementById('testStep3Error').classList.remove('hidden');
+        return;
+      }
+      testAnswers.shortAnswer = val;
+      renderTestStep4();
+    });
+  }
+
+  // ---- Step 4: final screen + PDF report ----
+  function renderTestStep4() {
+    testPanelBody.innerHTML =
+      '<div class="test-final-icon"><i class="fas fa-circle-check"></i></div>' +
+      '<div class="test-q-title" style="text-align:center;">Assessment Complete</div>' +
+      '<div class="test-q-sub" style="text-align:center; margin-bottom:20px;">Great work! Generate your final PDF report below.</div>' +
+      '<button class="btn test-next-btn" id="testPdfBtn" style="border-color:var(--gold); color:var(--gold);"><i class="fas fa-file-pdf"></i> PDF REPORT</button>';
+    document.getElementById('testPdfBtn').addEventListener('click', generatePdfReport);
+  }
+
+  function generatePdfReport() {
+    if (typeof window.jspdf === 'undefined') { showToast('danger', 'PDF library failed to load.'); return; }
+    showToast('warn', 'Generating PDF report…');
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+    const pageW = doc.internal.pageSize.getWidth();
+    const pageH = doc.internal.pageSize.getHeight();
+    const margin = 40;
+    let y = margin;
+
+    const orgName = ((currentRole && currentRole.organization) || '').toUpperCase();
+    const studentName = (studentInfo && studentInfo.name) || 'Student';
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(17);
+    doc.text('CYBERSECURITY ANALYSIS AT ' + orgName, pageW / 2, y, { align: 'center' }); y += 24;
+    doc.setFontSize(13);
+    doc.text(currentRole.role_name, pageW / 2, y, { align: 'center' }); y += 18;
+    doc.text(studentName, pageW / 2, y, { align: 'center' }); y += 22;
+
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    const now = new Date();
+    const rowText = now.toLocaleDateString() + '  ' + now.toLocaleDateString(undefined, { weekday: 'long' }) + '  ' + now.toLocaleTimeString() +
+      '     SID: ' + ((studentInfo && studentInfo.sNumber) || '-') +
+      '     Grade: ' + ((studentInfo && studentInfo.grade) || '-') +
+      '     Cybersecurity Role: Completed';
+    doc.text(rowText, pageW / 2, y, { align: 'center', maxWidth: pageW - 2 * margin }); y += 22;
+
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(11); doc.text('Scenario', margin, y); y += 14;
+    doc.setFont('helvetica', 'normal'); doc.setFontSize(9.5);
+    const scenarioText = (briefExplain && briefExplain.textContent) || (currentRole.main_responsibility || '');
+    const scenarioLines = doc.splitTextToSize(scenarioText, pageW - 2 * margin);
+    doc.text(scenarioLines, margin, y, { align: 'justify', maxWidth: pageW - 2 * margin }); y += scenarioLines.length * 11 + 14;
+
+    if (stageScreenshotDataUrl) {
+      try {
+        const imgProps = doc.getImageProperties(stageScreenshotDataUrl);
+        const availW = pageW - 2 * margin;
+        let imgH = (imgProps.height * availW) / imgProps.width;
+        const availH = pageH - y - margin;
+        if (imgH > availH) imgH = availH;
+        const imgW = (imgProps.width * imgH) / imgProps.height;
+        doc.addImage(stageScreenshotDataUrl, 'JPEG', (pageW - imgW) / 2, y, imgW, imgH);
+      } catch (e) { /* screenshot optional */ }
+    }
+
+    // Page 2 — full Incident Log
+    doc.addPage();
+    y = margin;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text('Incident Log', pageW / 2, y, { align: 'center' }); y += 24;
+    doc.setFontSize(9.5);
+    incidentLog.forEach(entry => {
+      if (y > pageH - 90) { doc.addPage(); y = margin; }
+      const isClean = (entry.problem || '').toLowerCase().indexOf('no issue') !== -1;
+      doc.setFont('helvetica', 'bold');
+      doc.text('Workstation — ' + entry.stationId + ' — ' + entry.stationName, margin, y); y += 13;
+      doc.setFont('helvetica', 'normal');
+      doc.text('Issue Found: ' + (isClean ? 'No Issue Found' : 'Yes: Security incident found'), margin, y); y += 12;
+      doc.text('Issue Details: ' + (entry.issueEntered || '-'), margin, y); y += 12;
+      doc.text('Action: Reported To Cyber Team', margin, y); y += 12;
+      doc.text('Checked By: ' + entry.checkedBy, margin, y); y += 18;
+    });
+
+    // Page 3 — full assessment, correct answers in green
+    doc.addPage();
+    y = margin;
+    doc.setFont('helvetica', 'bold'); doc.setFontSize(15); doc.text('Assessment Results', pageW / 2, y, { align: 'center' }); y += 24;
+    doc.setFontSize(10);
+
+    const roleCorrect = normalizeIssueText(testAnswers.roleGuess) === normalizeIssueText(currentRole.role_name);
+    doc.setFont('helvetica', 'bold'); doc.text('Q1. Cybersecurity Role', margin, y); y += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(roleCorrect ? 20 : 200, roleCorrect ? 150 : 40, roleCorrect ? 90 : 40);
+    doc.text(testAnswers.roleGuess + (roleCorrect ? '  (Correct)' : '  (Incorrect)'), margin + 12, y); y += 20;
+    doc.setTextColor(0, 0, 0);
+
+    doc.setFont('helvetica', 'bold'); doc.text('Q2. Workstations Checked', margin, y); y += 14;
+    doc.setFont('helvetica', 'normal');
+    const validSet = new Set(currentRole.steps.map(s => normalizeIssueText(s['Station Name'])));
+    testAnswers.stations.forEach(s => {
+      const ok = validSet.has(normalizeIssueText(s));
+      doc.setTextColor(ok ? 20 : 200, ok ? 150 : 40, ok ? 90 : 40);
+      doc.text('- ' + s + (ok ? '  (Correct)' : '  (Incorrect)'), margin + 12, y); y += 13;
+    });
+    doc.setTextColor(0, 0, 0); y += 8;
+
+    doc.setFont('helvetica', 'bold'); doc.text('Q3. Match The Security Incident', margin, y); y += 14;
+    doc.setFont('helvetica', 'normal');
+    doc.setTextColor(20, 150, 90);
+    doc.text('All ' + testMatchPairs.length + ' workstations matched correctly.  (Correct)', margin + 12, y); y += 20;
+    doc.setTextColor(0, 0, 0);
+
+    if (y > pageH - 120) { doc.addPage(); y = margin; }
+    doc.setFont('helvetica', 'bold'); doc.text('Q4. Short Answer', margin, y); y += 14;
+    doc.setFont('helvetica', 'normal');
+    const shortLines = doc.splitTextToSize(testAnswers.shortAnswer || '-', pageW - 2 * margin - 12);
+    doc.text(shortLines, margin + 12, y); y += shortLines.length * 12 + 10;
+
+    const safeOrg = ((currentRole && currentRole.org_label) || 'report').replace(/[^a-z0-9]+/gi, '_');
+    doc.save('Cybersecurity_Report_' + safeOrg + '.pdf');
+    showToast('success', 'PDF report downloaded.');
+  }
+
+  changeRoleBtn.addEventListener('click', () => { renderRoleModal(); openRoleModal(); });
+  retryRoleBtn.addEventListener('click', () => { completeModal.classList.add('hidden'); startRole(currentRole); });
+  pickAnotherBtn.addEventListener('click', () => { completeModal.classList.add('hidden'); renderRoleModal(); openRoleModal(); });
+  document.getElementById('viewLogBtn').addEventListener('click', renderViewLogModal);
+  document.getElementById('viewLogFromCompleteBtn').addEventListener('click', renderViewLogModal);
+  document.getElementById('closeViewLogBtn').addEventListener('click', () => document.getElementById('viewLogModal').classList.add('hidden'));
+
+  // ============================================================
+  // Animate loop
+  // ============================================================
+  function animate() {
+    requestAnimationFrame(animate);
+    const t = clock.getElapsedTime();
+
+    Object.keys(stationEntries).forEach(k => {
+      const e = stationEntries[k];
+      const labelWorldY = e.worldPos.y + (e.isTarget ? 1.6 : 1.1);
+      const s = worldToScreen(new THREE.Vector3(e.worldPos.x, labelWorldY, e.worldPos.z));
+      e.labelEl.style.left = s.x + 'px';
+      e.labelEl.style.top = s.y + 'px';
+      // Labels are hover-only: visible only while the pointer is over this
+      // exact station (and it isn't behind the camera). While a check is
+      // actively running, keep that station's label visible too so its
+      // name/id/issue stays readable during the animation. Set directly via
+      // inline style (not a CSS class) so visibility can never be affected
+      // by stylesheet cascade/specificity — only this one line controls it.
+      const shouldShow = !s.behind && (hoveredStationKey === k || e.isTarget || e.persistentLabel);
+      e.labelEl.style.opacity = shouldShow ? '1' : '0';
+      e.labelEl.classList.toggle('done', e.done && !e.isTarget);
+      e.labelEl.classList.toggle('current', !!e.isTarget);
+
+      // "Flash Station" — glowing halo + light beam + gentle bob while a
+      // station is being checked from the Control Room. Reset once the
+      // check sequence ends (isTarget flips back to false).
+      if (e.isTarget) {
+        e.model.position.y = Math.sin(t * 2.2) * 0.12;
+        e.halo.material.opacity = 0.35 + Math.sin(t * 6) * 0.25;
+        e.halo.scale.setScalar(1 + Math.sin(t * 6) * 0.08);
+        e.beam.material.opacity = 0.10 + Math.sin(t * 6) * 0.06;
+      } else {
+        e.model.position.y = 0;
+        e.halo.material.opacity = Math.max(0, e.halo.material.opacity - 0.02);
+        e.beam.material.opacity = Math.max(0, e.beam.material.opacity - 0.02);
+      }
+
+      if (e.model.userData.beacon) {
+        e.model.userData.beacon.rotation.y = t * 3;
+        e.model.userData.beacon.material.emissiveIntensity = 1.2 + Math.sin(t * 6) * 0.6;
+      }
+
+      // transient scale-pulse feedback (gold while checking, red on reveal)
+      if (e._pulseStart !== undefined) {
+        const dt = t - e._pulseStart;
+        if (dt < 0.6) {
+          const scale = e.baseScale * (1 + Math.sin((dt / 0.6) * Math.PI) * 0.25);
+          e.model.scale.set(scale, scale, scale);
+        } else {
+          e.model.scale.set(e.baseScale, e.baseScale, e.baseScale);
+          e._pulseStart = undefined;
+        }
+      }
+    });
+
+    // Control Room console glow while actively checking a station, and the
+    // HTML monitor-panel is tracked every frame to exactly match the
+    // monitor's own screen rectangle: its four corners are projected to
+    // screen space, and the panel's left/top/width/height are set from
+    // that projected bounding box, so the div always sits precisely on the
+    // glass regardless of camera angle, zoom, or viewport size.
+    if (controlRoomEntry) {
+      const e = controlRoomEntry;
+      const s = worldToScreen(new THREE.Vector3(e.worldPos.x, e.worldPos.y + 1.8, e.worldPos.z));
+      e.labelEl.style.left = s.x + 'px';
+      e.labelEl.style.top = s.y + 'px';
+      e.labelEl.style.opacity = s.behind ? '0' : '1';
+      if (e.isTarget) {
+        e.halo.material.opacity = 0.35 + Math.sin(t * 6) * 0.25;
+        e.halo.scale.setScalar(1 + Math.sin(t * 6) * 0.08);
+      } else {
+        e.halo.material.opacity = Math.max(0, e.halo.material.opacity - 0.02);
+      }
+      if (e.cornerTL && monitorPanel) {
+        const pTL = worldToScreen(e.cornerTL);
+        const pTR = worldToScreen(e.cornerTR);
+        const pBL = worldToScreen(e.cornerBL);
+        const pBR = worldToScreen(e.cornerBR);
+        const anyBehind = pTL.behind || pTR.behind || pBL.behind || pBR.behind;
+        const minX = Math.min(pTL.x, pTR.x, pBL.x, pBR.x);
+        const maxX = Math.max(pTL.x, pTR.x, pBL.x, pBR.x);
+        const minY = Math.min(pTL.y, pTR.y, pBL.y, pBR.y);
+        const maxY = Math.max(pTL.y, pTR.y, pBL.y, pBR.y);
+        monitorPanel.style.left = minX + 'px';
+        monitorPanel.style.top = minY + 'px';
+        monitorPanel.style.width = Math.max(1, maxX - minX) + 'px';
+        monitorPanel.style.height = Math.max(1, maxY - minY) + 'px';
+        monitorPanel.style.opacity = anyBehind ? '0' : '1';
+      }
+    }
+
+    // Animated connector beam + travelling dot between the Control Room and
+    // the station currently being checked — 5s out, 5s back, driven purely
+    // by the clock so it can't drift. The dot travels the bent, two-segment
+    // path (straight out from the console, then a 90-degree turn into the
+    // station) rather than cutting a diagonal corner.
+    if (connectorLine) {
+      const el = t - connectorLine.phaseStart;
+      if (connectorLine.phase === 'forward') {
+        const p = Math.min(1, el / 5);
+        connectorLine.dot.position.copy(connectorPointAtDistance(connectorLine, p * connectorLine.totalLength));
+        if (p >= 1 && !connectorLine.firedForward) {
+          connectorLine.firedForward = true;
+          connectorLine.phase = 'backward';
+          connectorLine.phaseStart = t;
+          if (connectorLine.onForwardDone) connectorLine.onForwardDone();
+        }
+      } else if (connectorLine.phase === 'backward') {
+        const p = Math.min(1, el / 5);
+        connectorLine.dot.position.copy(connectorPointAtDistance(connectorLine, (1 - p) * connectorLine.totalLength));
+        if (p >= 1 && !connectorLine.firedBackward) {
+          connectorLine.firedBackward = true;
+          connectorLine.phase = 'done';
+          if (connectorLine.onBackwardDone) connectorLine.onBackwardDone();
+        }
+      }
+    }
+
+    controls.update();
+    renderer.render(scene, camera);
+  }
+
+  // ============================================================
+  // Boot
+  // ============================================================
+  function showLoadError(err) {
+    modalEyebrow.textContent = 'LOAD ERROR';
+    modalTitle.textContent = "Couldn't load roleplay.json";
+    document.getElementById('modalSub').innerHTML =
+      'Make sure <code>' + JSON_PATH + '</code> is present alongside this HTML file.<br><br>' +
+      '<span style="color:var(--danger); font-family:var(--mono); font-size:12px;">' + escapeHtml((err && err.message) || String(err)) + '</span>';
+    roleGrid.innerHTML = '';
+    openRoleModal();
+  }
+
+  function boot() {
+    initThree();
+    fetch(encodeURI(JSON_PATH)).then(r => {
+      if (!r.ok) throw new Error('HTTP ' + r.status + ' while fetching ' + JSON_PATH);
+      return r.json();
+    }).then(data => {
+      const sim = data.simulation || data;
+      simData = sim;
+      document.getElementById('simTitle').textContent = sim.title || 'Cybersecurity Control Room';
+      modalEyebrow.textContent = sim.title || 'CYBER ROLEPLAY SIMULATION';
+      modalTitle.textContent = 'Choose Your Role';
+      document.getElementById('modalSub').textContent = sim.description ||
+        'Pick a role below. The 3D control room will be built with the exact stations you need, in the order you\'ll use them — then work through each step directly on the stage.';
+      renderRoleModal();
+      openRoleModal();
+    }).catch(showLoadError);
+  }
+
+  boot();
+})();
+</script>
+</body>
+</html>
