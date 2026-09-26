@@ -284,6 +284,9 @@
     transition: border-color .15s, transform .15s, box-shadow .15s; position: relative; overflow: hidden;
   }
   .role-card:hover { border-color: var(--ok); transform: translateY(-2px); box-shadow: 0 10px 26px rgba(34,211,166,.12); }
+  .role-card.locked { cursor: not-allowed; opacity: .48; filter: grayscale(.45); border-color: #39414d; }
+  .role-card.locked:hover { border-color: #39414d; transform: none; box-shadow: none; }
+  .role-card.locked::before { background: #39414d; }
   .role-card::before {
     content:""; position:absolute; top:0; left:0; right:0; height:3px;
     background: linear-gradient(90deg,#22d3a6,#4d9fff);
@@ -536,6 +539,9 @@
   .test-drag-tile:hover { background: rgba(255,213,74,.22); }
   .test-drag-tile.selected { outline: 2px solid var(--gold); transform: scale(1.03); }
   .test-final-icon { font-size: 34px; text-align: center; margin-bottom: 10px; color: var(--ok); }
+.role-week-heading {
+    display: none !important;
+}
 </style>
 </head>
 <body>
@@ -1550,8 +1556,8 @@ const bezelMat = new THREE.MeshStandardMaterial({
 
   function renderStepPanel() {
     if (!currentRole) return;
-    const total = currentRole.steps.length;
-    const done = completedStationCount();
+    const total = Math.min(7, currentRole.steps.length);
+    const done = Math.min(7, completedStationCount());
 
     progressWrap.classList.add('show');
     const pct = total ? Math.round((done / total) * 100) : 0;
@@ -1785,6 +1791,10 @@ const bezelMat = new THREE.MeshStandardMaterial({
   }
 
   function checkStationId() {
+    if (completedStationCount() >= Math.min(7, currentRole.steps.length)) {
+      showToast('warning', 'Maximum 7 workstation checks reached. Please use LOAD TEST.');
+      return;
+    }
     if (!currentRole || !controlRoomWorldPos) return;
     monitorError.classList.add('hidden');
     const typed = monitorStationInput.value.trim().toUpperCase();
@@ -2147,7 +2157,11 @@ const bezelMat = new THREE.MeshStandardMaterial({
     activeStep = null;
     hideDesktopShowInput();
 
-    if (completedStationCount() >= currentRole.steps.length) { showCompletion(); return; }
+    if (completedStationCount() >= Math.min(7, currentRole.steps.length)) {
+      renderStepPanel();
+      showToast('success', '7 workstation checks completed. Assessment is now available.');
+      return;
+    }
     renderStepPanel();
   }
 
@@ -2176,11 +2190,13 @@ const bezelMat = new THREE.MeshStandardMaterial({
   // ============================================================
   function renderRoleModal() {
     roleGrid.innerHTML = '';
-    (simData.roles || []).forEach((role, idx) => {
+    (simData.roles || []).slice(0, 4).forEach((role, idx) => {
       const card = document.createElement('div');
-      card.className = 'role-card';
+      const weekNumber = idx + 5;
+      const isLocked = weekNumber !== 5;
+      card.className = 'role-card' + (isLocked ? ' locked' : '');
       card.innerHTML =
-        '<div class="role-week-heading">' + escapeHtml(role.week_label || ('WEEK ' + (idx + 1))) + '</div>' +
+        '<div class="role-week-heading">' + escapeHtml('WEEK ' + weekNumber) + '</div>' +
         '<div class="role-card-top">' +
           '<span class="role-id-badge">' + escapeHtml(role.role_id) + '</span>' +
           '<span class="role-level-badge">' + escapeHtml(role.level || '') + '</span>' +
@@ -2188,11 +2204,11 @@ const bezelMat = new THREE.MeshStandardMaterial({
         '<div class="role-name">' + escapeHtml(role.role_name) + '</div>' +
         '<div class="role-resp">' + escapeHtml(role.main_responsibility || '') + '</div>' +
         '<div class="role-meta">' +
-          '<span><i class="fas fa-list-check"></i>' + (role.steps ? role.steps.length : 0) + ' steps</span>' +
+          '<span><i class="fas fa-list-check"></i>' + Math.min(7, role.steps ? role.steps.length : 0) + ' steps</span>' +
           '<span><i class="fas fa-cube"></i>' + (role.devices_objects_components ? role.devices_objects_components.length : 0) + ' stations</span>' +
         '</div>' +
-        '<div class="role-start"><i class="fas fa-play"></i> Start Role</div>';
-      card.addEventListener('click', () => openRoleBriefModal(role));
+        '<div class="role-start"><i class="fas fa-' + (isLocked ? 'lock' : 'play') + '"></i> ' + (isLocked ? 'Locked' : 'Start Role') + '</div>';
+      if (!isLocked) card.addEventListener('click', () => openRoleBriefModal(role));
       roleGrid.appendChild(card);
     });
   }
@@ -2341,13 +2357,13 @@ const bezelMat = new THREE.MeshStandardMaterial({
   // ---- Step 1: name the role + list at-least-N checked workstations ----
   function renderTestStep1() {
     const test = currentRole.test;
-    const minStations = test.min_stations || 6;
+    const minStations = Math.min(7, currentRole.steps.length);
     testPanelBody.innerHTML =
       '<div class="test-q-title">' + escapeHtml(test.role_prompt || 'Name the Cybersecurity Role.') + '</div>' +
       '<input type="text" class="test-input" id="testRoleInput" placeholder="Cybersecurity role title">' +
-      '<div class="test-q-sub" style="margin-top:14px;">' + escapeHtml(test.station_prompt || ('Enter at least ' + minStations + ' workstation names you checked.')) + '</div>' +
+      '<div class="test-q-sub" style="margin-top:14px;">' + escapeHtml(test.station_prompt || ('Enter the ' + minStations + ' workstation names you checked.')) + '</div>' +
       '<div class="test-station-grid" id="testStationGrid"></div>' +
-      '<div class="test-error hidden" id="testStep1Error">Please check your answers — the role name and at least ' + minStations + ' correct workstation names are required.</div>' +
+      '<div class="test-error hidden" id="testStep1Error">Please check your answers — the role name and all ' + minStations + ' correct workstation names are required.</div>' +
       '<button class="btn test-next-btn" id="testStep1Next" style="border-color:var(--ok); color:var(--ok);">NEXT</button>';
     const grid = document.getElementById('testStationGrid');
     for (let i = 0; i < minStations; i++) {
