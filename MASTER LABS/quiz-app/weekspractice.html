@@ -1,0 +1,192 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Cybersecurity Foundations · Practice Test Center</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Inter:wght@400;500;600;700&family=IBM+Plex+Mono:wght@500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+<div class="shell">
+
+  <!-- ============ HEADER ============ -->
+  <header class="header">
+    <div class="header__brand">
+      <span class="header__mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="14" height="14" fill="none"><path d="M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5l-8-3Z" stroke="currentColor" stroke-width="1.6" stroke-linejoin="round"/><path d="m9 12 2 2 4-4" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </span>
+      <div class="header__title-wrap">
+        <h1 class="header__title"><span class="header__title-a">Cybersecurity Foundations</span><span class="header__title-sep">:</span> <span class="header__title-b">Practice Test Center</span></h1>
+      </div>
+    </div>
+    <div class="header__stats" id="headerStats"></div>
+    <button class="sidebar-toggle" id="sidebarToggle" type="button" aria-label="Toggle week directory" aria-expanded="false">
+      <svg viewBox="0 0 20 20" width="18" height="18" fill="none"><path d="M3 6h14M3 10h14M3 14h14" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg>
+      Weeks
+    </button>
+  </header>
+
+  <div class="layout">
+
+    <!-- ============ SIDEBAR: WEEK DIRECTORY ============ -->
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar__head">
+        <h2 class="sidebar__title">WEEKLY CYBER TEST</h2>
+        <p class="sidebar__eyebrow">Access Directory</p>
+      </div>
+      <div class="sidebar__scroll">
+        <nav class="week-list" id="weekList" aria-label="Practice test weeks"></nav>
+      </div>
+      <div class="sidebar__legend" id="sidebarClock">—</div>
+      <div class="sidebar__footer" id="sidebarTimer">15:00</div>
+    </aside>
+
+    <!-- ============ MAIN PANEL ============ -->
+    <main class="main-panel">
+      <div class="panel-inner" id="quizStage" hidden></div>
+
+      <div class="panel-empty" id="emptyState">
+        <div class="panel-empty__badge" aria-hidden="true">
+          <svg viewBox="0 0 24 24" width="30" height="30" fill="none"><path d="M12 2 4 5v6c0 5.2 3.4 9.7 8 11 4.6-1.3 8-5.8 8-11V5l-8-3Z" stroke="currentColor" stroke-width="1.5" stroke-linejoin="round"/></svg>
+        </div>
+        <h2>Select a week to begin</h2>
+        <p>Choose any unlocked week from the directory to load its practice test — multiple choice, matching, drag &amp; drop, yes/no and short answer, all in one place.</p>
+        <div class="empty-input-row">
+          <div class="empty-input-field">
+            <label for="studentNameInput">Enter Your Name</label>
+            <input type="text" id="studentNameInput" autocomplete="off" placeholder="Your name">
+          </div>
+          <div class="empty-input-field">
+            <label for="studentIdInput">Enter Your ID</label>
+            <input type="text" id="studentIdInput" autocomplete="off" placeholder="Student ID">
+          </div>
+          <div class="empty-input-field">
+            <label for="studentGradeInput">Enter Grade</label>
+            <input type="text" id="studentGradeInput" autocomplete="off" placeholder="Grade / class">
+          </div>
+        </div>
+        <div class="empty-input-error" id="studentDetailsError"></div>
+      </div>
+    </main>
+
+  </div>
+</div>
+
+<!-- jsPDF, for the "Download PDF" report button -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+
+<!-- ============ QUESTION-CARD TEMPLATES (cloned by JS) ============ -->
+<template id="tpl-mcq">
+  <div class="qcard" data-kind="MULTIPLE-CHOICE QUESTIONS">
+    <p class="qcard__prompt"></p>
+    <div class="mcq-row"></div>
+  </div>
+</template>
+
+<template id="tpl-yesno">
+  <div class="qcard" data-kind="YES / NO">
+    <p class="qcard__prompt"></p>
+    <div class="yesno-row">
+      <button class="yn-btn" data-value="Yes" type="button">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none"><path d="M4 10.5 8 14l8-8" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+        Yes
+      </button>
+      <button class="yn-btn" data-value="No" type="button">
+        <svg viewBox="0 0 20 20" width="18" height="18" fill="none"><path d="m5 5 10 10M15 5 5 15" stroke="currentColor" stroke-width="2" stroke-linecap="round"/></svg>
+        No
+      </button>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-short">
+  <div class="qcard" data-kind="SHORT ANSWER">
+    <p class="qcard__prompt"></p>
+    <textarea class="short-input" rows="3" placeholder="Type your answer here…" aria-label="Your answer"></textarea>
+    <div class="qcard__actions">
+      <button class="btn btn--primary short-submit" type="button">Submit answer</button>
+    </div>
+  </div>
+</template>
+
+<template id="tpl-pair">
+  <div class="qcard qcard--wide" data-kind="">
+    <p class="qcard__prompt"></p>
+    <div class="pair-layout"></div>
+    <div class="qcard__actions">
+      <button class="btn btn--primary pair-submit" type="button">Check answers</button>
+    </div>
+  </div>
+</template>
+
+<script src="data.js"></script>
+<script src="app.js"></script>
+
+<!-- ============ SIDEBAR CLOCK + COUNTDOWN (inline, does not touch app.js) ============ -->
+<script>
+(function () {
+  "use strict";
+
+  function pad(n) { return String(n).padStart(2, "0"); }
+
+  // ---- live date/time, replaces the Ready/Completed/Locked legend ----
+  var DAYS = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+  var MONTHS = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+
+  function renderClock() {
+    var el = document.getElementById("sidebarClock");
+    if (!el) return;
+    var now = new Date();
+    var dateStr = DAYS[now.getDay()] + ", " + MONTHS[now.getMonth()] + " " + now.getDate();
+    var timeStr = pad(now.getHours()) + ":" + pad(now.getMinutes()) + ":" + pad(now.getSeconds());
+    el.textContent = dateStr + " · " + timeStr;
+  }
+  renderClock();
+  setInterval(renderClock, 1000);
+
+  // ---- 15-minute countdown, replaces the "CYBER TEST" footer text ----
+  var remainingSeconds = 15 * 60;
+
+  function renderTimer() {
+    var el = document.getElementById("sidebarTimer");
+    if (!el) return;
+    var m = Math.floor(remainingSeconds / 60);
+    var s = remainingSeconds % 60;
+    el.textContent = pad(m) + ":" + pad(s);
+    el.classList.toggle("is-low", remainingSeconds <= 60 && remainingSeconds > 0);
+    el.classList.toggle("is-done", remainingSeconds <= 0);
+  }
+  renderTimer();
+  var countdownId = setInterval(function () {
+    if (remainingSeconds > 0) {
+      remainingSeconds--;
+      renderTimer();
+    }
+    if (remainingSeconds <= 0) clearInterval(countdownId);
+  }, 1000);
+})();
+</script>
+<script>
+// Prevent Save As
+document.addEventListener('keydown', function (e) {
+
+    if (e.ctrlKey && e.key.toLowerCase() === 's') {
+        e.preventDefault();
+        e.stopPropagation();
+        return false;
+    }
+
+});
+
+// Disable right-click menu on the main page
+document.addEventListener('contextmenu', function (e) {
+    e.preventDefault();
+});
+
+</script>
+</body>
+</html>
