@@ -1801,7 +1801,7 @@ const LABS = [
     objectives: ['Explain never trust, always verify.', 'Recognise MFA Fatigue, shared accounts, forgotten accounts and excessive permissions.', 'Use access control tools effectively.'],
     outcomes: ['I can make Zero Trust access decisions.', 'I can reject push requests I did not start.', 'I can fix common account mistakes.'] }
 ];
-const GRADES = { 'Grade 10': 'ABCDEFGHIJK'.split('').map(c => 'GRADE 10-' + c), 'Grade 11': 'ABCDEFGHIJK'.split('').map(c => 'GRADE 11-' + c), 'Grade 12': 'ABCDEFGHIJK'.split('').map(c => 'GRADE 12-' + c) };
+const GRADES = { 'Grade 10': 'ABCDEFGHIJK'.split('').map(c => 'CYBERSECURITY-GRADE-10-' + c), 'Grade 11': 'ABCDEFGHIJK'.split('').map(c => 'CYBERSECURITY-GRADE-11-' + c), 'Grade 12': 'ABCDEFGHIJK'.split('').map(c => 'CYBERSECURITY-GRADE-12-' + c) };
 const PDF_MIN = 40;
 const JSPDF_URL = 'https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js';
 const STUDENT = { name: '', sid: '', grade: '' };
