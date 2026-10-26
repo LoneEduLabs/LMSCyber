@@ -1802,11 +1802,4 @@ loadData().then(d=>{if(d){DATA=d;ready();}else{buildWeekButtons();}});
   var first=function(e){if(e.target===btn)return;enter();document.removeEventListener('pointerdown',first,true);document.removeEventListener('keydown',first,true);};
   document.addEventListener('pointerdown',first,true);document.addEventListener('keydown',first,true);   /* otherwise on the first click or key */
 })();
-</script>
-<script>
-document.addEventListener('keydown', function (e) {
-    if (e.ctrlKey && e.key.toLowerCase() === 's') { e.preventDefault(); e.stopPropagation(); return false; }
-});
-document.addEventListener('contextmenu', function (e) { e.preventDefault(); });
-</script>
-</body></html>
+</script></body></html>
