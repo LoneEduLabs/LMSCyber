@@ -1,0 +1,1178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>PBL Phase 1 Dashboard</title>
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>📊</text></svg>">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{--ink:#13203A;--ink2:#2B3A55;--muted:#5D6B82;--line:#DDE3EC;--bg:#EDF1F6;--paper:#fff;
+--accent:#2459E0;--accent-soft:#E7EEFD;--amber:#E39A0B;--amber-soft:#FDF3DE;--ok:#1E8A52;--ok-soft:#E3F4EA;--bad:#C8372D;--bad-soft:#FBE8E6;--violet:#8E44AD;--violet-soft:#F1E8FA}
+*{box-sizing:border-box}
+html,body{margin:0}
+body{font:15px/1.55 'Manrope',system-ui,-apple-system,'Segoe UI',Roboto,sans-serif;padding-right:20px;color:var(--ink);background:var(--bg)}
+button,input,select,textarea{font:inherit;color:inherit}
+
+/* ===== Dashboard shell ===== */
+.app{display:grid;grid-template-columns:272px minmax(0,1fr);min-height:100vh}
+.nav{position:sticky;top:0;height:100vh;overflow:auto;background:#0B1428;color:#fff;padding:22px 16px;display:flex;flex-direction:column;gap:20px;z-index:40}
+.brand{display:flex;gap:12px;align-items:center;padding:0 6px}
+.brand .mark{width:40px;height:40px;border-radius:12px;background:var(--accent);display:grid;place-items:center;flex:none}
+.brand .mark svg{width:22px;height:22px}
+.brand b{display:block;font-size:1rem;font-weight:800;letter-spacing:-.01em}
+.brand small{display:block;font-size:.74rem;color:#8EA2C4}
+.nav h6{margin:0 6px;font-size:.68rem;letter-spacing:.14em;color:#7F93B5;font-weight:800}
+.navgrp{display:grid;gap:10px}
+.navbtn{display:flex;gap:12px;align-items:flex-start;width:100%;text-align:left;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.03);color:#DCE5F4;border-radius:14px;padding:12px;cursor:pointer;transition:background .15s,border-color .15s}
+.navbtn:hover{background:rgba(255,255,255,.08)}
+.navbtn .pl{flex:none;width:34px;height:34px;border-radius:10px;display:grid;place-items:center;font-weight:800;background:rgba(255,255,255,.1)}
+.navbtn b{display:block;font-size:.78rem;letter-spacing:.03em;line-height:1.35;font-weight:800}
+.navbtn small{display:block;font-size:.72rem;color:#8EA2C4;margin-top:4px;font-weight:500}
+.navbtn.on{background:var(--accent);border-color:var(--accent);color:#fff;box-shadow:0 10px 24px -14px rgba(36,89,224,.9)}
+.navbtn.on .pl{background:#fff;color:var(--accent)}
+.navbtn.on small{color:#D6E2FF}
+.nav .foot{margin-top:auto;font-size:.76rem;color:#8EA2C4;border-top:1px solid rgba(255,255,255,.08);padding:14px 6px 0;line-height:1.6}
+.nav .foot b{color:#DCE5F4}
+.content{min-width:0}
+.part{display:none}.part.on{display:block}
+
+/* ===== Part A (original planner styles) ===== */
+.top{position:sticky;top:0;z-index:30;background:var(--ink);color:#fff;padding:12px 28px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;box-shadow:0 6px 18px -12px rgba(0,0,0,.6)}
+.top .mark{width:38px;height:38px;border-radius:11px;background:var(--accent);display:grid;place-items:center;flex:none}
+.top .mark svg{width:22px;height:22px}
+.top h1{margin:0;font-size:1.08rem;font-weight:800;letter-spacing:-.01em}
+.top p{margin:0;font-size:.78rem;color:#AFC0DA}
+.chips{margin-left:auto;display:flex;gap:8px;flex-wrap:wrap}
+.chip{display:inline-flex;align-items:center;gap:6px;border-radius:99px;padding:5px 12px;font-size:.78rem;font-weight:600;background:rgba(255,255,255,.1);color:#E4EBF7;white-space:nowrap}
+.chip.phase{background:var(--amber);color:#fff}
+.chip.due{background:#fff;color:var(--bad)}
+.chip i{width:7px;height:7px;border-radius:50%;background:currentColor;display:inline-block}
+.wrap{display:grid;grid-template-columns:290px 1fr;gap:24px;max-width:1380px;margin:0 auto;padding:24px 28px 60px}
+.side{position:sticky;top:86px;align-self:start;display:grid;gap:16px}
+.panel{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:18px}
+.panel h3{margin:0 0 10px;font-size:.84rem;color:var(--muted);font-weight:700}
+.stepper{list-style:none;margin:0;padding:0;display:grid;gap:4px}
+.stepper button{width:100%;display:flex;align-items:center;gap:12px;text-align:left;border:none;background:none;padding:9px 10px;border-radius:12px;cursor:pointer}
+.stepper button:hover{background:#F3F6FB}
+.stepper .n{flex:none;width:30px;height:30px;border-radius:50%;display:grid;place-items:center;font-weight:800;font-size:.82rem;border:2px solid var(--line);color:var(--muted);background:#fff}
+.stepper .t{font-weight:600;font-size:.9rem;line-height:1.25}
+.stepper .s{display:block;font-size:.74rem;color:var(--muted);font-weight:500}
+.stepper li.cur button{background:var(--accent-soft)}
+.stepper li.cur .n{border-color:var(--accent);color:var(--accent)}
+.stepper li.done .n{background:var(--ok);border-color:var(--ok);color:#fff}
+.stepper li.locked button{opacity:.5;cursor:not-allowed}
+.tl{display:grid;gap:8px}
+.tl div{display:grid;grid-template-columns:62px 1fr;gap:8px;font-size:.8rem;align-items:start}
+.tl b{display:inline-block;background:var(--accent-soft);color:var(--accent);border-radius:8px;padding:2px 0;text-align:center;font-size:.74rem}
+.tl .last b{background:var(--bad);color:#fff}
+.prog{height:6px;background:#E3E8F0;border-radius:99px;overflow:hidden;margin-top:12px}
+.prog i{display:block;height:100%;background:var(--ok);width:0;transition:width .3s}
+.main{min-width:0}
+.step{display:none}
+.step.show{display:block;animation:in .25s ease}
+@keyframes in{from{opacity:0;transform:translateY(6px)}to{opacity:1;transform:none}}
+.shead{display:flex;align-items:flex-end;justify-content:space-between;gap:16px;margin-bottom:16px}
+.shead .k{font-size:.8rem;font-weight:700;color:var(--accent)}
+.shead h2{margin:2px 0 0;font-size:1.6rem;letter-spacing:-.02em;line-height:1.15}
+.shead p{margin:6px 0 0;color:var(--muted);max-width:720px}
+.card{background:var(--paper);border:1px solid var(--line);border-radius:18px;padding:22px;margin-bottom:16px}
+.card h4{margin:0 0 4px;font-size:1.02rem}
+.card .hint{margin:0 0 14px;color:var(--muted);font-size:.86rem}
+.grid{display:grid;gap:14px}
+.g2{grid-template-columns:1fr 1fr}.g3{grid-template-columns:repeat(3,1fr)}
+.f label{display:block;font-size:.8rem;font-weight:700;color:var(--ink2);margin-bottom:6px}
+.f label em{font-style:normal;color:var(--bad)}
+.f small{display:block;color:var(--muted);font-size:.76rem;margin-top:5px}
+.in{width:100%;background:#F7F9FC;border:1.5px solid var(--line);border-radius:11px;padding:10px 12px;transition:border-color .15s,box-shadow .15s}
+.in:focus{outline:none;border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px var(--accent-soft)}
+textarea.in{resize:vertical;min-height:84px;line-height:1.5}
+select.in{appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235D6B82' stroke-width='2' fill='none'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center;padding-right:34px}
+.in[readonly]{background:#EEF2F7;color:var(--muted)}
+.f.err .in{border-color:var(--bad);background:var(--bad-soft)}
+.fixed{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin-top:4px}
+.fact{border:1px solid var(--line);border-radius:14px;padding:10px 12px;background:#FAFBFD}
+.fact span{display:block;font-size:.72rem;color:var(--muted);font-weight:600}
+.fact b{font-size:.95rem}
+.fact.warn{background:var(--bad-soft);border-color:#F2C7C2}.fact.warn b{color:var(--bad)}
+.fact.amb{background:var(--amber-soft);border-color:#F3DDA9}
+.proj{display:none;margin-top:16px;border-radius:16px;border:1.5px solid var(--accent);background:linear-gradient(180deg,var(--accent-soft),#fff 70%);padding:18px}
+.proj.show{display:block}
+.proj h5{margin:0 0 12px;font-size:1.2rem}
+.proj dl{margin:0;display:grid;grid-template-columns:150px 1fr;gap:8px 14px;font-size:.9rem}
+.proj dt{color:var(--muted);font-weight:600}
+.proj dd{margin:0}
+.marks{display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:6px}
+.marks div{border-radius:12px;background:#F6F8FC;border:1px solid var(--line);padding:9px 10px;font-size:.78rem;line-height:1.3}
+.marks b{display:block;font-size:1.1rem;color:var(--accent)}
+.checks{display:flex;flex-wrap:wrap;gap:8px}
+.ck{display:inline-flex;align-items:center;gap:8px;border:1.5px solid var(--line);border-radius:11px;padding:8px 12px;cursor:pointer;background:#fff;font-size:.88rem;font-weight:600}
+.ck input{accent-color:var(--accent);width:16px;height:16px}
+.ck:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.agree{display:flex;gap:10px;align-items:flex-start;border-radius:12px;background:var(--amber-soft);border:1px solid #F3DDA9;padding:12px 14px;font-size:.88rem;cursor:pointer}
+.agree input{margin-top:3px;width:17px;height:17px;accent-color:var(--amber)}
+.objrow{display:grid;grid-template-columns:34px 1fr;gap:10px;align-items:center}
+.objrow span{width:34px;height:34px;border-radius:10px;background:var(--accent-soft);color:var(--accent);display:grid;place-items:center;font-weight:800}
+.std{display:flex;flex-wrap:wrap;gap:6px;margin:0 0 12px}
+.std span{font-size:.74rem;font-weight:600;border-radius:8px;background:#F1F4F9;color:var(--ink2);padding:3px 9px}
+.navs{display:flex;justify-content:space-between;gap:12px;margin-top:6px}
+.btn{border:none;border-radius:12px;padding:12px 20px;font-weight:700;cursor:pointer;display:inline-flex;align-items:center;gap:8px}
+.btn.pri{background:var(--accent);color:#fff}
+.btn.pri:hover{background:#1B48BD}
+.btn.gh{background:#fff;border:1.5px solid var(--line)}
+.btn.red{background:#C62828;color:#fff;font-size:1.02rem;padding:15px 26px}
+.btn.red:hover{background:#A61F1F}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.sm{padding:8px 13px;font-size:.84rem;border-radius:10px}
+.alert{display:none;border-radius:12px;padding:11px 14px;font-size:.88rem;margin-bottom:14px;background:var(--bad-soft);color:var(--bad);border:1px solid #F2C7C2}
+.alert.show{display:block}
+.lockbox{border-radius:18px;border:1.5px dashed #B9C4D6;background:#fff;padding:40px;text-align:center;color:var(--muted)}
+.lockbox b{display:block;font-size:1.1rem;color:var(--ink);margin-bottom:6px}
+.gwrap{overflow-x:auto;border:1px solid var(--line);border-radius:16px;background:#fff}
+.gantt{border-collapse:separate;border-spacing:0;min-width:1000px;width:100%;font-size:.82rem}
+.gantt th,.gantt td{border-bottom:1px solid #EDF0F5}
+.gantt thead th{position:sticky;top:0;background:#F7F9FC;z-index:2}
+.gantt .wk th{font-size:.76rem;font-weight:800;padding:8px 4px;text-align:center;border-left:2px solid #D5DCE7;color:var(--ink2)}
+.gantt .wk th.w10{background:var(--bad-soft);color:var(--bad)}
+.gantt .dy th{font-size:.68rem;font-weight:600;color:var(--muted);padding:4px 0;text-align:center;width:32px;min-width:30px}
+.gantt .dy th.ws,.gantt td.ws{border-left:2px solid #D5DCE7}
+.gantt .lh{text-align:left;padding:8px 10px;font-size:.74rem;color:var(--muted);font-weight:700;white-space:nowrap}
+.gantt td.task{padding:6px 10px;min-width:220px;width:240px}
+.gantt td.task b{display:block;font-size:.84rem;line-height:1.25}
+.gantt td.task small{color:var(--muted);font-size:.72rem}
+.gantt td.task input{width:100%;border:1.5px solid var(--line);border-radius:8px;padding:5px 8px;font-weight:600;font-size:.84rem}
+.gantt td.ctl{padding:6px 4px}
+.gantt td.ctl select{width:100%;min-width:104px;border:1.5px solid var(--line);border-radius:8px;padding:5px 6px;font-size:.78rem;background:#F7F9FC}
+.gantt td.ctl select.err{border-color:var(--bad);background:var(--bad-soft)}
+.gantt td.dur{text-align:center;font-weight:800;color:var(--ink2);width:46px}
+.gantt td.cell{height:44px;padding:0;cursor:pointer;position:relative}
+.gantt td.cell:hover{background:#F3F6FB}
+.gantt td.cell.on::before{content:'';position:absolute;left:0;right:0;top:12px;bottom:12px;background:var(--c,var(--accent))}
+.gantt td.cell.on.first::before{left:3px;border-radius:8px 0 0 8px}
+.gantt td.cell.on.last::before{right:3px;border-radius:0 8px 8px 0}
+.gantt tr.ms td.cell{cursor:default}
+.dia{position:absolute;left:50%;top:50%;width:14px;height:14px;background:var(--amber);transform:translate(-50%,-50%) rotate(45deg);border-radius:2px}
+.dia.red{background:var(--bad)}
+.gantt tr.ms td.task b{color:var(--amber)}
+.xbtn{border:none;background:none;color:var(--muted);cursor:pointer;font-size:1rem;padding:0 4px}
+.xbtn:hover{color:var(--bad)}
+.legend{display:flex;flex-wrap:wrap;gap:14px;margin-top:12px;font-size:.8rem;color:var(--muted)}
+.legend span{display:inline-flex;align-items:center;gap:6px}
+.legend i{width:16px;height:10px;border-radius:3px;display:inline-block}
+.legend .d{width:11px;height:11px;transform:rotate(45deg);border-radius:2px}
+.addrow{display:flex;gap:10px;margin-top:14px;flex-wrap:wrap}
+.addrow input{flex:1;min-width:220px}
+body.wide #partA .wrap{grid-template-columns:1fr}
+body.wide #partA .side{display:none}
+.rev{display:grid;grid-template-columns:1fr 1fr;gap:16px}
+.rev .card{margin:0}
+.kv{display:grid;grid-template-columns:140px 1fr;gap:6px 12px;font-size:.88rem}
+.kv span{color:var(--muted);font-weight:600}
+.okl{list-style:none;margin:0;padding:0;display:grid;gap:8px}
+.okl li{display:flex;gap:10px;align-items:center;font-weight:600;font-size:.9rem}
+.okl li::before{content:'✓';width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:var(--ok);color:#fff;font-size:.75rem}
+.okl li.no::before{content:'!';background:var(--bad)}
+.dl-box{border-radius:18px;background:var(--ink);color:#fff;padding:24px;display:flex;gap:20px;align-items:center;justify-content:space-between;flex-wrap:wrap;margin-top:16px}
+.dl-box h4{margin:0 0 4px;font-size:1.15rem}
+.dl-box p{margin:0;color:#AFC0DA;font-size:.88rem;max-width:620px}
+.guidehead{border-radius:14px;background:var(--accent-soft);border:1px solid #C9D8F8;padding:12px 16px;margin-bottom:16px;font-size:.9rem}
+.guide{grid-column:2;display:flex;gap:10px;align-items:flex-start;justify-content:space-between;margin-top:8px;border-radius:10px;background:#F1F6FF;border:1px dashed #A9C0F2;padding:8px 10px;font-size:.8rem;color:var(--ink2);line-height:1.45}
+.guide b{color:var(--accent)}
+.guide .btn{flex:none;white-space:nowrap}
+.toast{position:fixed;left:50%;bottom:26px;transform:translate(-50%,20px);background:var(--ink);color:#fff;padding:11px 18px;border-radius:12px;font-size:.88rem;opacity:0;transition:.25s;pointer-events:none;z-index:99}
+.toast.show{opacity:1;transform:translate(-50%,0)}
+
+/* ===== Part B: project designing ===== */
+.dwrap{max-width:1240px;margin:0 auto;padding:24px 28px 60px}
+.courses{display:grid;grid-template-columns:repeat(auto-fit,minmax(205px,1fr));gap:12px}
+.course{border:1.5px solid var(--line);border-radius:14px;padding:12px;background:#FAFBFD;transition:border-color .15s,background .15s}
+.course.on{border-color:var(--accent);background:var(--accent-soft)}
+.course label{display:flex;gap:9px;align-items:center;font-size:.76rem;font-weight:800;letter-spacing:.03em;color:var(--ink2);margin-bottom:9px;line-height:1.25}
+.course label span{flex:none;width:26px;height:26px;border-radius:8px;display:grid;place-items:center;background:#fff;border:1.5px solid var(--line);color:var(--accent);font-size:.8rem}
+.course.on label span{background:var(--accent);border-color:var(--accent);color:#fff}
+.course select.in{background-color:#fff;font-size:.86rem;padding:9px 32px 9px 10px}
+.selbar{margin-top:14px;display:none;align-items:center;gap:10px;flex-wrap:wrap;border-radius:12px;background:var(--ok-soft);border:1px solid #BFE3CD;padding:10px 14px;font-size:.88rem}
+.selbar.show{display:flex}
+.selbar b{color:var(--ok)}
+.fchead{display:flex;justify-content:space-between;align-items:flex-start;gap:14px;flex-wrap:wrap;margin-bottom:14px}
+.fchead .k{font-size:.78rem;font-weight:800;color:var(--accent);letter-spacing:.04em}
+.fchead h4{font-size:1.15rem!important;margin:2px 0 2px!important}
+.fcgrid{display:grid;grid-template-columns:minmax(0,1fr) 290px;gap:18px;align-items:start}
+.fcstage{border:1px solid var(--line);border-radius:16px;background:
+ radial-gradient(circle,#E3E8F0 1px,transparent 1.2px) 0 0/18px 18px,#FBFCFE;padding:14px}
+.fcsvg{width:100%;height:auto;display:block;max-width:760px;margin:0 auto;font-family:'Manrope',system-ui,sans-serif}
+.fc-node{cursor:pointer;outline:none}
+.fc-node .shp{transition:stroke-width .15s,filter .15s}
+.fc-node:hover .shp,.fc-node:focus-visible .shp{stroke-width:3.4;filter:drop-shadow(0 6px 10px rgba(19,32,58,.18))}
+.fc-node .plus{transition:transform .15s;transform-box:fill-box;transform-origin:center}
+.fc-node:hover .plus{transform:scale(1.15)}
+.fcbox{border:1px solid var(--line);border-radius:16px;background:#fff;padding:16px}
+.fcbox h5{margin:0 0 10px;font-size:.8rem;color:var(--muted);font-weight:800;letter-spacing:.04em}
+.lg{display:grid;gap:10px}
+.lg div{display:grid;grid-template-columns:44px 1fr;gap:10px;align-items:center;font-size:.8rem;line-height:1.3}
+.lg b{display:block;font-size:.84rem}
+.lg span{color:var(--muted)}
+.howto{margin:0;padding-left:18px;font-size:.84rem;display:grid;gap:6px;color:var(--ink2)}
+.bigprog{display:flex;align-items:baseline;gap:6px}
+.bigprog b{font-size:1.7rem;letter-spacing:-.02em}
+.bigprog span{color:var(--muted);font-size:.84rem}
+/* picker modal */
+.modal{position:fixed;inset:0;background:rgba(11,20,40,.55);display:grid;place-items:center;z-index:90;padding:16px}
+.modal[hidden]{display:none}
+.mbox{background:#fff;border-radius:20px;width:min(540px,100%);max-height:88vh;display:flex;flex-direction:column;overflow:hidden;box-shadow:0 30px 60px -20px rgba(0,0,0,.45);animation:in .2s ease}
+.mhead{padding:18px 20px 14px;border-bottom:1px solid var(--line)}
+.mhead h4{margin:8px 0 2px;font-size:1.15rem}
+.mhead p{margin:0;color:var(--muted);font-size:.85rem}
+.tb{display:inline-flex;align-items:center;gap:6px;font-size:.72rem;font-weight:800;letter-spacing:.04em;border-radius:99px;padding:4px 10px}
+.t-term{background:var(--ok-soft);color:var(--ok)}.t-process{background:var(--accent-soft);color:var(--accent)}.t-io{background:var(--amber-soft);color:#A86A00}.t-decision{background:var(--violet-soft);color:var(--violet)}
+.opts{overflow:auto;padding:12px 16px;display:grid;gap:7px}
+.opt{display:flex;justify-content:space-between;align-items:center;gap:10px;text-align:left;border:1.5px solid var(--line);background:#fff;border-radius:12px;padding:10px 13px;cursor:pointer;font-weight:600;font-size:.9rem}
+.opt:hover,.opt:focus-visible{border-color:var(--accent);background:var(--accent-soft);outline:none}
+.opt.cur{border-color:var(--accent);background:var(--accent-soft)}
+.opt em{flex:none;font-style:normal;font-size:.68rem;font-weight:800;color:var(--muted);background:#F1F4F9;border-radius:6px;padding:2px 7px}
+.opt.cur em{background:var(--accent);color:#fff}
+.mcust{padding:12px 16px;border-top:1px solid var(--line);display:flex;gap:8px}
+.mcust input{flex:1}
+.pko{display:flex;gap:10px;align-items:center;border:1.5px solid var(--line);border-radius:12px;padding:10px 13px;cursor:pointer;font-weight:600;font-size:.9rem;background:#fff}
+.pko input{flex:none;width:17px;height:17px;accent-color:var(--accent)}
+.pko span{flex:1}
+.pko:has(input:checked){border-color:var(--accent);background:var(--accent-soft)}
+.pko.dis{opacity:.45;cursor:not-allowed}
+.pko em{flex:none;font-style:normal;font-size:.66rem;font-weight:800;color:var(--amber);background:var(--amber-soft);border-radius:6px;padding:2px 7px}
+.pkcount{margin-top:10px;font-size:.82rem;color:var(--muted)}.pkcount b{color:var(--accent);font-size:.95rem}
+.mfoot{padding:12px 16px;display:flex;justify-content:space-between;gap:10px;background:#F7F9FC;border-top:1px solid var(--line)}
+
+
+/* Part B: full-width flowchart + fixed progress footer */
+#partB .dwrap{max-width:1500px;padding-bottom:120px}
+.fcgrid{grid-template-columns:1fr!important}
+.fcstage{padding:22px}
+.fcsvg{max-width:1180px}
+#partB .card{padding:26px}
+#partB .card h4{font-size:1.15rem}
+#partB .card .hint{font-size:.95rem}
+#partB .f label{font-size:.9rem}
+#partB .in{padding:13px 15px;font-size:1rem}
+#partB .course label{font-size:.84rem}
+#partB .course select.in{font-size:.95rem;padding:12px 34px 12px 12px}
+#partB .shead h2{font-size:1.9rem}
+#partB .shead p{font-size:1.02rem}
+#partB .btn.sm{padding:10px 16px;font-size:.92rem}
+#partB .fchead h4{font-size:1.4rem!important}
+.bfoot{position:fixed;left:272px;right:0;bottom:0;z-index:35;background:#0B1428;color:#fff;box-shadow:0 -10px 24px -14px rgba(0,0,0,.55);border-top:3px solid var(--accent)}
+.bfin{max-width:1500px;margin:0 auto;padding:14px 28px;display:flex;align-items:center;gap:22px;flex-wrap:wrap}
+.bf-l{display:flex;flex-direction:column;line-height:1.2;min-width:170px}
+.bf-k{font-size:.72rem;font-weight:800;letter-spacing:.14em;color:#8EA2C4}
+.bf-n{font-size:1rem;color:#DCE5F4;font-weight:600}
+.bf-n b{font-size:1.5rem;color:#fff;margin-right:2px}
+.bf-bar{flex:1;min-width:160px}
+.bf-bar .prog{height:10px;margin:0;background:rgba(255,255,255,.12)}
+.bf-bar .prog i{background:linear-gradient(90deg,#2ECC71,#1E8A52)}
+.bdots{display:flex;gap:7px}
+.bdots span{width:32px;height:32px;border-radius:9px;display:grid;place-items:center;font-weight:800;font-size:.86rem;border:1.5px solid rgba(255,255,255,.18);color:#8EA2C4;cursor:pointer;transition:background .15s}
+.bdots span:hover{border-color:#fff;color:#fff}
+.bdots span.ok{background:var(--ok);border-color:var(--ok);color:#fff}
+.toast{bottom:96px}
+@media (max-width:1000px){.bfoot{left:0}.bfin{padding:10px 16px;gap:12px}.bdots span{width:26px;height:26px;font-size:.76rem}}
+@media (max-width:640px){.bdots{display:none}}
+@media (max-width:1100px){.fcgrid{grid-template-columns:1fr}}
+@media (max-width:1000px){.app{grid-template-columns:1fr}.nav{position:sticky;top:0;height:auto;flex-direction:row;flex-wrap:wrap;align-items:center;padding:10px 16px;gap:10px}.nav h6,.nav .foot,.brand small{display:none}.navgrp{display:flex;flex:1;gap:8px;min-width:0}.navbtn{padding:8px 10px;align-items:center}.navbtn small{display:none}.navbtn .pl{width:28px;height:28px}.top{position:static}.wrap{grid-template-columns:1fr}.side{position:static}.g3,.marks,.fixed{grid-template-columns:1fr 1fr}.rev{grid-template-columns:1fr}}
+@media (max-width:640px){.g2,.g3,.marks,.fixed{grid-template-columns:1fr}.top{padding:12px 16px}.wrap,.dwrap{padding:16px}.proj dl,.kv{grid-template-columns:1fr}.navbtn b{font-size:.68rem}.brand b{display:none}}
+@media (prefers-reduced-motion:reduce){*{animation:none!important;transition:none!important}}
+
+/* ===== Unified dark theme, rounded main panel, selected = dark red ===== */
+:root{--sel:#8E1B1B;--sel-h:#741515;--shell:linear-gradient(135deg,#070D1C 0%,#0E1A33 45%,#16264A 100%)}
+html,body{background:#070D1C}
+body{background:var(--shell);background-attachment:fixed;min-height:100vh}
+.nav{background:transparent}
+.top{background:var(--shell);background-attachment:fixed;box-shadow:none;padding:7px 28px;gap:14px}
+.top .mark{width:30px;height:30px;border-radius:9px}
+.top .mark svg{width:18px;height:18px}
+.top h1{font-size:.98rem}
+.top p{font-size:.72rem}
+.chip{padding:3px 10px;font-size:.74rem}
+#partA .wrap,#partB .dwrap{max-width:none;background:var(--bg);border-radius:20px;margin:0 10px 10px 0}
+#partB .dwrap{padding-bottom:40px;margin-bottom:62px}
+.bfoot{background:var(--shell);background-attachment:fixed;box-shadow:none;border-top:none}
+.bfin{max-width:none;padding:6px 28px 6px 18px;gap:16px}
+.bf-l{flex-direction:row;align-items:baseline;gap:12px}
+.bf-n{font-size:.88rem}
+.bf-n b{font-size:1.05rem}
+.bf-bar .prog{height:8px}
+.bdots span{width:26px;height:26px;border-radius:7px;font-size:.76rem}
+.toast{bottom:70px}
+/* selected states */
+.navbtn.on{background:var(--sel);border-color:var(--sel);box-shadow:0 10px 24px -14px rgba(142,27,27,.9)}
+.navbtn.on .pl{color:var(--sel)}
+.navbtn.on small{color:#F3D3D3}
+.course.on{background:var(--sel);border-color:var(--sel)}
+.course.on label{color:#fff}
+.course.on label span{background:#fff;border-color:#fff;color:var(--sel)}
+.course.on select.in{background-color:#fff;color:var(--ink);border-color:#fff}
+/* dropdowns: always clean white, single arrow, never tiled */
+select.in,select.in:focus,.course select.in,.course.on select.in{background-color:#fff;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%235D6B82' stroke-width='2' fill='none'/%3E%3C/svg%3E")!important;background-repeat:no-repeat!important;background-position:right 12px center!important;background-size:12px 8px!important}
+.course select option{background:#fff;color:var(--ink)}
+.selbar{background:var(--sel);border-color:var(--sel);color:#fff}
+.selbar b,.selbar span{color:#fff!important}
+.pko:has(input:checked){background:var(--sel);border-color:var(--sel);color:#fff}
+.pko:has(input:checked) input{accent-color:#fff}
+.pkcount b{color:var(--sel)}
+.stepper li.cur button{background:var(--sel);color:#fff}
+.stepper li.cur .n{border-color:#fff;color:var(--sel);background:#fff}
+.stepper li.cur .s{color:#F3D3D3}
+.ck:has(input:checked){background:var(--sel);border-color:var(--sel);color:#fff}
+.ck:has(input:checked) input{accent-color:#fff}
+@media (max-width:1000px){.nav{background:var(--shell);background-attachment:fixed}#partA .wrap,#partB .dwrap{margin:0 10px 10px 10px}#partB .dwrap{margin-bottom:62px}.bfin{padding:6px 16px}}
+
+/* ===== Fixed shell: the rounded panel scrolls inside, so its corners stay visible ===== */
+@media (min-width:1001px){
+ html,body{height:100%;overflow:hidden}
+ .app{height:100vh;min-height:0}
+ .content{height:100vh;overflow:hidden}
+ .part.on{display:flex;flex-direction:column;height:100vh}
+ .part .top{position:static;flex:none}
+ #partA .wrap,#partB .dwrap{flex:1;min-height:0;overflow:auto;margin:0 10px 10px 0;scrollbar-gutter:stable}
+ #partB .dwrap{margin-bottom:0}
+ #partA .side{top:0}
+ .bfoot{position:static;flex:none;left:auto}
+
+}
+@media (max-width:1000px){.bfoot{position:sticky;bottom:0}}
+.marksbox{border:1px solid rgba(255,255,255,.1);border-radius:14px;padding:12px;display:grid;gap:8px;background:rgba(255,255,255,.03)}
+.marksbox h6{margin:0 0 2px}
+.mk{display:flex;justify-content:space-between;align-items:center;gap:8px;font-size:.74rem;font-weight:800;letter-spacing:.03em}
+.mk span{color:#DCE5F4}
+.mk b{background:var(--sel);color:#fff;border-radius:8px;padding:3px 8px;font-size:.72rem;white-space:nowrap}
+.chip.mark6{background:var(--sel);color:#fff;font-weight:800}
+@media (max-width:1000px){.marksbox{display:none}}
+
+/* ===== Course dropdowns in one line (Part A and Part B) ===== */
+.courses{grid-template-columns:repeat(5,minmax(0,1fr))!important;gap:10px}
+.course{padding:10px;display:flex;flex-direction:column;justify-content:space-between}
+.course label{font-size:.72rem!important;min-height:2.6em;align-items:flex-start!important}
+.course label span{width:24px;height:24px;font-size:.76rem}
+.course select.in{font-size:.88rem!important;padding:10px 30px 10px 10px!important;text-overflow:ellipsis;white-space:nowrap;overflow:hidden}
+.selbar span{color:#F3D3D3!important}
+@media (max-width:1000px){.courses{grid-template-columns:repeat(auto-fit,minmax(190px,1fr))!important}}
+/* ===== Background ===== */
+:root{--shell:radial-gradient(1100px 650px at 12% -15%,rgba(36,89,224,.28),transparent 60%),radial-gradient(900px 600px at 105% 115%,rgba(142,27,27,.26),transparent 60%),linear-gradient(140deg,#050A16 0%,#0B1530 48%,#12203F 100%)}
+#partA .wrap,#partB .dwrap{background:
+ radial-gradient(900px 420px at 100% 0%,rgba(36,89,224,.08),transparent 65%),
+ radial-gradient(800px 420px at 0% 100%,rgba(142,27,27,.06),transparent 65%),
+ radial-gradient(circle,rgba(19,32,58,.06) 1px,transparent 1.3px) 0 0/22px 22px,
+ linear-gradient(180deg,#F6F8FC 0%,#EBF0F7 100%);
+ box-shadow:inset 0 0 0 1px rgba(255,255,255,.6)}
+.card,.panel{box-shadow:0 1px 2px rgba(19,32,58,.04),0 10px 26px -18px rgba(19,32,58,.28)}
+</style>
+</head>
+<body>
+<div class="app">
+ <!-- ===================== SIDEBAR ===================== -->
+ <nav class="nav" aria-label="Dashboard parts">
+  <div class="brand"><div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="7" height="9" rx="1.5"/><rect x="14" y="3" width="7" height="5" rx="1.5"/><rect x="14" y="12" width="7" height="9" rx="1.5"/><rect x="3" y="16" width="7" height="5" rx="1.5"/></svg></div><div><b>PBL Dashboard</b><small>Phase 1</small></div></div>
+  <h6>PARTS</h6>
+  <div class="navgrp">
+   <button class="navbtn" type="button" data-go="A"><span class="pl">A</span><span><b>PBL-PHASE-1-PROJECT PLANNING</b><small>6 marks | Planner, Gantt chart, PDF</small></span></button>
+   <button class="navbtn" type="button" data-go="B"><span class="pl">B</span><span><b>PBL-PHASE-1-PROJECT DESIGNING</b><small>4 marks | Project flowchart, PDF</small></span></button>
+  </div>
+  <div class="marksbox"><h6>MARKS</h6>
+   <div class="mk"><span>PROJECT PLANNING</span><b>6 MARKS</b></div>
+   <div class="mk"><span>PROJECT DESIGNING</span><b>4 MARKS</b></div>
+  </div>
+  <div class="foot"><b>Teacher:</b> Firdous Lone<br><b>Subject:</b> Computer Studies<br>Quarter 1 | Phase 1</div>
+ </nav>
+
+ <div class="content">
+ <!-- ===================== PART A: PROJECT PLANNING ===================== -->
+ <section class="part" id="partA">
+<header class="top">
+ <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.2" stroke-linecap="round"><path d="M4 20V10M10 20V4M16 20v-7M22 20H2"/></svg></div>
+ <div><h1>PBL Project Planner: Project Planning</h1><p>Phase 1 | Project planning</p></div>
+ <div class="chips"><span class="chip mark6">PROJECT PLANNING - 6 MARKS</span><span class="chip phase">PHASE 1 ONLY</span><span class="chip due">Deadline: Week 9, Thu 22 Oct</span></div>
+</header>
+
+<div class="wrap">
+ <aside class="side">
+  <div class="panel">
+   <h3>Your Phase 1 plan</h3>
+   <ol class="stepper" id="stepper"></ol>
+   <div class="prog"><i id="prog"></i></div>
+  </div>
+  <div class="panel">
+   <h3>Phase 1 timeline</h3>
+   <div class="tl">
+    <div><b>Week 7</b><span>4–8 Oct: problem analysis and Gantt chart</span></div>
+    <div><b>Week 8</b><span>11–15 Oct: data collection, cleaning and analysis</span></div>
+    <div class="last"><b>Week 9</b><span>18–22 Oct: dashboard, presentation. <strong>Submission deadline Thu 22 Oct.</strong></span></div>
+   </div>
+  </div>
+ </aside>
+
+ <main class="main">
+  <!-- STEP 1 -->
+  <section class="step" data-step="0">
+   <div class="shead"><div><div class="k">Step 1 of 5</div><h2>Student information</h2><p>Enter your details in English letters so they appear correctly on your PDF.</p></div></div>
+   <div class="alert" id="a0"></div>
+   <div class="card">
+    <h4>Student details</h4><p class="hint">Use English letters so your details appear correctly on the PDF.</p>
+    <div class="grid g3">
+     <div class="f"><label for="s_name">Student Name <em>*</em></label><input class="in" id="s_name" data-k="name" placeholder="e.g. Omar Al-Harbi" maxlength="60"></div>
+     <div class="f"><label for="s_sid">SID <em>*</em></label><input class="in" id="s_sid" data-k="sid" placeholder="Student ID" maxlength="20"></div>
+     <div class="f"><label for="s_sec">Grade <em>*</em></label><input class="in" id="s_sec" data-k="section" placeholder="e.g. G11-D" maxlength="20"></div>
+    </div>
+   </div>
+   <div class="card">
+    <h4>Phase 1 at a glance</h4><p class="hint">This planner covers Phase 1 of the project only.</p>
+    <div class="fixed">
+     <div class="fact"><span>Phase</span><b>Phase 1 (Quarter 1)</b></div>
+     <div class="fact"><span>Starts</span><b>Week 7, Sun 4 Oct</b></div>
+     <div class="fact warn"><span>Submission deadline</span><b>Week 9, Thu 22 Oct</b></div>
+     <div class="fact amb"><span>Marks</span><b>Planning 6 | Designing 4</b></div>
+    </div>
+   </div>
+   <div class="navs"><span></span><button class="btn pri" data-next>Continue to project →</button></div>
+  </section>
+
+  <!-- STEP 2 -->
+  <section class="step" data-step="1">
+   <div class="shead"><div><div class="k">Step 2 of 5</div><h2>Project selection</h2><p>Find your course and choose your project.</p></div></div>
+   <div class="alert" id="a1"></div>
+   <div class="card">
+    <h4>Choose your project</h4><p class="hint">Find your course and choose your project. Choosing a project in one list clears the other lists.</p>
+    <div class="courses" id="coursesA"></div>
+    <div class="selbar" id="selBarA"></div>
+    <div class="proj" id="projCard"></div>
+   </div>
+   <div class="card">
+    <h4>How Phase 1 is marked (10 marks)</h4><p class="hint">Plan your work so every component is covered by Week 9.</p>
+    <div class="marks">
+     <div><b>2</b>Project planning: problem, objectives, Gantt chart</div>
+     <div><b>2</b>Data collection: organized, cleaned dataset</div>
+     <div><b>2</b>Data analysis: patterns and trends</div>
+     <div><b>2</b>Data visualization: interactive dashboard</div>
+     <div><b>2</b>Presentation and live demonstration</div>
+    </div>
+   </div>
+   <div class="navs"><button class="btn gh" data-prev>← Back</button><button class="btn pri" data-next>Continue to objectives →</button></div>
+  </section>
+
+  <!-- STEP 3 -->
+  <section class="step" data-step="2">
+   <div class="shead"><div><div class="k">Step 3 of 5</div><h2>Problem, objectives and real-life use</h2><p>Explain what your project will find out, why it matters and who will use it. Suggestions for your chosen project appear under each box.</p></div></div>
+   <div class="alert" id="a2"></div>
+   <div class="guidehead" id="guideHead"></div>
+   <div class="card">
+    <h4>The problem</h4><p class="hint">Start from the driving question, then describe the problem in your own words.</p>
+    <div class="grid">
+     <div class="f"><label for="q_drive">Driving question <em>*</em></label><input class="in" id="q_drive" data-k="driving" maxlength="220"></div>
+     <div class="f"><label for="q_prob">Problem statement <em>*</em></label><textarea class="in" id="q_prob" data-k="problem" maxlength="700" placeholder="What does the organization record but not analyze? What decision is difficult for them right now?"></textarea></div>
+    </div>
+   </div>
+   <div class="card">
+    <h4>Project objectives</h4><p class="hint">Write three objectives. Begin each with an action verb, and link them to the standards below.</p>
+    <div class="std"><span>2.1 Identify data sources</span><span>2.2 Collect and organize data</span><span>2.3 Analyze patterns and trends</span><span>2.4 Visualize with dashboards</span></div>
+    <div class="grid">
+     <div class="objrow f"><span>1</span><input class="in" id="o1" data-k="obj1" maxlength="200" placeholder="e.g. Collect and organize … data using Microsoft Forms and Excel"></div>
+     <div class="objrow f"><span>2</span><input class="in" id="o2" data-k="obj2" maxlength="200" placeholder="e.g. Analyze the data to find …"></div>
+     <div class="objrow f"><span>3</span><input class="in" id="o3" data-k="obj3" maxlength="200" placeholder="e.g. Build an interactive dashboard that shows …"></div>
+    </div>
+   </div>
+   <div class="card">
+    <h4>Real-life use</h4><p class="hint">Who is your client, and how will your dashboard help them make better decisions?</p>
+    <div class="grid g2">
+     <div class="f"><label for="q_aud">Client / audience <em>*</em></label><input class="in" id="q_aud" data-k="audience" maxlength="120"></div>
+     <div class="f"><label for="q_ben">Who benefits? <em>*</em></label><input class="in" id="q_ben" data-k="benefit" maxlength="160" placeholder="e.g. students, staff, customers, managers"></div>
+    </div>
+    <div class="f" style="margin-top:14px"><label for="q_use">How will your findings be used in real life? <em>*</em></label><textarea class="in" id="q_use" data-k="realUse" maxlength="700" placeholder="Describe the decisions your dashboard will support and what could improve."></textarea></div>
+   </div>
+   <div class="card">
+    <h4>Data plan and tools</h4><p class="hint">Confirm what you will collect and how.</p>
+    <div class="f"><label for="q_data">Data to collect <em>*</em></label><input class="in" id="q_data" data-k="dataCollect" maxlength="240"></div>
+    <div class="f" style="margin-top:14px"><label>Collection methods <em>*</em></label><div class="checks" id="methods"></div></div>
+    <div class="f" style="margin-top:14px"><label>Tools <em>*</em></label><div class="checks" id="tools"></div></div>
+    <label class="agree" style="margin-top:16px"><input type="checkbox" id="q_priv" data-k="privacy"><span><b>Data privacy:</b> I will get permission to use the data and remove personal names, because names are not needed for analysis.</span></label>
+   </div>
+   <div class="navs"><button class="btn gh" data-prev>← Back</button><button class="btn pri" data-next>Unlock project schedule →</button></div>
+  </section>
+
+  <!-- STEP 4 -->
+  <section class="step" data-step="3">
+   <div class="shead"><div><div class="k">Step 4 of 5</div><h2>Phase 1 schedule: Gantt chart</h2><p>Plan every task between <b>Week 7 (Sun 4 Oct)</b> and <b>Week 9 (Thu 22 Oct)</b>. Choose a start and end day for each task, or click the chart: the first click sets the start, the next click sets the end.</p></div></div>
+   <div id="schedLock" class="lockbox"><b>Schedule locked</b>Complete steps 1 to 3 first. The Gantt chart opens once all your project information is recorded.</div>
+   <div id="schedBody" hidden>
+    <div class="alert" id="a3"></div>
+    <div class="gwrap"><table class="gantt" id="gantt"></table></div>
+    <div class="legend" id="legend"></div>
+    <div class="addrow"><input class="in" id="newTask" placeholder="Add your own task, e.g. Design survey questions" maxlength="60"><button class="btn gh sm" id="addTask" type="button">+ Add task</button></div>
+   </div>
+   <div class="navs" style="margin-top:18px"><button class="btn gh" data-prev>← Back</button><button class="btn pri" data-next>Review and download →</button></div>
+  </section>
+
+  <!-- STEP 5 -->
+  <section class="step" data-step="4">
+   <div class="shead"><div><div class="k">Step 5 of 5</div><h2>Review and download</h2><p>Check your Phase 1 plan, then download the PDF and hand it in to your teacher.</p></div></div>
+   <div class="rev" id="review"></div>
+   <div class="dl-box"><div><h4>Phase 1 Project Plan (PDF)</h4><p>Your PDF includes your student details, project, objectives, real-life use, data plan and the full Gantt chart. Phase 1 submission deadline: Week 9, Thursday 22 October.</p></div><button class="btn red" id="pdfBtn" type="button">⬇ Download PDF</button></div>
+   <div class="navs" style="margin-top:16px"><button class="btn gh" data-prev>← Back</button><button class="btn gh" id="reset" type="button">Start a new plan</button></div>
+  </section>
+ </main>
+</div>
+ </section>
+
+ <!-- ===================== PART B: PROJECT DESIGNING ===================== -->
+ <section class="part" id="partB">
+  <header class="top">
+   <div class="mark"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round"><rect x="7" y="2" width="10" height="5" rx="2.5"/><path d="M12 7v3M12 10l5 4-5 4-5-4z"/><path d="M12 18v4"/></svg></div>
+   <div><h1>PBL Project Designer: Project Flowchart</h1><p>Phase 1 | Project designing</p></div>
+   <div class="chips"><span class="chip mark6">PROJECT DESIGNING - 4 MARKS</span><span class="chip phase">PHASE 1 DESIGNING</span><span class="chip" id="bChip"><i></i>0 / 9 symbols complete</span></div>
+  </header>
+  <div class="dwrap">
+   <div class="shead"><div><div class="k">Part B</div><h2>PBL-PHASE-1-PROJECT DESIGNING</h2><p>Enter your details, choose your project, then complete the flowchart: click each symbol and choose the step that belongs there.</p></div></div>
+
+   <div class="card">
+    <h4>Student details</h4><p class="hint">Use English letters so your details appear correctly on the PDF.</p>
+    <div class="grid g3">
+     <div class="f" id="fb_name"><label for="b_name">Student Name <em>*</em></label><input class="in" id="b_name" data-b="name" placeholder="e.g. Omar Al-Harbi" maxlength="60"></div>
+     <div class="f" id="fb_sid"><label for="b_sid">SID <em>*</em></label><input class="in" id="b_sid" data-b="sid" placeholder="Student ID" maxlength="20"></div>
+     <div class="f" id="fb_grade"><label for="b_grade">Grade <em>*</em></label><input class="in" id="b_grade" data-b="grade" placeholder="e.g. G11-D" maxlength="20"></div>
+    </div>
+   </div>
+
+   <div class="card">
+    <h4>Choose your project</h4><p class="hint">Find your course and choose your project. Choosing a project in one list clears the other lists.</p>
+    <div class="courses" id="courses"></div>
+    <div class="selbar" id="selBar"></div>
+   </div>
+
+   <div class="card">
+    <div class="fchead"><div><div class="k">PROJECT FLOWCHART</div><h4 id="fcTitle">Choose a project to open your flowchart</h4><p class="hint" style="margin:0">Click a symbol, then choose one or more related steps. They appear to the right of the symbol.</p></div><button class="btn gh sm" id="fcClear" type="button">Clear flowchart</button></div>
+    <div class="fcgrid">
+     <div class="fcstage" id="fcStage"></div>
+    </div>
+   </div>
+
+   <div class="dl-box"><div><h4>Project Design (PDF, one page)</h4><p>Your PDF shows your student details, your selected project and your completed flowchart on a single page.</p></div><button class="btn red" id="bPdf" type="button">⬇ Download PDF</button></div>
+   <div class="navs" style="margin-top:16px"><span></span><button class="btn gh" id="bReset" type="button">Start a new design</button></div>
+  </div>
+  <footer class="bfoot" aria-live="polite">
+   <div class="bfin">
+    <div class="bf-l"><span class="bf-k">PROGRESS</span><span class="bf-n"><b id="bCount">0</b> of <span id="bTotal">9</span> symbols complete</span></div>
+    <div class="bf-bar"><div class="prog"><i id="bProg"></i></div></div>
+    <div class="bdots" id="bDots"></div>
+   </div>
+  </footer>
+ </section>
+ </div>
+</div>
+
+<!-- step picker (multi-select) -->
+<div class="modal" id="picker" hidden role="dialog" aria-modal="true" aria-labelledby="pkTitle">
+ <div class="mbox">
+  <div class="mhead" id="pkHead"></div>
+  <div class="opts" id="pkOpts"></div>
+  <div class="mcust"><input class="in" id="pkCustom" maxlength="45" placeholder="Add your own step (max 5 words)"><button class="btn gh sm" id="pkUse" type="button">+ Add</button></div>
+  <div class="mfoot"><button class="btn gh sm" id="pkClear" type="button">Clear all</button><span style="display:flex;gap:8px"><button class="btn gh sm" id="pkClose" type="button">Cancel</button><button class="btn pri sm" id="pkSave" type="button">Save steps</button></span></div>
+ </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<!-- =====================================================================
+ PROJECT GUIDE (separate section): suggested content for Step 3
+ (Problem, objectives and real-life use), one entry per project.
+ Row format: [project title, driving question, problem statement,
+ objective 1, objective 2, objective 3, client / audience, who benefits, real-life use]
+ To edit a project's guide, change its row. The title must match the project list.
+====================================================================== -->
+<script>
+window.PROJECT_GUIDE=Object.fromEntries([
+["School Library Usage Analysis","How can borrowing and visit data help the library stock the right books and plan its services?","The library records every book borrowed and returned, but nobody analyzes the records. Staff cannot easily see which books and categories are popular, when usage peaks, or which books are returned late, so buying and opening-hour decisions are based on guesses.","Collect and organize borrowing, return and visit records into a clean Excel dataset.","Analyze the data to find the most borrowed books, popular categories, monthly usage and overdue patterns.","Build an interactive dashboard that shows library usage for the librarian.","School librarian and library committee","Students, teachers and library staff","The librarian can buy more books in popular categories, send reminders for overdue books and plan staff for busy months."],
+["Hospital Patient Flow Analysis","How can arrival and discharge data show where patients wait and which departments are overloaded?","The hospital records patient arrivals, departments and admission and discharge times, but does not study how patients move through the hospital. Long waits and crowded departments are noticed only after complaints.","Collect and organize patient arrival, department and admission/discharge times into a clean dataset (no patient names).","Analyze the data to find patient volume, waiting-time patterns, department workload and peak periods.","Build an interactive dashboard that shows patient flow by department and time of day.","Hospital management and department heads","Patients, doctors, nurses and hospital managers","Managers can add staff at peak periods, shorten waiting times and balance the workload between departments."],
+["Restaurant Sales Analysis","Which dishes and times bring the most revenue, and how can the restaurant use this to sell more?","The restaurant records every sale but only looks at daily totals. The owner does not know which dishes sell best, which categories earn the most or when the restaurant is busiest.","Collect and organize menu item, quantity, price, date and meal period data into a clean Excel dataset.","Analyze the data to find best-selling dishes, revenue trends, peak hours and category performance.","Build an interactive dashboard that shows restaurant sales by dish, category and time.","Restaurant owner and manager","Owner, kitchen staff, waiters and customers","The manager can promote best sellers, remove weak items, plan ingredient orders and schedule staff for busy hours."],
+["School Attendance Analysis","How can attendance records reveal when and where students are most often absent?","The school records daily attendance, but the data is not analyzed. Staff cannot see which classes or periods have frequent absences, so problems are noticed late.","Collect and organize attendance dates, classes and status into a clean dataset (no student names).","Analyze the data to find attendance rates, absence patterns, class comparisons and frequent absence periods.","Build an interactive dashboard that shows attendance by class, day and month.","School administration and class teachers","Students, parents, teachers and the school","Staff can follow up early with classes that have high absence, plan support and share clear attendance reports with parents."],
+["Cafeteria Food Sales Analysis","Which foods and meal periods drive cafeteria sales, and how can waste be reduced?","The cafeteria records food sales but does not analyze them. Staff do not know which items are most popular or when demand peaks, so some food is wasted and other items run out.","Collect and organize food item, quantity, price, date and meal period data into a clean dataset.","Analyze the data to find popular foods, sales trends, peak periods and item performance.","Build an interactive dashboard that shows cafeteria sales by item and time.","Cafeteria manager","Students, teachers and cafeteria staff","The manager can prepare the right amounts, keep popular foods in stock, improve the menu and reduce waste."],
+["Store Customer Visits Analysis","How can customer visit data show when and where the store is busiest?","The store counts customer visits but does not study them. Managers do not know the busiest days, hours or store areas, so staffing and layout decisions are guesses.","Collect and organize visit dates, customer counts, store areas and visit times into a clean dataset.","Analyze the data to find busy periods, visit trends and daily and weekly patterns.","Build an interactive dashboard that shows customer visits by day, hour and store area.","Store manager","Customers, store staff and the owner","The manager can schedule staff for busy periods, place products in busy areas and plan promotions on quiet days."],
+["School Canteen Sales Analysis","Which products sell best in the school canteen, and when is demand highest?","The canteen sells many products every day, but sales are not analyzed. Staff do not know which products and meal periods bring the most sales, so stock and preparation are not well planned.","Collect and organize product, quantity, price, date and meal period data into a clean dataset.","Analyze the data to find best-selling products, daily sales, peak periods and product categories.","Build an interactive dashboard that shows canteen sales by product and time.","School canteen manager","Students, canteen staff and the school","The canteen can stock best sellers, prepare for peak breaks, offer healthier popular choices and reduce leftover food."],
+["Hospital Bed Occupancy Analysis","How can bed and ward data show when hospital beds are under or over used?","The hospital records bed use and admission dates but does not analyze them. Managers cannot easily see which wards are full, which have free beds or when occupancy peaks.","Collect and organize bed, ward, occupancy status and admission/discharge dates into a clean dataset.","Analyze the data to find occupancy rates, ward utilization and peak occupancy periods.","Build an interactive dashboard that shows bed occupancy by ward and date.","Hospital bed management and administration","Patients, nurses and hospital managers","Managers can move patients or staff between wards, plan for busy periods and use beds more efficiently."],
+["Retail Store Sales Analysis","Which products and branches perform best, and how can the store use sales data to grow?","The retail store records sales for many products and branches, but the data is not analyzed together. The owner cannot easily compare branches or see which products earn the most.","Collect and organize product, quantity, price, branch and date data into a clean Excel dataset.","Analyze the data to find product performance, branch comparisons, sales trends and revenue distribution.","Build an interactive dashboard that shows sales by product, branch and month.","Retail store owner and branch managers","Owners, managers, staff and customers","Managers can stock best sellers, support weaker branches and plan promotions at the right time."],
+["Supermarket Customer Purchase Analysis","What do customers buy together and when, and how can the supermarket use this to improve service?","The supermarket records every purchase but does not study customer buying behavior. Managers do not know which products and categories customers buy most or how much they spend.","Collect and organize product, quantity, category, purchase date and transaction value data into a clean dataset.","Analyze the data to find popular products, shopping patterns and category performance.","Build an interactive dashboard that shows customer purchases by product, category and time.","Supermarket management","Customers, managers and shelf-stocking staff","The supermarket can arrange shelves smartly, plan offers on popular products and keep enough stock."],
+["Student Performance Analysis","How can assessment results show which subjects and groups need more support?","The school records student results but does not compare them across subjects and grades. Teachers cannot easily see where scores are low or improving.","Collect and organize student results, subjects, scores and grades into a clean dataset (no student names).","Analyze the data to find average scores, subject performance, grade comparisons and improvement patterns.","Build an interactive dashboard that shows performance by subject and grade.","School academic leaders and subject teachers","Students, teachers and parents","Teachers can plan extra support for weaker subjects, share good practice from strong areas and track improvement over time."],
+["Hospital Appointment Analysis","How can appointment data show busy periods and reduce missed appointments?","The hospital records appointments but does not analyze them. Some departments are overbooked, and many patients miss their appointments, which wastes time and slots.","Collect and organize appointment dates, departments, types and attendance status into a clean dataset (no patient names).","Analyze the data to find appointment volume, busy periods, department demand and missed appointments.","Build an interactive dashboard that shows appointments by department, day and attendance status.","Hospital appointments office and department managers","Patients, doctors and reception staff","The hospital can add slots in busy departments, send reminders to reduce no-shows and plan doctor schedules."],
+["Supermarket Product Sales Analysis","Which products and categories sell best, and how can sales data guide stock and pricing?","The supermarket records product sales but does not analyze them. Managers do not know which categories earn the most or how daily sales change.","Collect and organize product, quantity, price, category and sales date data into a clean dataset.","Analyze the data to find best-selling products, category sales, daily trends and revenue patterns.","Build an interactive dashboard that shows sales by product, category and day.","Supermarket manager","Customers, managers and suppliers","The supermarket can reorder fast sellers on time, reduce slow stock and plan discounts."],
+["School Transportation Analysis","How can bus route data show where buses are crowded or late?","The school transport department records routes, passengers and times, but does not analyze them. Some buses are crowded, others are nearly empty, and delays are not tracked.","Collect and organize route, passenger count, pickup, arrival time and delay data into a clean dataset.","Analyze the data to find route usage, passenger distribution, delay patterns and peak periods.","Build an interactive dashboard that shows bus usage and delays by route and time.","School transport department","Students, parents, drivers and the school","The department can rebalance routes, add a bus where needed and fix routes with frequent delays."],
+["Hospital Pharmacy Inventory Analysis","How can stock data help the pharmacy avoid running out of important medicines?","The pharmacy records purchases and stock but does not analyze them. Some medicines run out while others stay unused on the shelf.","Collect and organize medicine name, quantity, stock level, purchase and usage date data into a clean dataset.","Analyze the data to find fast-moving medicines, stock levels, reorder patterns and inventory trends.","Build an interactive dashboard that shows medicine stock and usage.","Hospital pharmacy manager","Patients, pharmacists and doctors","The pharmacy can set reorder points, avoid shortages and reduce waste from expired medicines."],
+["Hotel Occupancy Analysis","How can room and booking data show when the hotel is full and when it is empty?","The hotel records bookings but does not study occupancy over time. Managers cannot easily see which room types are in demand or which periods are quiet.","Collect and organize room, booking, check-in/out date, room type and occupancy data into a clean dataset.","Analyze the data to find occupancy rates, room-type demand, peak periods and booking trends.","Build an interactive dashboard that shows hotel occupancy by room type and date.","Hotel management","Guests, hotel managers and staff","Managers can set better prices, plan offers for quiet periods and schedule staff for busy seasons."],
+["Airline Passenger Data Analysis","How can flight data show which routes are popular and where delays and cancellations happen?","The airline records flights, passengers, delays and cancellations, but does not analyze them together. It is hard to see which routes have high demand or frequent problems.","Collect and organize flight, destination, passenger, date, delay and cancellation data into a clean dataset.","Analyze the data to find passenger volume, route demand, delays and cancellation patterns.","Build an interactive dashboard that shows passengers and delays by route and date.","Airline operations and planning team","Passengers, airline staff and managers","The airline can add flights on busy routes, fix routes with frequent delays and improve passenger satisfaction."],
+["Teacher Attendance Analysis","How can teacher attendance data show absence patterns so lessons are covered better?","The school records teacher attendance but does not analyze it. Leaders cannot easily see which departments or months have the most absences, so cover is arranged at the last minute.","Collect and organize attendance dates, departments and status into a clean dataset (no teacher names).","Analyze the data to find attendance rates, absence patterns, department comparisons and monthly trends.","Build an interactive dashboard that shows teacher attendance by department and month.","School administration and head of school","Students, teachers and school leaders","Leaders can plan cover teachers early, spot busy absence periods and keep lessons running smoothly."],
+["Hospital Medicine Usage Analysis","Which medicines does each department use most, and how can this guide ordering?","The hospital records medicines used by departments but does not analyze the data. Managers do not know which medicines have the highest demand or how usage changes by month.","Collect and organize medicine name, quantity used, department and usage date data into a clean dataset.","Analyze the data to find medicine demand, department usage, monthly trends and high-use medicines.","Build an interactive dashboard that shows medicine usage by department and month.","Hospital pharmacy and procurement team","Patients, doctors, nurses and pharmacists","The hospital can order the right quantities, prepare for seasonal demand and control costs."],
+["Bus Passenger Analysis","How can passenger counts show which routes and times need more buses?","The bus system records passenger numbers but does not analyze them. Planners cannot easily see which routes, stops and times are overcrowded.","Collect and organize route, passenger count, date, time and boarding location data into a clean dataset.","Analyze the data to find route demand, busy times, passenger trends and location comparisons.","Build an interactive dashboard that shows passengers by route, stop and time.","Bus company planners and operations managers","Passengers, drivers and the bus company","Planners can add buses at busy times, adjust timetables and remove low-demand trips."],
+["School Facility Usage Analysis","How can booking data show which school facilities are used most and which are underused?","The school records bookings for rooms, labs and halls, but does not analyze them. Some facilities are always full while others are rarely used.","Collect and organize room, lab and hall bookings, times, durations and departments into a clean dataset.","Analyze the data to find most-used facilities, peak hours and utilization rates.","Build an interactive dashboard that shows facility usage by place, time and department.","School administration","Teachers, students and school leaders","The school can improve timetables, share facilities fairly and decide where new spaces are needed."],
+["Banking Transaction Analysis","How can transaction data show customer activity patterns across branches and accounts?","The bank records many transactions but does not study them together. Managers cannot easily see which branches and transaction types are busiest.","Collect and organize transaction type, amount, date, branch and account category data into a clean dataset (no account numbers or names).","Analyze the data to find transaction trends, branch activity and transaction categories.","Build an interactive dashboard that shows transactions by branch, type and date.","Bank branch and operations managers","Customers, bank staff and managers","The bank can staff branches for busy days, improve services that customers use most and spot unusual activity trends."],
+["E-Commerce Sales Analysis","Which products and order patterns drive online sales, and how can the store grow them?","The online store records orders but does not analyze them. The owner does not know which products are in demand or when customers order most.","Collect and organize product, order, quantity, price, customer group and date data into a clean dataset (no customer names).","Analyze the data to find sales trends, product demand, order patterns and revenue.","Build an interactive dashboard that shows online sales by product and date.","Online store owner and marketing team","Customers, owners and delivery staff","The store can promote high-demand products, time its offers well and keep the right stock."],
+["Public Transportation Usage Analysis","How can ridership data show which routes and stations are busiest?","The bus and metro system records passengers, but the data is not analyzed. Planners cannot easily see popular routes, peak hours or crowded stations.","Collect and organize route, passenger count, date, time and station data into a clean dataset.","Analyze the data to find route popularity, peak hours and passenger trends.","Build an interactive dashboard that shows ridership by route, station and hour.","Public transport authority","Commuters, drivers and city planners","The authority can increase service at peak hours, improve crowded stations and plan new routes."],
+["Classroom Usage Analysis","How can usage data show how well classrooms are used?","The school has many classrooms, but nobody analyzes how often they are occupied. Some rooms are overcrowded or empty at certain times.","Collect and organize classroom, class, usage time, occupancy and subject data into a clean dataset.","Analyze the data to find room usage, busy periods, occupancy patterns and class comparisons.","Build an interactive dashboard that shows classroom usage by room and period.","School timetable coordinator and administration","Students, teachers and school leaders","The school can improve timetables, balance room use and plan for new classes."],
+["Patient Admission Analysis","How can admission data show which departments and periods are busiest?","The hospital records admissions but does not analyze trends. Managers cannot easily see which departments have rising admissions or when the busiest periods are.","Collect and organize admission date, department, patient count and discharge date data into a clean dataset (no patient names).","Analyze the data to find admission trends, department workload and busy periods.","Build an interactive dashboard that shows admissions by department and date.","Hospital administration and department heads","Patients, doctors, nurses and managers","The hospital can plan staff and beds ahead for busy periods and give more support to high-workload departments."],
+["Parking Usage Analysis","How can entry and exit data show when and where parking is busiest?","The parking facility records vehicle entries and exits but does not analyze them. Drivers find areas full at certain times while other areas are empty.","Collect and organize entry time, exit time, vehicle count and parking area data into a clean dataset (no plate numbers).","Analyze the data to find busy periods, parking area usage and daily and weekly patterns.","Build an interactive dashboard that shows parking usage by area and time.","Parking facility manager","Drivers, visitors and facility staff","The manager can guide drivers to free areas, plan staff and set better opening or pricing rules."],
+["School Event Participation Analysis","Which school events attract the most participants, and why?","The activities department organizes many events but does not analyze attendance. Planners do not know which events and categories are popular.","Collect and organize event name, date, participant number, category and location data into a clean dataset.","Analyze the data to find popular events, participation trends, category comparisons and venue usage.","Build an interactive dashboard that shows event participation by category and date.","School activities department","Students, teachers and event organizers","The department can plan more of the popular events, choose better venues and dates and improve participation."],
+["Warehouse Inventory Analysis","How can stock data help the warehouse avoid shortages and overstock?","The warehouse records stock coming in and going out but does not analyze movement. Some products run out while others sit unused.","Collect and organize product, stock level, incoming/outgoing quantity and date data into a clean dataset.","Analyze the data to find stock movement, fast-moving products, low-stock items and inventory trends.","Build an interactive dashboard that shows stock levels and movement by product.","Warehouse manager","Warehouse staff, suppliers and customers","The warehouse can reorder on time, reduce storage cost and deliver orders faster."],
+["Cinema Ticket Sales Analysis","Which movies, genres and showtimes sell the most tickets?","The cinema records ticket sales but does not analyze them. Managers do not know which genres and showtimes are most popular.","Collect and organize movie, genre, tickets sold, showtime, date and ticket price data into a clean dataset.","Analyze the data to find popular movies, genre demand, showtime performance and sales trends.","Build an interactive dashboard that shows ticket sales by movie, genre and showtime.","Cinema manager","Moviegoers, cinema staff and the owner","The cinema can choose the right movies and showtimes, plan staff and promote quiet shows."],
+["Electricity Consumption Analysis","How can usage data show where and when the building uses the most electricity?","The facility pays electricity bills but does not analyze its consumption. Managers do not know which rooms or equipment use the most energy or when peaks happen.","Collect and organize daily consumption, room, equipment, date and usage period data into a clean dataset.","Analyze the data to find consumption trends, peak usage, room comparisons and energy patterns.","Build an interactive dashboard that shows electricity use by room and time.","Facility manager","The school or building, staff and the environment","The manager can switch off unused equipment, plan energy-saving actions and reduce the electricity bill."],
+["School Exam Results Analysis","How can exam results show strengths and weaknesses across subjects and classes?","The school records exam scores but does not compare them across subjects, classes and exam dates. Teachers cannot easily see where students struggle.","Collect and organize exam subject, student score, grade, class and exam date data into a clean dataset (no student names).","Analyze the data to find average scores, subject comparisons, class performance and grade trends.","Build an interactive dashboard that shows exam results by subject, class and grade.","School academic leaders and subject teachers","Students, teachers and parents","Teachers can plan revision for weak topics, compare classes fairly and set realistic targets."],
+["Hotel Guest Services Analysis","How can guest request data show which services are most needed and how fast the hotel responds?","The hotel records guest requests but does not analyze them. Managers do not know which services are used most or which departments respond slowly.","Collect and organize guest request, service type, date, response time and department data into a clean dataset (no guest names).","Analyze the data to find popular services, service demand and response-time patterns.","Build an interactive dashboard that shows service requests and response times by department.","Hotel guest services manager","Guests, hotel staff and managers","The hotel can staff busy services, shorten response times and improve guest satisfaction."],
+["Sports Facility Usage Analysis","How can booking data show when sports facilities are busy or free?","The sports department records bookings but does not analyze them. Some facilities are overbooked at certain times while others are rarely used.","Collect and organize facility, booking, date, time, user and activity data into a clean dataset.","Analyze the data to find facility demand, busy periods and activity comparisons.","Build an interactive dashboard that shows facility usage by place, time and activity.","School sports department","Students, coaches and sports staff","The department can improve timetables, share facilities fairly and plan new activities for free times."],
+["School Resource & Equipment Usage Analysis","How can usage and maintenance records show which equipment is used most and needs repair most often?","The school records equipment use and maintenance but does not analyze it. Some devices are overused and break often, while others are rarely used.","Collect and organize equipment type, usage and maintenance record data into a clean dataset.","Analyze the data to find most-used equipment, maintenance frequency and utilization trends.","Build an interactive dashboard that shows equipment usage and maintenance by type.","School IT or resources department","Students, teachers and IT staff","The department can plan repairs and replacements, buy more of the most needed items and share equipment fairly."],
+["Hospital Waiting Time Analysis","How can arrival and service times show where patients wait longest?","The hospital records patient arrival and service times but does not analyze waiting. Long waits are known from complaints, not from data.","Collect and organize department, arrival time, waiting time, service time and date data into a clean dataset (no patient names).","Analyze the data to find average waiting time, department comparisons and peak periods.","Build an interactive dashboard that shows waiting times by department and hour.","Hospital service quality manager","Patients, doctors and hospital staff","The hospital can add staff at peak times, redesign queues and reduce long waits."],
+["Hotel Room Booking Analysis","How can booking records show which rooms and dates are in highest demand?","The hotel records bookings but does not analyze them. Managers cannot easily see room demand, booking trends or cancellations.","Collect and organize room type, booking, check-in/out date and booking status data into a clean dataset.","Analyze the data to find room demand, booking trends and occupancy patterns.","Build an interactive dashboard that shows bookings by room type, date and status.","Hotel reservations manager","Guests, reservation staff and hotel managers","The hotel can set prices by demand, plan offers for low-demand rooms and reduce cancellations."],
+["Library Book Borrowing Analysis","Which books and categories do students borrow most, and when?","The school library records borrowing but does not study reading habits. Librarians do not know which categories and student groups borrow the most.","Collect and organize book title, category, borrowing date, return date and student group data into a clean dataset (no student names).","Analyze the data to find most borrowed books, popular categories and monthly borrowing trends.","Build an interactive dashboard that shows borrowing by book, category and month.","School librarian","Students, teachers and library staff","The librarian can buy popular books, run reading campaigns in low-use months and encourage reading in quiet groups."],
+["Restaurant Customer Analysis","How can customer visit data show when the restaurant is busiest and how much customers spend?","The restaurant counts customers but does not analyze visits. Managers do not know the busiest meal periods or the average order value.","Collect and organize customer visit, date, meal period, customer count and order value data into a clean dataset (no customer names).","Analyze the data to find customer trends, busy periods, meal-period patterns and average orders.","Build an interactive dashboard that shows customers and order values by day and meal period.","Restaurant manager","Customers, waiters and the owner","The manager can staff busy periods, plan offers for quiet times and improve service."],
+["Computer Lab Usage Analysis","How can booking data show when the computer lab is busy and how well it is used?","The school records lab bookings but does not analyze them. Some periods are overbooked while many computers sit unused at other times.","Collect and organize lab booking, class, date, usage time and student count data into a clean dataset.","Analyze the data to find lab utilization, busy periods, class usage and computer demand.","Build an interactive dashboard that shows lab usage by class, day and period.","School computer studies department and IT coordinator","Students, teachers and IT staff","The school can improve lab timetables, plan new computers or maintenance and give fair access to all classes."]
+].map(r=>[r[0],{q:r[1],p:r[2],o:[r[3],r[4],r[5]],c:r[6],b:r[7],u:r[8]}]));
+</script>
+
+<!-- =====================================================================
+ PART B DATA (separate section): course dropdowns, project lists and steps.
+ To change a course's projects, edit its "projects" array.
+ Courses 2, 4 and 5 (cybersecurity) use CYBER_ROLES; course 3 uses the planner list (Part A).
+ DESIGN_STEPS: the steps students can choose for each flowchart stage.
+ Keep every step to 5 words or fewer so it fits on one line.
+====================================================================== -->
+<script>
+window.DESIGN_COURSES=(function(){
+ const CYBER_ROLES=['SOC Analyst','Penetration Tester','Security Engineer','Incident Responder','Digital Forensics Analyst','Threat Intelligence Analyst','Vulnerability Analyst','GRC Analyst','Network Security Administrator','Cloud Security Specialist'];
+ const PLANNER_LIST=Object.keys(window.PROJECT_GUIDE||{}).sort((a,b)=>a.localeCompare(b));
+ return [
+  {label:'G10-COMPUTER STUDIES',projects:['Smart Home Security System','Fire Alarm and Emergency Warning System']},
+  {label:'GRADE 10-CYBERSECURITY',projects:CYBER_ROLES},
+  {label:'GRADE-11-COMPUTER STUDIES',projects:PLANNER_LIST},
+  {label:'GRADE-11-CYBERSECURITY',projects:CYBER_ROLES},
+  {label:'GRADE-12-CYBERSECURITY',projects:CYBER_ROLES}
+ ];})();
+window.DESIGN_STEPS={
+ Begin:['Start the project','Receive the project brief','Meet the client','Choose the project idea'],
+ Planning:['Identify the problem','Define the project goal','Set project objectives','List project requirements','Plan tasks and timeline','Create the Gantt chart','Assign time and resources'],
+ Research:['Gather client requirements','Research existing solutions','Collect background information','Study similar projects','Survey users for needs','List components and tools'],
+ Design:['Sketch the initial design','Draw the block diagram','Design the user interface','Choose components and software','Plan the data structure','Review design with teacher'],
+ Development:['Build the prototype','Connect the hardware parts','Write the program code','Upload code to device','Collect and organize data','Create the dashboard visuals'],
+ Testing:['Does the system work?','Does it meet requirements?','Do all tests pass?','Is the data accurate?','Are users satisfied?'],
+ Evaluation:['Compare results with objectives','Analyze the test results','Collect user feedback','List strengths and weaknesses','Suggest future improvements'],
+ Presentation:['Prepare presentation slides','Demonstrate the working project','Present findings and results','Submit the final report','Share project with client'],
+ Finish:['End the project','Project complete','Submit final version of project']
+};
+</script>
+
+<!-- ===================== PART A SCRIPT (planner) ===================== -->
+<script>
+(function(){
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2600);};
+
+/* ---------- Project list (no grade or team names), sorted A-Z ---------- */
+const P=(title,src,col,ana,vis)=>({title,src,col,ana,vis});
+const PROJECTS=[
+P('School Library Usage Analysis','School Library','Book titles, categories, borrowing dates, return dates, visits','Most borrowed books, popular categories, monthly usage, overdue patterns','Library usage dashboard'),
+P('Hospital Patient Flow Analysis','Hospital','Patient arrivals, departments, waiting times, admission/discharge times','Patient volume, waiting-time patterns, department workload, peak periods','Hospital flow dashboard'),
+P('Restaurant Sales Analysis','Restaurant','Menu items, quantities, prices, dates, meal periods','Best-selling dishes, revenue trends, peak hours, category performance','Restaurant sales dashboard'),
+P('School Attendance Analysis','School','Student attendance dates, classes, attendance status, absences','Attendance rates, absence patterns, class comparison, frequent absence periods','Attendance dashboard'),
+P('Cafeteria Food Sales Analysis','Cafeteria','Food items, quantities, prices, dates, meal periods','Popular foods, sales trends, peak periods, item performance','Cafeteria sales dashboard'),
+P('Store Customer Visits Analysis','Retail Store','Visit dates, customer counts, store areas, visit times','Busy periods, visit trends, daily and weekly patterns','Customer visits dashboard'),
+P('School Canteen Sales Analysis','School Canteen','Products, quantities sold, prices, dates, meal periods','Best-selling products, daily sales, peak periods, product categories','Canteen sales dashboard'),
+P('Hospital Bed Occupancy Analysis','Hospital','Beds, wards, occupancy status, admission/discharge dates','Occupancy rate, ward utilization, peak occupancy periods','Bed occupancy dashboard'),
+P('Retail Store Sales Analysis','Retail Store','Products, quantities, prices, branches, dates','Product performance, branch comparison, sales trends, revenue distribution','Retail sales dashboard'),
+P('Supermarket Customer Purchase Analysis','Supermarket','Products, quantities, categories, purchase dates, transaction values','Popular products, shopping patterns, category performance','Customer purchase dashboard'),
+P('Student Performance Analysis','School','Student results, subjects, assessment scores, grades','Average scores, subject performance, grade comparison, improvement patterns','Student performance dashboard'),
+P('Hospital Appointment Analysis','Hospital','Appointment dates, departments, appointment types, attendance status','Appointment volume, busy periods, department demand, missed appointments','Appointment dashboard'),
+P('Supermarket Product Sales Analysis','Supermarket','Products, quantities, prices, categories, sales dates','Best-selling products, category sales, daily trends, revenue patterns','Supermarket sales dashboard'),
+P('School Transportation Analysis','School Transport Department','Bus routes, passenger counts, pickup times, arrival times, delays','Route usage, passenger distribution, delay patterns, peak periods','Transport dashboard'),
+P('Hospital Pharmacy Inventory Analysis','Hospital Pharmacy','Medicine names, quantities, stock levels, purchases, usage dates','Fast-moving medicines, stock levels, reorder patterns, inventory trends','Pharmacy inventory dashboard'),
+P('Hotel Occupancy Analysis','Hotel','Rooms, bookings, check-in/out dates, room types, occupancy','Occupancy rates, room-type demand, peak periods, booking trends','Hotel occupancy dashboard'),
+P('Airline Passenger Data Analysis','Airline','Flights, destinations, passengers, dates, delays, cancellations','Passenger volume, route demand, delays, cancellation patterns','Airline passenger dashboard'),
+P('Teacher Attendance Analysis','School','Teacher attendance dates, departments, attendance status, absences','Attendance rates, absence patterns, department comparison, monthly trends','Teacher attendance dashboard'),
+P('Hospital Medicine Usage Analysis','Hospital Pharmacy','Medicine names, quantities used, departments, usage dates','Medicine demand, department usage, monthly trends, high-use medicines','Medicine usage dashboard'),
+P('Bus Passenger Analysis','Bus System','Routes, passenger counts, dates, times, boarding locations','Route demand, busy times, passenger trends, location comparison','Bus passenger dashboard'),
+P('School Facility Usage Analysis','School Administration','Rooms, labs, halls, booking times, usage duration, departments','Most-used facilities, peak hours, utilization rates','Facility usage dashboard'),
+P('Banking Transaction Analysis','Bank','Transaction type, amount, date, branch, account category','Transaction trends, branch activity, transaction categories','Banking analytics dashboard'),
+P('E-Commerce Sales Analysis','Online Store','Products, orders, quantities, prices, customers, dates','Sales trends, product demand, order patterns, revenue','E-commerce sales dashboard'),
+P('Public Transportation Usage Analysis','Bus / Metro System','Routes, passenger counts, dates, times, stations','Route popularity, peak hours, passenger trends','Public transport dashboard'),
+P('Classroom Usage Analysis','School','Classrooms, classes, usage times, occupancy, subjects','Room usage, busy periods, occupancy patterns, class comparison','Classroom usage dashboard'),
+P('Patient Admission Analysis','Hospital','Admission dates, departments, patient counts, discharge dates','Admission trends, department workload, busy periods','Patient admission dashboard'),
+P('Parking Usage Analysis','Parking Facility','Entry times, exit times, vehicle counts, parking areas','Busy periods, parking area usage, daily and weekly patterns','Parking usage dashboard'),
+P('School Event Participation Analysis','School Activities Department','Event names, dates, participant numbers, categories, locations','Popular events, participation trends, category comparison, venue usage','Event participation dashboard'),
+P('Warehouse Inventory Analysis','Warehouse','Products, stock levels, incoming/outgoing quantities, dates','Stock movement, fast-moving products, low-stock items, inventory trends','Warehouse inventory dashboard'),
+P('Cinema Ticket Sales Analysis','Cinema','Movies, genres, tickets sold, showtimes, dates, ticket prices','Popular movies, genre demand, showtime performance, sales trends','Cinema sales dashboard'),
+P('Electricity Consumption Analysis','Building / Facility','Daily consumption, rooms, equipment, dates, usage periods','Consumption trends, peak usage, room comparison, energy patterns','Electricity usage dashboard'),
+P('School Exam Results Analysis','School','Exam subjects, student scores, grades, classes, exam dates','Average scores, subject comparison, class performance, grade trends','Exam results dashboard'),
+P('Hotel Guest Services Analysis','Hotel','Guest requests, service types, dates, response times, departments','Popular services, service demand, response-time patterns','Guest services dashboard'),
+P('Sports Facility Usage Analysis','Sports Department','Facility names, bookings, dates, times, users, activities','Facility demand, busy periods, activity comparison','Sports facility dashboard'),
+P('School Resource & Equipment Usage Analysis','School / Department','Computers, projectors, devices, equipment type, usage, maintenance records','Most-used equipment, maintenance frequency, utilization trends','Equipment usage dashboard'),
+P('Hospital Waiting Time Analysis','Hospital','Departments, patient arrivals, waiting times, service times, dates','Average waiting time, department comparison, peak periods','Hospital waiting-time dashboard'),
+P('Hotel Room Booking Analysis','Hotel','Room types, bookings, check-in/out dates, booking status','Room demand, booking trends, occupancy patterns','Hotel booking dashboard'),
+P('Library Book Borrowing Analysis','School Library','Book titles, categories, borrowing dates, return dates, student groups','Most borrowed books, popular categories, monthly borrowing trends','Book borrowing dashboard'),
+P('Restaurant Customer Analysis','Restaurant','Customer visits, dates, meal periods, customer counts, order values','Customer trends, busy periods, meal-period patterns, average orders','Restaurant customer dashboard'),
+P('Computer Lab Usage Analysis','School Computer Lab','Computer lab bookings, classes, dates, usage times, student counts','Lab utilization, busy periods, class usage, computer demand','Computer lab usage dashboard')
+].sort((a,b)=>a.title.localeCompare(b.title));
+
+const METHODS=['Microsoft / Google Forms survey','Existing records (with permission)','Observation log','Interviews','MS Excel data log'];
+const TOOLS=['Gantt Chart Tool','MS Excel','Microsoft / Google Forms','Power BI','Tableau','Cisco Packet Tracer','Tinkercad / Arduino','Wireshark / security tools'];
+/* school days: Sun-Thu, Week 7 to Week 9, 2026 */
+const DAYS=[];{const wk=[[7,4],[8,11],[9,18]];const nm=['Sun','Mon','Tue','Wed','Thu'];
+ wk.forEach(([w,d0])=>nm.forEach((n,i)=>DAYS.push({w,d:d0+i,n,label:`${n} ${d0+i} Oct`})));}
+const MILESTONES=[{i:4,t:'Week 7 checkpoint: feedback on project plan'},{i:9,t:'Week 8 checkpoint: feedback on dataset and findings'},{i:14,t:'PHASE 1 SUBMISSION DEADLINE (Week 9, Thu 22 Oct)',red:true}];
+const STAGE_C=['#2459E0','#3B7BF0','#0E8C7E','#16A085','#D97A06','#E39A0B','#8E44AD','#C62828','#5D6B82'];
+const DEFAULT_TASKS=[
+ {name:'Problem analysis and objectives',hint:'Suggested: Week 7'},
+ {name:'Project plan and Gantt chart',hint:'Suggested: Week 7'},
+ {name:'Data collection',hint:'Suggested: Week 8'},
+ {name:'Data cleaning and organizing (Excel)',hint:'Suggested: Week 8'},
+ {name:'Data analysis: patterns and trends',hint:'Suggested: Week 8'},
+ {name:'Dashboard design (Power BI / Tableau)',hint:'Suggested: Week 9'},
+ {name:'Final dashboard, findings and recommendations',hint:'Suggested: Week 9'},
+ {name:'Rehearsal, presentation and Phase 1 submission',hint:'Suggested: Week 9, by Thu 22 Oct'}];
+
+/* general task list for non data-analysis projects (Computer Studies G10 and cybersecurity courses) */
+const GENERAL_TASKS=[
+ {name:'Problem analysis and objectives',hint:'Suggested: Week 7'},
+ {name:'Project plan and Gantt chart',hint:'Suggested: Week 7'},
+ {name:'Research and requirements',hint:'Suggested: Week 8'},
+ {name:'Solution design',hint:'Suggested: Week 8'},
+ {name:'Build / develop the solution',hint:'Suggested: Week 8'},
+ {name:'Testing and improvement',hint:'Suggested: Week 9'},
+ {name:'Final review and documentation',hint:'Suggested: Week 9'},
+ {name:'Presentation and final submission',hint:'Suggested: Week 9, by Thu 22 Oct'}];
+const COURSES=window.DESIGN_COURSES,DATA_COURSE=2; /* GRADE-11-COMPUTER STUDIES = data analysis projects */
+const tplFor=c=>(c===DATA_COURSE?DEFAULT_TASKS:GENERAL_TASKS).map(t=>({name:t.name,hint:t.hint,s:null,e:null,custom:false}));
+
+/* ---------- State ---------- */
+const KEY='g11-pbl-phase1-individual-v1';
+const blank=()=>({name:'',sid:'',section:'',course:null,project:'',
+ driving:'',problem:'',obj1:'',obj2:'',obj3:'',audience:'',benefit:'',realUse:'',dataCollect:'',methods:[],tools:['Gantt Chart Tool','MS Excel'],privacy:false,
+ tasks:DEFAULT_TASKS.map(t=>({name:t.name,hint:t.hint,s:null,e:null,custom:false})),step:0});
+let S;try{S=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||'{}'));}catch(_){S=blank();}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(S));}catch(_){}};
+/* older saves stored the project as a number in the Grade 11 list */
+if(/^\d+$/.test(String(S.project))&&S.course==null){const p=PROJECTS[+S.project];S.course=p?DATA_COURSE:null;S.project=p?p.title:'';}
+if(/^\d+$/.test(String(S.prefillFor||''))){const p=PROJECTS[+S.prefillFor];S.prefillFor=p?p.title:'';}
+const proj=()=>{if(S.course==null||!S.project)return null;const c=COURSES[S.course];if(!c||!c.projects.includes(S.project))return null;
+ const d=PROJECTS.find(p=>p.title===S.project);return d?Object.assign({course:c.label},d):{title:S.project,course:c.label,generic:true};};
+const LAST=4; /* index of review step */
+
+/* ---------- Stepper ---------- */
+const STEPS=[['Student information','Name, SID, grade'],['Project selection','Course and project'],['Objectives and real-life use','Problem, goals, data plan'],['Phase 1 schedule','Weekly Gantt chart'],['Review and download','PDF for your teacher']];
+const stepper=$('#stepper');
+STEPS.forEach(([t,s],i)=>{const li=document.createElement('li');li.innerHTML=`<button type="button"><span class="n">${i+1}</span><span class="t">${t}<span class="s">${s}</span></span></button>`;li.querySelector('button').addEventListener('click',()=>tryGo(i));stepper.appendChild(li);});
+
+/* ---------- Validation ---------- */
+const filled=v=>!!String(v||'').trim();
+function check(i){const e=[];
+ if(i===0){if(!filled(S.name))e.push(['s_name','Enter your full name.']);if(!filled(S.sid))e.push(['s_sid','Enter your SID.']);if(!filled(S.section))e.push(['s_sec','Enter your grade.']);}
+ if(i===1){if(!proj())e.push([null,'Choose your project from one of the course lists.']);}
+ if(i===2){[['q_drive','driving','Write the driving question.'],['q_prob','problem','Write the problem statement.'],['o1','obj1','Write objective 1.'],['o2','obj2','Write objective 2.'],['o3','obj3','Write objective 3.'],['q_aud','audience','Enter the client or audience.'],['q_ben','benefit','Say who benefits.'],['q_use','realUse','Describe the real-life use.'],['q_data','dataCollect','List the data to collect.']]
+   .forEach(([id,k,m])=>{if(!filled(S[k]))e.push([id,m]);});
+  if(filled(S.problem)&&S.problem.trim().length<30)e.push(['q_prob','Make the problem statement at least one full sentence.']);
+  if(!S.methods.length)e.push([null,'Choose at least one collection method.']);
+  if(!S.tools.includes('Gantt Chart Tool')||S.tools.length<2)e.push([null,'Tools must include the Gantt Chart Tool and at least one other tool.']);
+  if(!S.privacy)e.push([null,'Tick the data privacy statement.']);}
+ if(i===3){if(!infoDone())e.push([null,'Complete steps 1 to 3 first.']);
+  S.tasks.forEach((t,k)=>{if(!filled(t.name))e.push([null,`Task ${k+1} needs a name.`]);if(t.s===null||t.e===null)e.push([null,`Set the start and end day for "${t.name||'Task '+(k+1)}".`]);else if(t.e<t.s)e.push([null,`"${t.name}" ends before it starts.`]);});}
+ return e;}
+const infoDone=()=>[0,1,2].every(i=>!check(i).length);
+const allDone=()=>[0,1,2,3].every(i=>!check(i).length);
+function showErr(i,errs){const a=$('#a'+i);if(!a)return;$$(`.step[data-step="${i}"] .f.err`).forEach(x=>x.classList.remove('err'));
+ if(!errs.length){a.classList.remove('show');return;}
+ a.innerHTML='<b>Please complete:</b> '+[...new Set(errs.map(x=>x[1]))].join(' ');a.classList.add('show');
+ errs.forEach(([id])=>{if(id){const el=document.getElementById(id);if(el)el.closest('.f').classList.add('err');}});
+ a.scrollIntoView({behavior:'smooth',block:'center'});}
+
+/* ---------- Navigation ---------- */
+function go(i){S.step=i;save();document.body.classList.toggle('wide',i===1||i===3);$$('.step').forEach(s=>s.classList.toggle('show',+s.dataset.step===i));
+ if(i===2){prefill();renderGuides();}if(i===3)renderSched();if(i===4)renderReview();
+ updateStepper();const pw=document.querySelector('#partA .wrap');if(pw)pw.scrollTo({top:0,behavior:'smooth'});window.scrollTo({top:0,behavior:'smooth'});}
+function tryGo(i){if(i<=S.step){go(i);return;}
+ for(let k=S.step;k<i;k++){const e=check(k);if(e.length){go(k);setTimeout(()=>showErr(k,e),60);return;}}
+ if(i>=3&&!infoDone()){toast('Complete steps 1 to 3 to unlock the schedule.');return;}go(i);}
+$$('[data-next]').forEach(b=>b.addEventListener('click',()=>{const i=S.step,e=check(i);showErr(i,e);if(e.length)return;go(i+1);}));
+$$('[data-prev]').forEach(b=>b.addEventListener('click',()=>go(S.step-1)));
+function updateStepper(){const lis=[...stepper.children];let n=0;
+ lis.forEach((li,i)=>{const ok=i<LAST?!check(i).length:false;if(ok)n++;li.classList.toggle('done',ok);li.classList.toggle('cur',i===S.step);li.classList.toggle('locked',i>=3&&!infoDone());});
+ $('#prog').style.width=(n/LAST*100)+'%';}
+
+/* ---------- Bind simple fields ---------- */
+$$('[data-k]').forEach(el=>{const k=el.dataset.k;
+ if(el.type==='checkbox')el.checked=!!S[k];else if(k!=='project')el.value=S[k]||'';
+ el.addEventListener('input',()=>{S[k]=el.type==='checkbox'?el.checked:el.value;
+   save();updateStepper();if(['name','sid','section'].includes(k))shareA();const f=el.closest('.f');if(f)f.classList.remove('err');});
+ el.addEventListener('change',()=>el.dispatchEvent(new Event('input')));});
+
+/* ---------- Projects ---------- */
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+/* course dropdowns (same design as Part B) */
+$('#coursesA').innerHTML=COURSES.map((c,i)=>`<div class="course" data-ci="${i}"><label for="crsA${i}"><span>${i+1}</span>${esc(c.label)}</label><select class="in" id="crsA${i}" data-ci="${i}"><option value="">Choose a project…</option>${c.projects.map(p=>`<option>${esc(p)}</option>`).join('')}</select></div>`).join('');
+$$('#coursesA select').forEach(s=>s.addEventListener('change',()=>{const i=+s.dataset.ci;
+ if(s.value)setProject(i,s.value);else if(S.course===i)setProject(null,'');
+ shareA();if(proj())toast('Project selected: '+S.project);}));
+function setProject(course,title){const oldC=S.course;S.course=course;S.project=title||'';
+ /* fresh task list for the course type, only while no dates are planned */
+ const planned=S.tasks.some(t=>t.s!==null||t.custom);
+ if(course!==null&&!planned&&(oldC===null||(oldC===DATA_COURSE)!==(course===DATA_COURSE)))S.tasks=tplFor(course);
+ save();onProject();if(proj())prefill();updateStepper();const a=$('#a1');if(a)a.classList.remove('show');}
+function onProject(){const p=proj();const c=$('#projCard');
+ $$('#coursesA .course').forEach(box=>{const i=+box.dataset.ci,s=box.querySelector('select'),on=S.course===i&&!!p;box.classList.toggle('on',on);s.value=on?S.project:'';});
+ const sb=$('#selBarA');if(p){sb.innerHTML=`<span>✓ Selected project:</span> <b>${esc(p.title)}</b> <span>(${esc(p.course)})</span>`;sb.classList.add('show');}else sb.classList.remove('show');
+ if(!p){c.classList.remove('show');return;}
+ c.innerHTML=`<h5>${esc(p.title)}</h5><dl><dt>Course</dt><dd>${esc(p.course)}</dd>`+(p.generic?'':`<dt>Category / Department</dt><dd>${esc(p.src)}</dd><dt>Data collection</dt><dd>${esc(p.col)}</dd><dt>Data analysis</dt><dd>${esc(p.ana)}</dd><dt>Data visualization</dt><dd>${esc(p.vis)}</dd>`)+`<dt>Phase</dt><dd><b>Phase 1 only</b>: Week 7 (4 Oct) to Week 9 (22 Oct)</dd></dl>`;
+ c.classList.add('show');}
+onProject();
+/* keep student details and project the same in Part A and Part B */
+function shareA(){window.dispatchEvent(new CustomEvent('pbl:sync',{detail:{from:'A',name:S.name,sid:S.sid,grade:S.section,course:S.course,project:S.project}}));}
+window.addEventListener('pbl:sync',e=>{const d=e.detail;if(d.from==='A')return;
+ S.name=d.name;S.sid=d.sid;S.section=d.grade;['name','sid','section'].forEach(k=>{const el=document.querySelector(`#partA [data-k="${k}"]`);if(el)el.value=S[k]||'';});
+ if(d.course!==S.course||d.project!==S.project)setProject(d.course,d.project);else{save();updateStepper();}});
+window.PBL_A={get:()=>({name:S.name,sid:S.sid,grade:S.section,course:S.course,project:S.project})};
+
+/* ---------- Objectives prefill & checks ---------- */
+const autoOf=p=>({dataCollect:p&&p.col?p.col:''});
+function prefill(){const p=proj();if(!p)return;const prev=autoOf(S.prefillFor?PROJECTS.find(x=>x.title===S.prefillFor):null),now=autoOf(p);
+ ['dataCollect'].forEach(k=>{if(!filled(S[k])||S[k]===prev[k])S[k]=now[k];const el=document.querySelector(`[data-k="${k}"]`);if(el)el.value=S[k];});
+ S.prefillFor=p.title;save();}
+/* project guide: suggestions from window.PROJECT_GUIDE shown under each Step 3 field */
+const GUIDE_FIELDS=[['driving','q'],['problem','p'],['obj1','o0'],['obj2','o1'],['obj3','o2'],['audience','c'],['benefit','b'],['realUse','u']];
+function renderGuides(){const p=proj();const g=p&&window.PROJECT_GUIDE&&window.PROJECT_GUIDE[p.title];
+ $$('.guide').forEach(x=>x.remove());const gh=$('#guideHead');
+ if(!g){gh.hidden=true;return;}
+ gh.hidden=false;gh.innerHTML=`<b>Your project:</b> ${esc(p.title)}. A suggestion for your project is shown under each box. Use it as a starting point, then rewrite it in your own words.`;
+ GUIDE_FIELDS.forEach(([k,t])=>{const el=document.querySelector(`[data-k="${k}"]`);if(!el)return;
+  const txt=t[0]==='o'?g.o[+t[1]]:g[t];
+  const d=document.createElement('div');d.className='guide';d.innerHTML=`<span><b>Guide:</b> ${esc(txt)}</span>`;
+  const bt=document.createElement('button');bt.type='button';bt.className='btn gh sm';bt.textContent='Use as starting point';
+  bt.addEventListener('click',()=>{el.value=txt;el.dispatchEvent(new Event('input'));el.focus();});
+  d.appendChild(bt);el.closest('.f').appendChild(d);});}
+function checks(box,list,key){$(box).innerHTML=list.map(t=>`<label class="ck"><input type="checkbox" value="${t}"${S[key].includes(t)?' checked':''}>${t}</label>`).join('');
+ $$(box+' input').forEach(c=>c.addEventListener('change',()=>{S[key]=$$(box+' input:checked').map(x=>x.value);save();updateStepper();}));}
+checks('#methods',METHODS,'methods');checks('#tools',TOOLS,'tools');
+
+/* ---------- Gantt ---------- */
+function dayOpts(v){let h='<option value="">Choose…</option>';[7,8,9].forEach(w=>{h+=`<optgroup label="Week ${w}">`+DAYS.map((d,i)=>d.w===w?`<option value="${i}"${v===i?' selected':''}>W${w} ${d.n} ${d.d}</option>`:'').join('')+'</optgroup>';});return h;}
+function renderSched(){const ok=infoDone();$('#schedLock').hidden=ok;$('#schedBody').hidden=!ok;if(!ok)return;
+ let h='<thead><tr class="wk"><th class="lh" colspan="4" style="border-left:none">Task</th>'+[7,8,9].map(w=>{const d=DAYS.filter(x=>x.w===w);return `<th colspan="5" class="${w===9?'w10':''}">Week ${w} · ${d[0].d}–${d[4].d} Oct</th>`;}).join('')+'</tr>';
+ h+='<tr class="dy"><th class="lh">#</th><th class="lh">Task name</th><th class="lh">Start / End</th><th class="lh">Days</th>'+DAYS.map((d,i)=>`<th class="${i%5===0?'ws':''}">${d.n.slice(0,2)}<br>${d.d}</th>`).join('')+'</tr></thead><tbody>';
+ S.tasks.forEach((t,k)=>{const c=STAGE_C[k%STAGE_C.length];const dur=(t.s!==null&&t.e!==null&&t.e>=t.s)?t.e-t.s+1:'–';
+  h+=`<tr data-t="${k}"><td style="text-align:center;font-weight:800;color:${c}">${k+1}</td>
+  <td class="task">${t.custom?`<input data-tf="name" value="${esc(t.name)}" maxlength="60">`:`<b>${esc(t.name)}</b>`}<small>${t.custom?'Your task <button class="xbtn" data-del title="Remove task">✕</button>':esc(t.hint)}</small></td>
+  <td class="ctl"><select data-tf="s" class="${t.s===null?'err':''}">${dayOpts(t.s)}</select><div style="height:4px"></div><select data-tf="e" class="${t.e===null||t.e<t.s?'err':''}">${dayOpts(t.e)}</select></td>
+  <td class="dur">${dur}</td>`+DAYS.map((d,i)=>{const on=t.s!==null&&t.e!==null&&i>=t.s&&i<=t.e;return `<td class="cell${i%5===0?' ws':''}${on?' on':''}${on&&i===t.s?' first':''}${on&&i===t.e?' last':''}" data-d="${i}" style="--c:${c}" title="${d.label}"></td>`;}).join('')+'</tr>';});
+ h+=`<tr class="ms"><td style="text-align:center;color:var(--amber);font-weight:800">◆</td><td class="task"><b>Checkpoints and deadline</b><small>Teacher feedback each Thursday</small></td><td></td><td></td>`+DAYS.map((d,i)=>{const m=MILESTONES.find(x=>x.i===i);return `<td class="cell${i%5===0?' ws':''}" title="${m?m.t:''}">${m?`<span class="dia${m.red?' red':''}"></span>`:''}</td>`;}).join('')+'</tr></tbody>';
+ $('#gantt').innerHTML=h;
+ $('#legend').innerHTML='<span><i style="background:var(--accent)"></i>Task duration (school days, Sun–Thu)</span><span><i class="d" style="background:var(--amber)"></i>Weekly checkpoint</span><span><i class="d" style="background:var(--bad)"></i>Phase 1 submission deadline: Week 9, Thu 22 Oct</span>';
+ $$('#gantt tr[data-t]').forEach(tr=>{const k=+tr.dataset.t,t=S.tasks[k];
+  tr.querySelectorAll('[data-tf]').forEach(el=>el.addEventListener(el.tagName==='INPUT'?'input':'change',()=>{const f=el.dataset.tf;
+   if(f==='s'||f==='e'){t[f]=el.value===''?null:+el.value;if(f==='s'&&t.s!==null&&(t.e===null||t.e<t.s))t.e=t.s;}else t[f]=el.value;
+   save();updateStepper();if(f!=='name')renderSched();}));
+  tr.querySelectorAll('td.cell').forEach(td=>td.addEventListener('click',()=>{const d=+td.dataset.d;
+   if(t.s===null||t.pick!==1||d<t.s){t.s=d;t.e=d;t.pick=1;}else{t.e=d;t.pick=0;}save();updateStepper();renderSched();}));
+  const del=tr.querySelector('[data-del]');if(del)del.addEventListener('click',()=>{S.tasks.splice(k,1);save();renderSched();updateStepper();});});}
+$('#addTask').addEventListener('click',()=>{const v=$('#newTask').value.trim();if(!v){toast('Type a task name first.');return;}
+ S.tasks.splice(S.tasks.length-1,0,{name:v,hint:'',s:null,e:null,custom:true});$('#newTask').value='';save();renderSched();updateStepper();toast('Task added before the final submission task.');});
+
+/* ---------- Review ---------- */
+function renderReview(){const p=proj()||{};
+ const st=[0,1,2,3].map(i=>!check(i).length);
+ $('#review').innerHTML=`
+ <div class="card"><h4>Student and project</h4><div class="kv" style="margin-top:10px"><span>Student</span><b>${esc(S.name)} (SID ${esc(S.sid)})</b><span>Grade</span><b>${esc(S.section)}</b><span>Course</span><b>${esc(p.course||'')}</b><span>Project</span><b>${esc(p.title||'')}</b><span>Type</span><b>Individual project</b><span>Phase</span><b>Phase 1 only: Week 7 to Week 9</b><span>Deadline</span><b style="color:var(--bad)">Week 9, Thu 22 Oct</b></div></div>
+ <div class="card"><h4>Checklist</h4><ul class="okl" style="margin-top:10px">${STEPS.slice(0,4).map((s,i)=>`<li class="${st[i]?'':'no'}">${s[0]}</li>`).join('')}</ul></div>
+ <div class="card"><h4>Data plan</h4><div class="kv" style="margin-top:10px"><span>Data</span><b>${esc(S.dataCollect)}</b><span>Methods</span><b>${esc(S.methods.join(', '))}</b><span>Tools</span><b>${esc(S.tools.join(', '))}</b></div></div>
+ <div class="card"><h4>Objectives</h4><ol style="margin:10px 0 0;padding-left:20px">${[S.obj1,S.obj2,S.obj3].map(o=>`<li>${esc(o)}</li>`).join('')}</ol></div>`;
+ $('#pdfBtn').disabled=!st.every(Boolean);}
+$('#reset').addEventListener('click',()=>{if(!confirm('Start a new plan? Everything you entered will be cleared.'))return;try{localStorage.removeItem(KEY);}catch(_){}location.reload();});
+
+/* ---------- PDF ---------- */
+$('#pdfBtn').addEventListener('click',()=>{if(!allDone()){toast('Complete every step before downloading.');return;}
+ const J=window.jspdf&&window.jspdf.jsPDF;if(!J){toast('The PDF tool needs an internet connection. Connect and try again.');return;}
+ try{buildPDF(J);}catch(err){console.error(err);toast('Sorry, the PDF could not be created.');}});
+function buildPDF(J){
+ const p=proj();const doc=new J({unit:'mm',format:'a4'});
+ const clean=s=>String(s||'').replace(/[\u2018\u2019]/g,"'").replace(/[\u201C\u201D]/g,'"').replace(/[\u2013\u2014]/g,'-').replace(/\u2192/g,'->').replace(/\u00B7/g,'|').replace(/[^\x20-\x7E\u00A0-\u00FF]/g,'');
+ const INK=[19,32,58],MUT=[93,107,130],ACC=[36,89,224],AMB=[227,154,11],RED=[198,40,40],LINE=[221,227,236],SOFT=[231,238,253];
+ const font=(sz,st,c)=>{doc.setFont('helvetica',st);doc.setFontSize(sz);doc.setTextColor(...c);};
+ let W=210,H=297,M=14,y=0;
+ const stamp=new Date().toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+ const need=h=>{if(y+h>H-18){doc.addPage('a4','portrait');W=210;H=297;y=18;}};
+ const sec=(n,t)=>{need(16);y+=4;doc.setFillColor(...ACC);doc.roundedRect(M,y-4.6,7,7,1.5,1.5,'F');font(9,'bold',[255,255,255]);doc.text(String(n),M+3.5,y+0.4,{align:'center'});font(12.5,'bold',INK);doc.text(t,M+10,y+0.6);y+=4;doc.setDrawColor(...LINE);doc.setLineWidth(.3);doc.line(M,y,W-M,y);y+=5;};
+ const para=(label,txt)=>{font(10,'normal',INK);const ls=doc.splitTextToSize(clean(txt),W-2*M-4);need(ls.length*4.6+9);font(8.5,'bold',MUT);doc.text(label.toUpperCase(),M,y);y+=4.6;font(10,'normal',INK);doc.text(ls,M,y);y+=ls.length*4.6+3;};
+ const at=(opts)=>{doc.autoTable(Object.assign({startY:y,margin:{left:M,right:M,bottom:18},theme:'grid',styles:{font:'helvetica',fontSize:9,cellPadding:2.4,textColor:INK,lineColor:LINE,lineWidth:.2},headStyles:{fillColor:INK,textColor:255,fontStyle:'bold',fontSize:8.8},alternateRowStyles:{fillColor:[247,249,252]}},opts));y=doc.lastAutoTable.finalY+7;};
+ /* cover header */
+ doc.setFillColor(...INK);doc.rect(0,0,W,52,'F');doc.setFillColor(...ACC);doc.rect(0,52,W,1.6,'F');
+ font(8,'bold',[175,192,218]);doc.text(clean('PROJECT BASED LEARNING (PBL)  |  PHASE 1 PROJECT PLANNING  |  '+p.course),M,12);
+ font(22,'bold',[255,255,255]);doc.text('Phase 1 Project Plan',M,25);
+ font(12,'normal',[228,235,247]);const tl=doc.splitTextToSize(clean(p.title),130);doc.text(tl,M,33);
+ font(9,'normal',[175,192,218]);doc.text(clean(`${S.name}  |  Computer Studies  |  Teacher: Firdous Lone`),M,33+tl.length*5.2+2);
+ doc.setFillColor(...AMB);doc.roundedRect(W-M-38,14,38,10,5,5,'F');font(10,'bold',[255,255,255]);doc.text('PHASE 1 ONLY',W-M-19,20.4,{align:'center'});
+ doc.setFillColor(255,255,255);doc.roundedRect(W-M-38,27,38,15,3,3,'F');font(7,'bold',RED);doc.text('SUBMISSION DEADLINE',W-M-19,32,{align:'center'});font(9.5,'bold',INK);doc.text('Week 9, Thu 22 Oct',W-M-19,38,{align:'center'});
+ y=62;
+ const facts=[['START','Week 7, Sun 4 Oct'],['END / DEADLINE','Week 9, Thu 22 Oct'],['MARKS','Planning: 6 marks'],['PROJECT TYPE','Individual']];
+ const fw=(W-2*M-9)/4;facts.forEach(([k,v],i)=>{const x=M+i*(fw+3);doc.setFillColor(...(i===1?[251,232,230]:[244,247,252]));doc.roundedRect(x,y,fw,15,2.5,2.5,'F');font(7,'bold',i===1?RED:MUT);doc.text(k,x+4,y+5.5);font(10.5,'bold',i===1?RED:INK);doc.text(v,x+4,y+11.5);});
+ y+=23;
+ sec(1,'Student information');
+ at({body:[['Student name',clean(S.name),'SID',clean(S.sid)],['Grade',clean(S.section),'Course',clean(p.course)],['Subject','Computer Studies','Teacher','Firdous Lone'],['Quarter / phase','Quarter 1 - Phase 1','Generated',clean(stamp)]],theme:'plain',styles:{fontSize:9.5,cellPadding:2.2,textColor:INK},columnStyles:{0:{fontStyle:'bold',textColor:MUT,cellWidth:32},1:{cellWidth:59},2:{fontStyle:'bold',textColor:MUT,cellWidth:24}}});
+ sec(2,'Project overview');
+ at({body:[['Project title',clean(p.title)],['Course',clean(p.course)],...(p.generic?[]:[['Category / Department',clean(p.src)],['Project data collection',clean(p.col)]]),['Data to collect',clean(S.dataCollect)],...(p.generic?[]:[['Data analysis',clean(p.ana)],['Data visualization',clean(p.vis)]]),['Driving question',clean(S.driving)],['Phase','Phase 1 only: Week 7 (Sun 4 Oct) to Week 9 (Thu 22 Oct)']],columnStyles:{0:{fontStyle:'bold',fillColor:SOFT,cellWidth:42}},alternateRowStyles:{}});
+ sec(3,'Problem, objectives and real-life use');
+ para('Problem statement',S.problem);
+ need(26);font(8.5,'bold',MUT);doc.text('PROJECT OBJECTIVES',M,y);y+=3;
+ at({body:[S.obj1,S.obj2,S.obj3].map((o,i)=>[`O${i+1}`,clean(o)]),theme:'plain',styles:{fontSize:10,cellPadding:{top:1.8,bottom:1.8,left:2,right:2},textColor:INK},columnStyles:{0:{cellWidth:12,fontStyle:'bold',textColor:ACC}}});y-=3;
+ para('Client / audience',S.audience);para('Who benefits',S.benefit);para('Real-life use of findings',S.realUse);
+ sec(4,'Data plan and tools');
+ at({body:[['Collection methods',clean(S.methods.join(', '))],['Tools',clean(S.tools.join(', '))],['Data privacy','Confirmed: permission will be obtained and personal names removed before analysis.']],columnStyles:{0:{fontStyle:'bold',fillColor:SOFT,cellWidth:42}},alternateRowStyles:{}});
+ /* ---- Gantt page (landscape) ---- */
+ doc.addPage('a4','landscape');W=297;H=210;y=14;
+ doc.setFillColor(...INK);doc.rect(0,0,W,20,'F');font(13,'bold',[255,255,255]);doc.text('5  Phase 1 Schedule: Gantt Chart',M,13);
+ font(9,'normal',[175,192,218]);doc.text(clean(p.title)+'  |  Week 7 (4 Oct) to Week 9 (22 Oct)',W-M,13,{align:'right'});
+ y=28;const LX=M,LW=86,GX=M+LW,GW=W-M-GX,CW=GW/15,RH=8.2;
+ doc.setFillColor(244,247,252);doc.rect(LX,y,W-2*M,15,'F');
+ [7,8,9].forEach((w,k)=>{const x=GX+k*5*CW;doc.setFillColor(...(w===9?[251,232,230]:[231,238,253]));doc.rect(x,y,5*CW,7,'F');font(8,'bold',w===9?RED:ACC);const d=DAYS.filter(z=>z.w===w);doc.text(`Week ${w}  (${d[0].d}-${d[4].d} Oct)`,x+5*CW/2,y+4.8,{align:'center'});});
+ DAYS.forEach((d,i)=>{font(6.6,'normal',MUT);doc.text(`${d.n.slice(0,2)} ${d.d}`,GX+i*CW+CW/2,y+12,{align:'center'});});
+ font(7.5,'bold',MUT);doc.text('#',LX+2,y+12);doc.text('TASK',LX+8,y+12);
+ y+=15;const top=y;
+ S.tasks.forEach((t,k)=>{const c=STAGE_C[k%STAGE_C.length].match(/\w\w/g).map(h=>parseInt(h,16));
+  if(k%2===0){doc.setFillColor(250,251,253);doc.rect(LX,y,W-2*M,RH,'F');}
+  font(8,'bold',c);doc.text(String(k+1),LX+2,y+5.3);
+  font(7.4,'bold',INK);const nl=doc.splitTextToSize(clean(t.name),74).slice(0,2);doc.text(nl,LX+8,nl.length>1?y+3.6:y+5.3,{lineHeightFactor:1.15});
+  doc.setFillColor(...c);doc.roundedRect(GX+t.s*CW+.6,y+1.8,(t.e-t.s+1)*CW-1.2,RH-3.6,1.4,1.4,'F');
+  const days=t.e-t.s+1;if(days*CW>12){font(6.5,'bold',[255,255,255]);doc.text(`${days}d`,GX+t.s*CW+2,y+5.1);}
+  y+=RH;});
+ doc.setFillColor(253,243,222);doc.rect(LX,y,W-2*M,RH,'F');font(8,'bold',AMB);doc.text('Checkpoints and deadline',LX+8,y+5.3);
+ MILESTONES.forEach(m=>{const cx=GX+m.i*CW+CW/2,cy=y+RH/2;doc.setFillColor(...(m.red?RED:AMB));doc.lines([[2.6,2.6],[-2.6,2.6],[-2.6,-2.6],[2.6,-2.6]],cx,cy-2.6,[1,1],'F',true);});
+ y+=RH;
+ doc.setDrawColor(...LINE);doc.setLineWidth(.15);for(let i=0;i<=15;i++){const x=GX+i*CW;if(i%5===0){doc.setLineWidth(.45);doc.setDrawColor(190,200,215);doc.line(x,top-15,x,y);}else{doc.setLineWidth(.12);doc.setDrawColor(...LINE);doc.line(x,top-8,x,y);}}
+ doc.setDrawColor(...RED);doc.setLineWidth(.6);doc.setLineDashPattern([1.2,1],0);doc.line(GX+15*CW-.3,top-15,GX+15*CW-.3,y+2);doc.setLineDashPattern([],0);
+ doc.setDrawColor(...LINE);doc.setLineWidth(.3);doc.rect(LX,top-15,W-2*M,y-top+15);
+ y+=5;font(7.5,'normal',MUT);
+ doc.setFillColor(...ACC);doc.roundedRect(M,y-2.6,6,3,1,1,'F');doc.text('Task duration in school days (Sun-Thu)',M+8,y);
+ doc.setFillColor(...AMB);doc.lines([[1.8,1.8],[-1.8,1.8],[-1.8,-1.8],[1.8,-1.8]],M+72,y-3,[1,1],'F',true);doc.text('Weekly checkpoint (teacher feedback)',M+76,y);
+ doc.setFillColor(...RED);doc.lines([[1.8,1.8],[-1.8,1.8],[-1.8,-1.8],[1.8,-1.8]],M+136,y-3,[1,1],'F',true);font(7.5,'bold',RED);doc.text('Phase 1 submission deadline: Week 9, Thursday 22 October',M+140,y);
+ y+=7;
+ at({head:[['#','Task','Start','End','School days','Week(s)']],body:S.tasks.map((t,k)=>[k+1,clean(t.name),`Wk ${DAYS[t.s].w} - ${DAYS[t.s].label}`,`Wk ${DAYS[t.e].w} - ${DAYS[t.e].label}`,t.e-t.s+1,DAYS[t.s].w===DAYS[t.e].w?`Week ${DAYS[t.s].w}`:`Week ${DAYS[t.s].w} to ${DAYS[t.e].w}`]),styles:{fontSize:8.3,cellPadding:1.8},columnStyles:{0:{cellWidth:8,halign:'center'},4:{halign:'center',cellWidth:22}}});
+ /* ---- marks & sign-off ---- */
+ doc.addPage('a4','portrait');W=210;H=297;y=18;
+ sec(6,'Phase 1 checkpoints and mark allocation');
+ at({head:[['Week','Focus','Checkpoint / output']],body:[['Week 7 (4-8 Oct)','Problem analysis, objectives, Gantt chart','Feedback on project plan'],['Week 8 (11-15 Oct)','Data collection, cleaning and analysis','Feedback on dataset and findings'],['Week 9 (18-22 Oct)','Final dashboard, presentation and demonstration','Phase 1 submission by Thu 22 Oct']],didParseCell:d=>{if(d.section==='body'&&d.row.index===2){d.cell.styles.textColor=RED;d.cell.styles.fontStyle='bold';}}});
+ at({head:[['Component (Phase 1)','Evidence','Marks']],body:[['Project planning','Problem statement, objectives, Gantt chart (Gantt Chart Tool)','2'],['Data collection','Organized and cleaned dataset','2'],['Data analysis','Patterns, trends and comparisons','2'],['Data visualization','Interactive Power BI / Tableau dashboard','2'],['Presentation & demonstration','Live showcase of the working dashboard','2'],['Total','','10']],columnStyles:{2:{halign:'center',cellWidth:18,fontStyle:'bold'}},didParseCell:d=>{if(d.section==='body'&&d.row.index===5){d.cell.styles.fillColor=SOFT;d.cell.styles.fontStyle='bold';}}});
+ need(18);font(8.5,'italic',MUT);doc.text(doc.splitTextToSize('Late submissions are capped at 70% of the total mark unless a valid excuse is approved by the Head of School (Assessment Policy). This plan covers Phase 1 only.',W-2*M),M,y);y+=12;
+ sec(7,'Student agreement and sign-off');
+ font(9.5,'normal',INK);const ag=doc.splitTextToSize('I agree to this Phase 1 plan, to complete my tasks on time, and to submit Phase 1 by Week 9, Thursday 22 October.',W-2*M);doc.text(ag,M,y);y+=ag.length*4.8+4;
+ at({head:[['Name','Role','Signature']],body:[[clean(S.name),'Student',''],['Firdous Lone','Teacher','']],styles:{minCellHeight:10,valign:'middle'},columnStyles:{2:{cellWidth:60}}});
+ /* footers */
+ const n=doc.getNumberOfPages();for(let i=1;i<=n;i++){doc.setPage(i);const pw=doc.internal.pageSize.getWidth(),ph=doc.internal.pageSize.getHeight();
+  doc.setDrawColor(...LINE);doc.setLineWidth(.3);doc.line(M,ph-12,pw-M,ph-12);font(7.5,'normal',MUT);
+  doc.text(clean(`PBL Phase 1 Project Plan  |  ${p.title}  |  ${S.name} (SID ${S.sid})`),M,ph-7.5);
+  font(7.5,'bold',RED);doc.text('Phase 1 deadline: Week 9, Thu 22 Oct',pw/2+40,ph-7.5,{align:'center'});
+  font(7.5,'normal',MUT);doc.text(`Page ${i} of ${n}`,pw-M,ph-7.5,{align:'right'});}
+ const safe=v=>clean(v).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+ doc.save(`PBL_Phase1_Plan_${safe(S.sid)}_${safe(S.name)}.pdf`);toast('PDF downloaded. Hand it in to your teacher.');}
+
+/* ---------- Init ---------- */
+/* plans saved before the deadline moved to Week 9: drop days that no longer exist */
+S.tasks.forEach(t=>{const L=DAYS.length-1;if(t.s!==null&&t.s>L){t.s=null;t.e=null;}else if(t.e!==null&&t.e>L)t.e=L;});save();
+if(proj())prefill();
+go(Math.min(S.step||0,LAST));
+})();
+</script>
+
+<!-- ===================== PART B SCRIPT (project designing) ===================== -->
+<script>
+(function(){
+const $=s=>document.querySelector(s),$$=s=>[...document.querySelectorAll(s)];
+const esc=s=>String(s||'').replace(/[&<>"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c]));
+const toast=m=>{const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>t.classList.remove('show'),2600);};
+const COURSES=window.DESIGN_COURSES,BANK=window.DESIGN_STEPS;
+const MAXSEL=Infinity,MAXWORDS=5; /* no limit on steps per symbol */
+const words=t=>String(t).trim().split(/\s+/).filter(Boolean).length;
+
+/* ---------- General flowchart model ---------- */
+const NODES=[
+ {id:'s1',type:'term',stage:'Begin'},{id:'s2',type:'process',stage:'Planning'},{id:'s3',type:'io',stage:'Research'},
+ {id:'s4',type:'process',stage:'Design'},{id:'s5',type:'process',stage:'Development'},{id:'s6',type:'decision',stage:'Testing'},
+ {id:'s7',type:'process',stage:'Evaluation'},{id:'s8',type:'io',stage:'Presentation'},{id:'s9',type:'term',stage:'Finish'}];
+const N=Object.fromEntries(NODES.map((n,i)=>[n.id,Object.assign(n,{seq:i+1})]));
+const DEV=4,DEC=5; /* row indexes used by the test loop */
+const SIZE={term:[140,44],process:[140,50],io:[150,50],decision:[150,84]};
+const CX=320,LANE=208,BX=430,PX=446,PW=294,PH=22,PG=6,GAP=34,VW=760,SKEW=16;
+const COL={term:{f:'#E3F4EA',s:'#1E8A52',fr:[227,244,234],sr:[30,138,82]},process:{f:'#E7EEFD',s:'#2459E0',fr:[231,238,253],sr:[36,89,224]},io:{f:'#FDF3DE',s:'#D08A06',fr:[253,243,222],sr:[208,138,6]},decision:{f:'#F1E8FA',s:'#8E44AD',fr:[241,232,250],sr:[142,68,173]}};
+const TYPES={term:{name:'TERMINATOR',mean:'Shows where the process starts or ends.'},process:{name:'PROCESS',mean:'Actions or tasks you carry out.'},io:{name:'INPUT / OUTPUT',mean:'Information going into or coming out of the project.'},decision:{name:'DECISION',mean:'Yes / no questions that change the path.'}};
+
+/* ---------- State ---------- */
+const KEY='pbl-phase1-design-v2';
+const blank=()=>({name:'',sid:'',grade:'',course:null,project:'',fc:{}});
+let B;try{B=Object.assign(blank(),JSON.parse(localStorage.getItem(KEY)||localStorage.getItem('pbl-phase1-design-v1')||'{}'));}catch(_){B=blank();}
+Object.keys(B.fc||{}).forEach(k=>{if(!N[k]||!Array.isArray(B.fc[k]))delete B.fc[k];});
+if(B.course!==null&&(!COURSES[B.course]||!COURSES[B.course].projects.includes(B.project))){B.course=null;B.project='';}
+const save=()=>{try{localStorage.setItem(KEY,JSON.stringify(B));}catch(_){}};
+const filled=v=>!!String(v||'').trim();
+const sel=id=>B.fc[id]||[];
+const doneCount=()=>NODES.filter(n=>sel(n.id).length).length;
+
+/* ---------- Layout (shared by screen and PDF) ---------- */
+function layout(){let y=24;const rows=NODES.map(n=>{const [w,h]=SIZE[n.type],s=sel(n.id),k=Math.max(s.length,1),sh=k*PH+(k-1)*PG,rh=Math.max(h,sh)+4;
+  const r={n,w,h,s,x:CX-w/2,y:y+(rh-h)/2,cy:y+rh/2,sy:y+(rh-sh)/2};y+=rh+GAP;return r;});
+ return {rows,H:y-GAP+24};}
+const rightX=r=>r.n.type==='io'?CX+r.w/2-SKEW/2:CX+r.w/2;
+const poly=r=>{const {x,y,w,h,cy}=r;if(r.n.type==='io')return [[x+SKEW,y],[x+w,y],[x+w-SKEW,y+h],[x,y+h]];return [[CX,y],[x+w,cy],[CX,y+h],[x,cy]];};
+const edges=L=>{const R=L.rows,E=[];for(let i=0;i<R.length-1;i++){if(i===DEC)E.push([[CX,R[i].y+R[i].h],[CX,R[i+1].y]]);else E.push([[CX,R[i].y+R[i].h],[CX,R[i+1].y]]);}
+ const d=R[DEC],v=R[DEV];E.push([[d.x,d.cy],[LANE,d.cy],[LANE,v.cy],[v.x,v.cy]]);return E;};
+
+/* ---------- Student fields ---------- */
+function shareB(){window.dispatchEvent(new CustomEvent('pbl:sync',{detail:{from:'B',name:B.name,sid:B.sid,grade:B.grade,course:B.course,project:B.project}}));}
+/* start from whatever the student already entered in Part A */
+if(window.PBL_A){const a=window.PBL_A.get();['name','sid','grade'].forEach(k=>{if(filled(a[k]))B[k]=a[k];});
+ if(a.project&&COURSES[a.course]&&COURSES[a.course].projects.includes(a.project)){B.course=a.course;B.project=a.project;}save();}
+$$('[data-b]').forEach(el=>{const k=el.dataset.b;el.value=B[k]||'';el.addEventListener('input',()=>{B[k]=el.value;save();el.closest('.f').classList.remove('err');shareB();});});
+window.addEventListener('pbl:sync',e=>{const d=e.detail;if(d.from==='B')return;
+ B.name=d.name||'';B.sid=d.sid||'';B.grade=d.grade||'';$$('[data-b]').forEach(el=>el.value=B[el.dataset.b]||'');
+ if(d.course!==B.course||d.project!==B.project){B.course=d.project?d.course:null;B.project=d.project||'';syncCourses();renderFC();}save();});
+
+/* ---------- Course dropdowns ---------- */
+$('#courses').innerHTML=COURSES.map((c,i)=>`<div class="course" data-ci="${i}"><label for="crs${i}"><span>${i+1}</span>${esc(c.label)}</label><select class="in" id="crs${i}" data-ci="${i}"><option value="">Choose a project…</option>${c.projects.map(p=>`<option>${esc(p)}</option>`).join('')}</select></div>`).join('');
+$$('#courses select').forEach(s=>s.addEventListener('change',()=>{const i=+s.dataset.ci;
+ if(s.value){B.course=i;B.project=s.value;}else if(B.course===i){B.course=null;B.project='';}
+ save();syncCourses();renderFC();shareB();if(B.project)toast('Flowchart opened for: '+B.project);}));
+function syncCourses(){$$('#courses .course').forEach(box=>{const i=+box.dataset.ci,s=box.querySelector('select'),on=B.course===i;box.classList.toggle('on',on);s.value=on?B.project:'';});
+ const sb=$('#selBar');if(B.project){sb.innerHTML=`<span>✓ Selected project:</span> <b>${esc(B.project)}</b> <span style="color:var(--muted)">(${esc(COURSES[B.course].label)})</span>`;sb.classList.add('show');}else sb.classList.remove('show');}
+
+/* ---------- Flowchart rendering ---------- */
+function renderFC(){const st=$('#fcStage'),c=doneCount();
+ $('#bCount').textContent=c;$('#bTotal').textContent=NODES.length;$('#bProg').style.width=(c/NODES.length*100)+'%';$('#bChip').innerHTML=`<i></i>${c} / ${NODES.length} symbols complete`;
+ $('#bDots').innerHTML=NODES.map(n=>`<span class="${sel(n.id).length?'ok':''}" data-id="${n.id}" title="${n.seq}. ${n.stage}${sel(n.id).length?' (done)':''}">${n.seq}</span>`).join('');
+ if(!B.project){$('#fcTitle').textContent='Choose a project to open your flowchart';st.innerHTML='<div class="lockbox"><b>No project selected</b>Choose your project from one of the course lists above. Your flowchart will appear here.</div>';return;}
+ $('#fcTitle').textContent=B.project;
+ const L=layout(),R=L.rows,d=R[DEC],v=R[DEV];
+ let s=`<svg class="fcsvg" viewBox="0 0 ${VW} ${L.H}" role="group" aria-label="Project flowchart"><defs><marker id="fcA" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><path d="M0,0 L10,5 L0,10 z" fill="#7C8BA5"/></marker></defs>`;
+ edges(L).forEach(p=>{s+=`<path d="M${p.map(q=>q.join(' ')).join(' L')}" fill="none" stroke="#8494AE" stroke-width="2" stroke-linejoin="round" marker-end="url(#fcA)"/>`;});
+ s+=`<text x="${CX+8}" y="${d.y+d.h+18}" font-size="12" font-weight="800" fill="#1E8A52">Yes</text><text x="${LANE+8}" y="${d.cy-7}" font-size="12" font-weight="800" fill="#C8372D">No</text><text transform="translate(${LANE-7} ${(d.cy+v.cy)/2}) rotate(-90)" text-anchor="middle" font-size="10.5" font-weight="800" fill="#C8372D" letter-spacing=".5">FIX AND RETEST</text>`;
+ R.forEach(r=>{const n=r.n,C=COL[n.type],on=r.s.length>0;
+  s+=`<rect x="20" y="${r.cy-24}" width="156" height="48" rx="12" fill="#fff" stroke="#DDE3EC"/><rect x="20" y="${r.cy-24}" width="5" height="48" rx="2.5" fill="${C.s}"/><text x="36" y="${r.cy-5}" font-size="10" font-weight="800" fill="${C.s}" letter-spacing="1">${TYPES[n.type].name}</text><text x="36" y="${r.cy+14}" font-size="15" font-weight="800" fill="#13203A">${n.stage}</text>`;
+  s+=`<g class="fc-node" data-id="${n.id}" tabindex="0" role="button" aria-label="Symbol ${n.seq}, ${n.stage}: ${on?esc(r.s.join(', ')):'no steps yet, click to choose steps'}">`;
+  const a=`class="shp" fill="${on?C.f:'#fff'}" stroke="${C.s}" stroke-width="2.4"${on?'':' stroke-dasharray="7 5"'}`;
+  if(n.type==='term')s+=`<rect ${a} x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="${r.h/2}"/>`;
+  else if(n.type==='process')s+=`<rect ${a} x="${r.x}" y="${r.y}" width="${r.w}" height="${r.h}" rx="6"/>`;
+  else s+=`<polygon ${a} points="${poly(r).map(p=>p.join(',')).join(' ')}"/>`;
+  s+=`<text x="${CX}" y="${r.cy+7.5}" text-anchor="middle" font-size="21" font-weight="800" fill="${C.s}">${n.seq}</text>`;
+  s+=`<line x1="${rightX(r)+4}" y1="${r.cy}" x2="${BX}" y2="${r.cy}" stroke="${C.s}" stroke-opacity=".55" stroke-width="1.5" stroke-dasharray="3 3"/>`;
+  if(on){const cys=r.s.map((_,j)=>r.sy+j*(PH+PG)+PH/2);
+   if(cys.length>1)s+=`<line x1="${BX}" y1="${cys[0]}" x2="${BX}" y2="${cys[cys.length-1]}" stroke="${C.s}" stroke-opacity=".55" stroke-width="1.5"/>`;
+   r.s.forEach((t,j)=>{const py=r.sy+j*(PH+PG);
+    s+=`<line x1="${BX}" y1="${py+PH/2}" x2="${PX}" y2="${py+PH/2}" stroke="${C.s}" stroke-opacity=".55" stroke-width="1.5"/><rect class="pill" x="${PX}" y="${py}" width="${PW}" height="${PH}" rx="11" fill="#fff" stroke="${C.s}" stroke-opacity=".6" stroke-width="1.3"/><text x="${PX+11}" y="${py+15.2}" font-size="12.5"><tspan font-weight="800" fill="${C.s}">${n.seq}.${j+1}</tspan><tspan dx="7" font-weight="600" fill="#13203A">${esc(t)}</tspan></text>`;});}
+  else s+=`<rect x="${PX}" y="${r.sy}" width="${PW}" height="${PH}" rx="11" fill="none" stroke="#B9C4D6" stroke-dasharray="4 4"/><text x="${PX+12}" y="${r.sy+15.2}" font-size="12" font-style="italic" fill="#8A97AD">Click the symbol to choose steps</text>`;
+  s+='</g>';});
+ st.innerHTML=s+'</svg>';}
+$('#bDots').addEventListener('click',e=>{const d=e.target.closest('span[data-id]');if(d&&B.project)openPicker(d.dataset.id);else if(d)toast('Choose a project first.');});
+$('#fcStage').addEventListener('click',e=>{const g=e.target.closest('.fc-node');if(g)openPicker(g.dataset.id);});
+$('#fcStage').addEventListener('keydown',e=>{const g=e.target.closest('.fc-node');if(g&&(e.key==='Enter'||e.key===' ')){e.preventDefault();openPicker(g.dataset.id);}});
+
+/* ---------- Multi-step picker ---------- */
+let cur=null,temp=[],extra=[];
+const optList=()=>[...BANK[N[cur].stage],...extra];
+function openPicker(id){cur=id;const n=N[id],T=TYPES[n.type];temp=[...sel(id)];extra=temp.filter(t=>!BANK[n.stage].includes(t));
+ $('#pkHead').innerHTML=`<span class="tb t-${n.type}">${T.name} SYMBOL ${n.seq}</span><h4 id="pkTitle">${esc(n.stage)}</h4><p>${T.mean} Choose as many related steps as you need. They appear to the right of the symbol as ${n.seq}.1, ${n.seq}.2 …</p><div class="pkcount" id="pkCount"></div>`;
+ $('#pkCustom').value='';renderPicker();$('#picker').hidden=false;const f=$('#pkOpts input:not(:disabled)');if(f)f.focus();}
+function renderPicker(){const full=temp.length>=MAXSEL;
+ $('#pkOpts').innerHTML=optList().map(t=>{const c=temp.includes(t),dis=full&&!c;return `<label class="pko${dis?' dis':''}"><input type="checkbox" value="${esc(t)}"${c?' checked':''}${dis?' disabled':''}><span>${esc(t)}</span>${extra.includes(t)?'<em>YOUR STEP</em>':''}</label>`;}).join('');
+ $('#pkCount').innerHTML=`<b>${temp.length}</b> step${temp.length===1?'':'s'} selected`;
+ $$('#pkOpts input').forEach(i=>i.addEventListener('change',()=>{const t=i.value;if(i.checked){if(temp.length<MAXSEL)temp.push(t);}else temp=temp.filter(x=>x!==t);renderPicker();const again=[...$$('#pkOpts input')].find(x=>x.value===t);if(again)again.focus();}));}
+function closePicker(){const id=cur;$('#picker').hidden=true;cur=null;const g=id&&document.querySelector(`.fc-node[data-id="${id}"]`);if(g)g.focus();}
+$('#pkUse').addEventListener('click',()=>{const v=$('#pkCustom').value.trim().replace(/\s+/g,' ');
+ if(!v){toast('Write your step first.');$('#pkCustom').focus();return;}
+ if(words(v)>MAXWORDS){toast(`Keep each step to ${MAXWORDS} words or fewer.`);$('#pkCustom').focus();return;}
+ if(optList().some(t=>t.toLowerCase()===v.toLowerCase())){toast('That step is already in the list.');return;}
+ if(temp.length>=MAXSEL){toast(`You can choose up to ${MAXSEL} steps. Untick one first.`);return;}
+ extra.push(v);temp.push(v);$('#pkCustom').value='';renderPicker();});
+$('#pkCustom').addEventListener('keydown',e=>{if(e.key==='Enter'){e.preventDefault();$('#pkUse').click();}});
+$('#pkClear').addEventListener('click',()=>{temp=[];renderPicker();});
+$('#pkSave').addEventListener('click',()=>{const order=optList(),id=cur;const out=order.filter(t=>temp.includes(t));
+ if(out.length)B.fc[id]=out;else delete B.fc[id];save();closePicker();renderFC();const g=document.querySelector(`.fc-node[data-id="${id}"]`);if(g)g.focus();
+ const left=NODES.length-doneCount();toast(left?`Saved. ${left} symbol${left===1?'':'s'} still need steps.`:'Flowchart complete. You can download the PDF.');});
+$('#pkClose').addEventListener('click',closePicker);
+$('#picker').addEventListener('click',e=>{if(e.target.id==='picker')closePicker();});
+document.addEventListener('keydown',e=>{if(e.key==='Escape'&&!$('#picker').hidden)closePicker();});
+$('#fcClear').addEventListener('click',()=>{if(!doneCount()){toast('The flowchart is already empty.');return;}if(!confirm('Clear every step from the flowchart?'))return;B.fc={};save();renderFC();});
+$('#bReset').addEventListener('click',()=>{if(!confirm('Start a new design? Your details, project and flowchart will be cleared.'))return;B=blank();save();$$('[data-b]').forEach(el=>el.value='');shareB();syncCourses();renderFC();document.querySelector('#partB .dwrap').scrollTo({top:0,behavior:'smooth'});window.scrollTo({top:0,behavior:'smooth'});});
+
+/* ---------- PDF (single A4 page) ---------- */
+$('#bPdf').addEventListener('click',()=>{
+ const miss=[];['name','sid','grade'].forEach(k=>{if(!filled(B[k])){miss.push(k);$('#fb_'+k).classList.add('err');}});
+ if(miss.length){toast('Enter your name, SID and grade first.');$('#fb_'+miss[0]).scrollIntoView({behavior:'smooth',block:'center'});return;}
+ if(!B.project){toast('Choose your project first.');$('#courses').scrollIntoView({behavior:'smooth',block:'center'});return;}
+ const left=NODES.length-doneCount();if(left){toast(`Complete the flowchart first: ${left} symbol${left===1?' has':'s have'} no steps yet.`);$('#fcStage').scrollIntoView({behavior:'smooth',block:'start'});return;}
+ const J=window.jspdf&&window.jspdf.jsPDF;if(!J){toast('The PDF tool needs an internet connection. Connect and try again.');return;}
+ try{buildPDF(J);}catch(err){console.error(err);toast('Sorry, the PDF could not be created.');}});
+function buildPDF(J){
+ const doc=new J({unit:'mm',format:'a4'});const W=210,M=14;
+ const clean=s=>String(s||'').replace(/[‘’]/g,"'").replace(/[“”]/g,'"').replace(/[–—]/g,'-').replace(/→/g,'->').replace(/·/g,'|').replace(/…/g,'...').replace(/[^\x20-\x7E -ÿ]/g,'');
+ const INK=[19,32,58],MUT=[93,107,130],ACC=[36,89,224],AMB=[227,154,11],LINE=[221,227,236],SOFT=[231,238,253];
+ const font=(sz,st,c)=>{doc.setFont('helvetica',st);doc.setFontSize(sz);doc.setTextColor(...c);};
+ const stamp=new Date().toLocaleString('en-GB',{day:'numeric',month:'short',year:'numeric',hour:'2-digit',minute:'2-digit'});
+ /* header */
+ doc.setFillColor(...INK);doc.rect(0,0,W,28,'F');doc.setFillColor(...ACC);doc.rect(0,28,W,1.4,'F');
+ font(7.5,'bold',[175,192,218]);doc.text('PROJECT BASED LEARNING (PBL)  |  PHASE 1  |  PROJECT DESIGNING',M,9);
+ font(18,'bold',[255,255,255]);doc.text('Project Design Flowchart',M,19.5);
+ font(8.5,'normal',[175,192,218]);doc.text(clean('Computer Studies  |  Teacher: Firdous Lone  |  '+stamp),M,25);
+ doc.setFillColor(...AMB);doc.roundedRect(W-M-42,8,42,9,4.5,4.5,'F');font(8.5,'bold',[255,255,255]);doc.text('PHASE 1 DESIGNING',W-M-21,13.8,{align:'center'});
+ /* details */
+ const box=(x,y,w,label,val,hl)=>{doc.setFillColor(...(hl?SOFT:[244,247,252]));doc.setDrawColor(...(hl?[201,216,248]:LINE));doc.setLineWidth(.25);doc.roundedRect(x,y,w,13,2.4,2.4,'FD');
+  font(6.6,'bold',hl?ACC:MUT);doc.text(label,x+3.5,y+4.6);font(9.6,'bold',INK);doc.text(doc.splitTextToSize(clean(val),w-7)[0]||'',x+3.5,y+10.2);};
+ box(M,35,88,'STUDENT NAME',B.name);box(M+91,35,44,'SID',B.sid);box(M+138,35,44,'GRADE',B.grade);
+ box(M,51,62,'COURSE',COURSES[B.course].label);box(M+65,51,117,'SELECTED PROJECT',B.project,true);
+ /* flowchart */
+ font(7.2,'bold',MUT);doc.text('PROJECT FLOWCHART',M,68.2);
+ doc.setDrawColor(...LINE);doc.setLineWidth(.3);doc.setFillColor(251,252,254);doc.roundedRect(M,70,W-2*M,213,3,3,'FD');
+ const L=layout(),R=L.rows,s=Math.min((W-2*M-4)/VW,207/L.H),ox=M+((W-2*M)-VW*s)/2,oy=73+(207-L.H*s)/2,X=v=>ox+v*s,Y=v=>oy+v*s,pt=px=>px*s*2.835;
+ const polyP=(P,style)=>{const p=P.map(([a,b])=>[X(a),Y(b)]);doc.lines(p.slice(1).map((q,i)=>[q[0]-p[i][0],q[1]-p[i][1]]),p[0][0],p[0][1],[1,1],style,true);};
+ const arrow=P=>{const p=P.map(([a,b])=>[X(a),Y(b)]);doc.setDrawColor(124,139,165);doc.setFillColor(124,139,165);doc.setLineWidth(.4);
+  const [ax,ay]=p[p.length-2],[bx,by]=p[p.length-1],Ln=Math.hypot(bx-ax,by-ay),ux=(bx-ax)/Ln,uy=(by-ay)/Ln,hs=8*s,bxp=bx-ux*hs,byp=by-uy*hs;
+  for(let i=0;i<p.length-1;i++){const last=i===p.length-2;doc.line(p[i][0],p[i][1],last?bxp:p[i+1][0],last?byp:p[i+1][1]);}
+  doc.triangle(bx,by,bxp-uy*hs*.55,byp+ux*hs*.55,bxp+uy*hs*.55,byp-ux*hs*.55,'F');};
+ edges(L).forEach(arrow);
+ const d=R[DEC],v=R[DEV];
+ font(pt(12),'bold',[30,138,82]);doc.text('Yes',X(CX+8),Y(d.y+d.h+18));
+ font(pt(12),'bold',[200,55,45]);doc.text('No',X(LANE+8),Y(d.cy-7));
+ font(pt(10.5),'bold',[200,55,45]);{const fw=doc.getTextWidth('FIX AND RETEST');doc.text('FIX AND RETEST',X(LANE-3),Y((d.cy+v.cy)/2)+fw/2,{angle:90});}
+ R.forEach(r=>{const n=r.n,C=COL[n.type];
+  doc.setFillColor(255,255,255);doc.setDrawColor(...LINE);doc.setLineWidth(.25);doc.roundedRect(X(20),Y(r.cy-24),156*s,48*s,12*s,12*s,'FD');
+  doc.setFillColor(...C.sr);doc.roundedRect(X(20),Y(r.cy-24),5*s,48*s,2*s,2*s,'F');
+  font(pt(10),'bold',C.sr);doc.text(TYPES[n.type].name,X(36),Y(r.cy-5),{charSpace:.2});font(pt(15),'bold',INK);doc.text(n.stage,X(36),Y(r.cy+14));
+  doc.setFillColor(...C.fr);doc.setDrawColor(...C.sr);doc.setLineWidth(.5);
+  if(n.type==='term')doc.roundedRect(X(r.x),Y(r.y),r.w*s,r.h*s,r.h*s/2,r.h*s/2,'FD');
+  else if(n.type==='process')doc.roundedRect(X(r.x),Y(r.y),r.w*s,r.h*s,6*s,6*s,'FD');
+  else polyP(poly(r),'FD');
+  font(pt(21),'bold',C.sr);doc.text(String(n.seq),X(CX),Y(r.cy+7.5),{align:'center'});
+  doc.setDrawColor(...C.sr);doc.setLineWidth(.3);doc.setLineDashPattern([.7,.7],0);doc.line(X(rightX(r)+4),Y(r.cy),X(BX),Y(r.cy));doc.setLineDashPattern([],0);
+  const cys=r.s.map((_,j)=>r.sy+j*(PH+PG)+PH/2);
+  if(cys.length>1)doc.line(X(BX),Y(cys[0]),X(BX),Y(cys[cys.length-1]));
+  r.s.forEach((t,j)=>{const py=r.sy+j*(PH+PG);doc.setDrawColor(...C.sr);doc.setLineWidth(.3);doc.line(X(BX),Y(py+PH/2),X(PX),Y(py+PH/2));
+   doc.setFillColor(255,255,255);doc.roundedRect(X(PX),Y(py),PW*s,PH*s,11*s,11*s,'FD');
+   const pre=`${n.seq}.${j+1}`;font(pt(12.5),'bold',C.sr);doc.text(pre,X(PX+11),Y(py+15.2));const pw=doc.getTextWidth(pre);
+   font(pt(12.5),'bold',INK);doc.text(clean(t),X(PX+11)+pw+7*s,Y(py+15.2));});});
+ /* footer */
+ doc.setDrawColor(...LINE);doc.setLineWidth(.3);doc.line(M,288,W-M,288);font(7.2,'normal',MUT);
+ doc.text(clean(`PBL Phase 1 Project Designing  |  ${B.name} (SID ${B.sid})  |  ${B.grade}`),M,292.5);
+ doc.text('Teacher signature: ____________________',W-M,292.5,{align:'right'});
+ const safe=v=>clean(v).replace(/[^A-Za-z0-9]+/g,'_').replace(/^_|_$/g,'');
+ doc.save(`PBL_Phase1_Design_${safe(B.sid)}_${safe(B.name)}.pdf`);toast('PDF downloaded. Hand it in to your teacher.');}
+
+/* ---------- Init ---------- */
+syncCourses();renderFC();shareB();
+})();
+</script>
+
+<!-- ===================== SHELL SCRIPT (sidebar part switching) ===================== -->
+<script>
+(function(){
+ const PK='pbl-dashboard-part';
+ function show(p){document.querySelectorAll('.part').forEach(s=>s.classList.toggle('on',s.id==='part'+p));
+  document.querySelectorAll('.navbtn').forEach(b=>{const on=b.dataset.go===p;b.classList.toggle('on',on);b.setAttribute('aria-current',on?'page':'false');});
+  try{localStorage.setItem(PK,p);}catch(_){}window.scrollTo({top:0});}
+ document.querySelectorAll('.navbtn').forEach(b=>b.addEventListener('click',()=>show(b.dataset.go)));
+ let p='A';try{p=localStorage.getItem(PK)||'A';}catch(_){}show(p==='B'?'B':'A');
+})();
+</script>
+</body>
+</html>
