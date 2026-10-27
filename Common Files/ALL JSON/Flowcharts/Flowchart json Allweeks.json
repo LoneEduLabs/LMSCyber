@@ -1,0 +1,168 @@
+{
+  "Week1-Flowchart": {
+    "toolbox": [
+      "Start",
+      "End",
+      "Doctor",
+      "Access Control Panel",
+      "Patient Records Server",
+      "Audit Log System",
+      "Decision/Diamond",
+      "Display/Screen",
+      "Arrow Connection Line",
+      "YES Connection Line",
+      "NO Connection Line"
+    ],
+    "title": "CIA Triad: Cybersecurity Algorithm",
+    "algorithmIntro": "A doctor needs to access a patient's medical record. The doctor requests the record through the hospital's Access Control Panel. The system checks whether the doctor is authorized to see this record. If the doctor is not authorized, the request is denied and nothing more happens. If the doctor is authorized, the record is opened from the Patient Records Server and the access is written to the Audit Log System so there is always a record of who viewed what.",
+    "flowchartTitle": "CIA Triad: Cybersecurity Flowchart",
+    "steps": [
+      { "step": 1, "title": "Place Start>>1: Select Start and place it anywhere on the stage to begin your flowchart." },
+      { "step": 2, "title": "Add the Doctor>>1: Select Doctor and place it after Start.>>2: Connect Start → Doctor: Line Type: Arrow Connection Line>>3: Add text: Request Patient Record" },
+      { "step": 3, "title": "Check Authorization (Decision)>>1: Select Access Control Panel and place it after Doctor.>>2: Connect Doctor → Access Control Panel: Line Type: Arrow Connection Line>>3: Add text: Check Authorization>>4: Select Decision/Diamond and place it after Access Control Panel.>>5: Connect Access Control Panel → Decision/Diamond: Line Type: Arrow Connection Line>>6: Add text: Authorized?" },
+      { "step": 4, "title": "If NOT Authorized>>1: Select Display/Screen and place it after the decision — this is the NO path.>>2: Connect NO → Display/Screen: Line Type: NO Connection Line>>3: Add text: Access Denied" },
+      { "step": 5, "title": "If Authorized>>1: Select Patient Records Server and place it after the decision — this is the YES path.>>2: Connect YES → Patient Records Server: Line Type: YES Connection Line>>3: Add text: Open Patient Record" },
+      { "step": 6, "title": "Log the Access>>1: Select Audit Log System and place it after Patient Records Server.>>2: Connect Patient Records Server → Audit Log System: Line Type: Arrow Connection Line>>3: Add text: Record Access in Audit Log" },
+      { "step": 7, "title": "Finish the Flowchart>>1: Select End and place it after Audit Log System.>>2: Connect all final results → End: Line Type: Arrow Connection Line" }
+    ],
+    "finalCheck": "Start → Doctor → Access Control Panel → Authorized? → (Access Denied) or (Open Record → Audit Log) → End"
+  },
+
+  "Week2-Flowchart": {
+    "toolbox": [
+      "Start",
+      "End",
+      "User",
+      "Computer/Laptop",
+      "Fingerprint Scanner",
+      "Decision/Diamond",
+      "Display/Screen",
+      "Arrow Connection Line",
+      "YES Connection Line",
+      "NO Connection Line"
+    ],
+    "title": "User Authentication: Cybersecurity Algorithm",
+    "algorithmIntro": "A user wants to log in on a computer. The user enters a username and password. The system checks whether these login details are correct. If the details are wrong, the login fails and the process stops. If the details are correct, the system scans the user's fingerprint to confirm their identity before finally granting access.",
+    "flowchartTitle": "User Authentication: Cybersecurity Flowchart",
+    "steps": [
+      { "step": 1, "title": "Place Start>>1: Select Start and place it anywhere on the stage to begin your flowchart." },
+      { "step": 2, "title": "Add the User>>1: Select User and place it after Start.>>2: Connect Start → User: Line Type: Arrow Connection Line>>3: Add text: Start Login" },
+      { "step": 3, "title": "Enter Login Details (Decision)>>1: Select Computer/Laptop and place it after User.>>2: Connect User → Computer/Laptop: Line Type: Arrow Connection Line>>3: Add text: Enter Username and Password>>4: Select Decision/Diamond and place it after Computer/Laptop.>>5: Connect Computer/Laptop → Decision/Diamond: Line Type: Arrow Connection Line>>6: Add text: Login Details Correct?" },
+      { "step": 4, "title": "If Login is WRONG>>1: Select Display/Screen and place it after the decision — this is the NO path.>>2: Connect NO → Display/Screen: Line Type: NO Connection Line>>3: Add text: Login Failed" },
+      { "step": 5, "title": "If Login is CORRECT>>1: Select Fingerprint Scanner and place it after the decision — this is the YES path.>>2: Connect YES → Fingerprint Scanner: Line Type: YES Connection Line>>3: Add text: Scan Fingerprint" },
+      { "step": 6, "title": "Grant Access>>1: Select Display/Screen and place it after Fingerprint Scanner.>>2: Connect Fingerprint Scanner → Display/Screen: Line Type: Arrow Connection Line>>3: Add text: Access Granted" },
+      { "step": 7, "title": "Finish the Flowchart>>1: Select End and place it after the final results.>>2: Connect all final results → End: Line Type: Arrow Connection Line" }
+    ],
+    "finalCheck": "Start → User → Computer → Login Correct? → (Login Failed) or (Scan Fingerprint → Access Granted) → End"
+  },
+
+  "Week3-Flowchart": {
+    "toolbox": [
+      "Start",
+      "End",
+      "User",
+      "Email",
+      "Process/Step",
+      "Decision/Diamond",
+      "Display/Screen",
+      "Arrow Connection Line",
+      "YES Connection Line",
+      "NO Connection Line"
+    ],
+    "title": "Phishing Email: Cybersecurity Decision Algorithm",
+    "algorithmIntro": "A user receives an email asking them to click a link and confirm their account details. The message feels urgent and may be a phishing attempt. Before clicking anything, the user checks the sender's address and the link. If the email looks suspicious, the user must not click the link and should report it. If the email looks safe, the user can continue and visit the official website directly instead of clicking the link.",
+    "flowchartTitle": "Phishing Email: Think Before You Click",
+    "steps": [
+      { "step": 1, "title": "Place Start>>1: Select Start and place it anywhere on the stage to begin your flowchart." },
+      { "step": 2, "title": "Add the User>>1: Select User and place it after Start.>>2: Connect Start → User: Line Type: Arrow Connection Line>>3: Add text: Receive Email" },
+      { "step": 3, "title": "Check the Email (Decision)>>1: Select Email and place it after User.>>2: Connect User → Email: Line Type: Arrow Connection Line>>3: Add text: Email Asks to Click a Link>>4: Select Process/Step and place it after Email.>>5: Connect Email → Process/Step: Line Type: Arrow Connection Line>>6: Add text: Check Sender and Link>>7: Select Decision/Diamond and place it after Process/Step.>>8: Connect Process/Step → Decision/Diamond: Line Type: Arrow Connection Line>>9: Add text: Suspicious?" },
+      { "step": 4, "title": "If Suspicious>>1: Select Display/Screen and place it after the decision — this is the YES path.>>2: Connect YES → Display/Screen: Line Type: YES Connection Line>>3: Add text: Do Not Click — Report the Email" },
+      { "step": 5, "title": "If Not Suspicious>>1: Select Display/Screen and place it after the decision — this is the NO path.>>2: Connect NO → Display/Screen: Line Type: NO Connection Line>>3: Add text: Visit the Official Website Directly" },
+      { "step": 6, "title": "Finish the Flowchart>>1: Select End and place it after the final results.>>2: Connect all final results → End: Line Type: Arrow Connection Line" }
+    ],
+    "finalCheck": "Start → User → Email → Check Sender/Link → Suspicious? → (Report Email) or (Use Official Website) → End"
+  },
+
+  "Week4-Flowchart": {
+    "toolbox": [
+      "Start",
+      "End",
+      "User",
+      "Computer/Laptop",
+      "Process/Step",
+      "Decision/Diamond",
+      "Display/Screen",
+      "Arrow Connection Line",
+      "YES Connection Line",
+      "NO Connection Line"
+    ],
+    "title": "Weak Passwords: Cybersecurity Decision Algorithm",
+    "algorithmIntro": "A user creates a password for a new account on a computer. The system checks whether the password is strong enough. If the password is weak, the user must create a stronger one before continuing. If the password is strong, it is stored securely and the account is protected.",
+    "flowchartTitle": "Weak Passwords: Secure Password Decision",
+    "steps": [
+      { "step": 1, "title": "Place Start>>1: Select Start and place it anywhere on the stage to begin your flowchart." },
+      { "step": 2, "title": "Add the User>>1: Select User and place it after Start.>>2: Connect Start → User: Line Type: Arrow Connection Line>>3: Add text: Create New Account" },
+      { "step": 3, "title": "Enter a Password (Decision)>>1: Select Computer/Laptop and place it after User.>>2: Connect User → Computer/Laptop: Line Type: Arrow Connection Line>>3: Add text: Enter Password>>4: Select Decision/Diamond and place it after Computer/Laptop.>>5: Connect Computer/Laptop → Decision/Diamond: Line Type: Arrow Connection Line>>6: Add text: Strong Password?" },
+      { "step": 4, "title": "If the Password is WEAK>>1: Select Display/Screen and place it after the decision — this is the NO path.>>2: Connect NO → Display/Screen: Line Type: NO Connection Line>>3: Add text: Create a Stronger Password" },
+      { "step": 5, "title": "If the Password is STRONG>>1: Select Process/Step and place it after the decision — this is the YES path.>>2: Connect YES → Process/Step: Line Type: YES Connection Line>>3: Add text: Store Password Securely" },
+      { "step": 6, "title": "Finish the Flowchart>>1: Select End and place it after the final results.>>2: Connect all final results → End: Line Type: Arrow Connection Line" }
+    ],
+    "finalCheck": "Start → User → Enter Password → Strong Password? → (Create Stronger Password) or (Store Securely) → End"
+  },
+
+  "Week5-Flowchart": {
+    "toolbox": [
+      "Start",
+      "End",
+      "User",
+      "Phone",
+      "Process/Step",
+      "Decision/Diamond",
+      "Display/Screen",
+      "Arrow Connection Line",
+      "YES Connection Line",
+      "NO Connection Line"
+    ],
+    "title": "Pretexting: Cybersecurity Decision Algorithm",
+    "algorithmIntro": "A user gets a phone call from someone claiming to be an authorized person, asking for confidential information. Before sharing anything, the user must verify the caller's identity using a trusted method. If the identity cannot be verified, the user should not share any information and should report the call. If the identity is verified, the user may share only the information that is truly needed.",
+    "flowchartTitle": "Pretexting: Verify Before Sharing",
+    "steps": [
+      { "step": 1, "title": "Place Start>>1: Select Start and place it anywhere on the stage to begin your flowchart." },
+      { "step": 2, "title": "Add the User>>1: Select User and place it after Start.>>2: Connect Start → User: Line Type: Arrow Connection Line>>3: Add text: Receive Phone Call" },
+      { "step": 3, "title": "Verify the Caller (Decision)>>1: Select Phone and place it after User.>>2: Connect User → Phone: Line Type: Arrow Connection Line>>3: Add text: Caller Requests Information>>4: Select Decision/Diamond and place it after Phone.>>5: Connect Phone → Decision/Diamond: Line Type: Arrow Connection Line>>6: Add text: Identity Verified?" },
+      { "step": 4, "title": "If NOT Verified>>1: Select Display/Screen and place it after the decision — this is the NO path.>>2: Connect NO → Display/Screen: Line Type: NO Connection Line>>3: Add text: Do Not Share — Report the Call" },
+      { "step": 5, "title": "If Verified>>1: Select Process/Step and place it after the decision — this is the YES path.>>2: Connect YES → Process/Step: Line Type: YES Connection Line>>3: Add text: Share Only Required Information" },
+      { "step": 6, "title": "Finish the Flowchart>>1: Select End and place it after the final results.>>2: Connect all final results → End: Line Type: Arrow Connection Line" }
+    ],
+    "finalCheck": "Start → User → Phone Call → Identity Verified? → (Report the Call) or (Share Only What's Needed) → End"
+  },
+
+  "Week6-Flowchart": {
+    "toolbox": [
+      "Start",
+      "End",
+      "Computer/Laptop",
+      "Security Monitor",
+      "Backup Server",
+      "Process/Step",
+      "Decision/Diamond",
+      "Display/Screen",
+      "Arrow Connection Line",
+      "YES Connection Line",
+      "NO Connection Line"
+    ],
+    "title": "Ransomware: Cybersecurity Response Algorithm",
+    "algorithmIntro": "A user notices files cannot be opened and a ransom message appears on the computer. The system checks whether this looks like a ransomware attack. If it is not ransomware, normal security checks simply continue. If ransomware is suspected, the device is disconnected from the network, the security team is informed, and the system is safely restored from a clean backup.",
+    "flowchartTitle": "Ransomware: Secure Response Decision",
+    "steps": [
+      { "step": 1, "title": "Place Start>>1: Select Start and place it anywhere on the stage to begin your flowchart." },
+      { "step": 2, "title": "Spot the Problem (Decision)>>1: Select Computer/Laptop and place it after Start.>>2: Connect Start → Computer/Laptop: Line Type: Arrow Connection Line>>3: Add text: Files Locked, Ransom Message Appears>>4: Select Decision/Diamond and place it after Computer/Laptop.>>5: Connect Computer/Laptop → Decision/Diamond: Line Type: Arrow Connection Line>>6: Add text: Ransomware Suspected?" },
+      { "step": 3, "title": "If NOT Ransomware>>1: Select Display/Screen and place it after the decision — this is the NO path.>>2: Connect NO → Display/Screen: Line Type: NO Connection Line>>3: Add text: Continue Normal Security Checks" },
+      { "step": 4, "title": "If Ransomware is Suspected>>1: Select Process/Step and place it after the decision — this is the YES path.>>2: Connect YES → Process/Step: Line Type: YES Connection Line>>3: Add text: Disconnect Device from Network" },
+      { "step": 5, "title": "Report It>>1: Select Security Monitor and place it after Process/Step.>>2: Connect Process/Step → Security Monitor: Line Type: Arrow Connection Line>>3: Add text: Report Incident to Security Team" },
+      { "step": 6, "title": "Recover Safely>>1: Select Backup Server and place it after Security Monitor.>>2: Connect Security Monitor → Backup Server: Line Type: Arrow Connection Line>>3: Add text: Restore from Clean Backup" },
+      { "step": 7, "title": "Finish the Flowchart>>1: Select End and place it after the final results.>>2: Connect all final results → End: Line Type: Arrow Connection Line" }
+    ],
+    "finalCheck": "Start → Computer → Ransomware Suspected? → (Continue Checks) or (Disconnect → Report → Restore Backup) → End"
+  }
+}
